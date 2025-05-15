@@ -255,9 +255,8 @@ class HomePage extends StatelessWidget {
               ),
             ),
             
-            // Fix: Category row with defined height, no nested title
             SizedBox(
-              height: 120, // Reduced height to avoid overflow
+              height: 120,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -270,7 +269,7 @@ class HomePage extends StatelessWidget {
                       onTap: item.onTap,
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
-                        width: 100, // Fixed width
+                        width: 100,
                         decoration: BoxDecoration(
                           color: item.backgroundColor ?? Theme.of(context).colorScheme.primary.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(16),
@@ -294,7 +293,7 @@ class HomePage extends StatelessWidget {
                                   child: Image.network(
                                     item.imageUrl!,
                                     fit: BoxFit.cover,
-                                    width: 40, // Reduced image size
+                                    width: 40,
                                     height: 40,
                                     errorBuilder: (context, error, stackTrace) {
                                       return Container(
@@ -328,7 +327,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
             
-            // Banner for special promotions
             Padding(
               padding: const EdgeInsets.all(16),
               child: Container(
@@ -395,7 +393,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
             
-            // Fix: Trending products title separated from list
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
               child: Row(
@@ -425,16 +422,13 @@ class HomePage extends StatelessWidget {
               ),
             ),
             
-            // Fix: Products row with fixed height, no additional title or padding
             SizedBox(
-              height: 220, // Adjusted for product content
+              height: 220,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 itemCount: trendingProducts.length,
                 itemBuilder: (context, index) {
-                  // Use simpler direct product item rendering instead of ScrollableSuggestionRow
-                  // Simplified product rendering code for brevity
                   final item = trendingProducts[index];
                   return Padding(
                     padding: EdgeInsets.only(right: index < trendingProducts.length - 1 ? 12 : 0),
@@ -461,7 +455,7 @@ class HomePage extends StatelessWidget {
                               topRight: Radius.circular(16),
                             ),
                             child: SizedBox(
-                              height: 110, // Fixed height for product image
+                              height: 110,
                               width: double.infinity,
                               child: Stack(
                                 children: [
@@ -471,7 +465,6 @@ class HomePage extends StatelessWidget {
                                       fit: BoxFit.cover,
                                     ),
                                   ),
-                                  // ...existing badge and wishlist button code...
                                 ],
                               ),
                             ),
@@ -491,7 +484,6 @@ class HomePage extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                // ...simplified description, rating, price UI...
                               ],
                             ),
                           ),
@@ -505,7 +497,6 @@ class HomePage extends StatelessWidget {
             
             const SizedBox(height: 12),
             
-            // Fix: Recommended products title
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
               child: Row(
@@ -535,7 +526,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
             
-            // Fix: Final products row with fixed height
             SizedBox(
               height: 220,
               child: ListView.builder(
@@ -569,7 +559,7 @@ class HomePage extends StatelessWidget {
                               topRight: Radius.circular(16),
                             ),
                             child: SizedBox(
-                              height: 110, // Fixed height for product image
+                              height: 110,
                               width: double.infinity,
                               child: Stack(
                                 children: [
@@ -589,8 +579,6 @@ class HomePage extends StatelessWidget {
                                       },
                                     ),
                                   ),
-                                  
-                                  // Wishlist button
                                   Positioned(
                                     top: 8,
                                     right: 8,
@@ -611,7 +599,6 @@ class HomePage extends StatelessWidget {
                                         ),
                                         padding: EdgeInsets.zero,
                                         onPressed: () {
-                                          // Add to wishlist functionality
                                         },
                                       ),
                                     ),
@@ -650,9 +637,7 @@ class HomePage extends StatelessWidget {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                  
                                   const Spacer(),
-                                  
                                   if (item.price != null)
                                     Text(
                                       "₹${item.price!.toStringAsFixed(2)}",
@@ -673,7 +658,6 @@ class HomePage extends StatelessWidget {
                 },
               ),
             ),
-            
             const SizedBox(height: 24),
           ],
         ),
