@@ -366,20 +366,14 @@ class CartSummary extends StatelessWidget {
   final List<CartItem> items;
   final double? discountAmount;
   final double? shippingCost;
-  final String? promoCode;
   final VoidCallback onCheckout;
-  final VoidCallback? onPromoCodeApply;
-  final TextEditingController? promoController;
 
   const CartSummary({
     Key? key,
     required this.items,
     this.discountAmount,
     this.shippingCost,
-    this.promoCode,
     required this.onCheckout,
-    this.onPromoCodeApply,
-    this.promoController,
   }) : super(key: key);
 
   double get subtotal {
@@ -455,16 +449,6 @@ class CartSummary extends StatelessWidget {
             ),
           ],
           
-          if (promoCode != null && promoCode!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            _SummaryRow(
-              label: "Promo ($promoCode)",
-              value: "Applied",
-              valueColor: Colors.green.shade700,
-              isSmallScreen: isSmallScreen,
-            ),
-          ],
-          
           const SizedBox(height: 16),
           Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
           const SizedBox(height: 16),
@@ -478,60 +462,6 @@ class CartSummary extends StatelessWidget {
           ),
           
           const SizedBox(height: 24),
-          
-          // Promo code input
-          if (onPromoCodeApply != null) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: promoController,
-                    decoration: InputDecoration(
-                      hintText: "Enter promo code",
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: isSmallScreen ? 13 : 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: isSmallScreen ? 10 : 14,
-                      ),
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(width: 12),
-                
-                ElevatedButton(
-                  onPressed: onPromoCodeApply,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 14 : 20,
-                      vertical: isSmallScreen ? 10 : 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    "Apply",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: isSmallScreen ? 13 : 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 20),
-          ],
           
           // Checkout button
           SizedBox(

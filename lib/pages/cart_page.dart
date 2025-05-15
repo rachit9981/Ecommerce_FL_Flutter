@@ -9,9 +9,6 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  // Controller for promo code input
-  final TextEditingController _promoController = TextEditingController();
-  
   // Sample cart items - in a real app, these would come from a state management solution
   List<CartItem> _cartItems = [
     CartItem(
@@ -53,13 +50,6 @@ class _CartPageState extends State<CartPage> {
   // Shipping and discount values
   final double _shippingCost = 0.0; // Free shipping
   double _discountAmount = 0.0;
-  String? _appliedPromoCode;
-
-  @override
-  void dispose() {
-    _promoController.dispose();
-    super.dispose();
-  }
 
   void _updateQuantity(String itemId, int newQuantity) {
     setState(() {
@@ -80,39 +70,6 @@ class _CartPageState extends State<CartPage> {
     setState(() {
       _cartItems = [];
       _discountAmount = 0;
-      _appliedPromoCode = null;
-      _promoController.clear();
-    });
-  }
-
-  void _applyPromoCode() {
-    final code = _promoController.text.trim().toUpperCase();
-    if (code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a promo code')),
-      );
-      return;
-    }
-
-    // This would normally validate the code against a backend
-    setState(() {
-      if (code == 'DISCOUNT20') {
-        _discountAmount = 20.0;
-        _appliedPromoCode = code;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Promo code applied successfully!')),
-        );
-      } else if (code == 'SAVE30') {
-        _discountAmount = 30.0;
-        _appliedPromoCode = code;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Promo code applied successfully!')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid promo code')),
-        );
-      }
     });
   }
 
@@ -129,8 +86,6 @@ class _CartPageState extends State<CartPage> {
 
   @override
   Widget build(BuildContext context) {
-    // final theme = Theme.of(context);
-    
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -198,10 +153,7 @@ class _CartPageState extends State<CartPage> {
                     items: _cartItems,
                     discountAmount: _discountAmount,
                     shippingCost: _shippingCost,
-                    promoCode: _appliedPromoCode,
-                    promoController: _promoController,
                     onCheckout: _proceedToCheckout,
-                    onPromoCodeApply: _applyPromoCode,
                   ),
                 ],
               ),
