@@ -8,63 +8,8 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<SuggestionItem> categories = [
-      SuggestionItem(
-        id: '1',
-        title: 'Electronics',
-        imageUrl: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        backgroundColor: Colors.blue.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Electronics category tapped')),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '2',
-        title: 'Fashion',
-        imageUrl: 'https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        backgroundColor: Colors.pink.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fashion category tapped')),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '3',
-        title: 'Home & Kitchen',
-        imageUrl: 'https://images.unsplash.com/photo-1556911220-bda9f7f3fe9b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        backgroundColor: Colors.green.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Home & Kitchen category tapped')),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '4',
-        title: 'Beauty',
-        imageUrl: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        backgroundColor: Colors.purple.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Beauty category tapped')),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '5',
-        title: 'Sports & Outdoors',
-        imageUrl: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        backgroundColor: Colors.orange.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sports category tapped')),
-          );
-        },
-      ),
-    ];
+    // Get sample categories from CategoryData
+    final categories = CategoryData.getSampleCategories(context);
     
     // Sample trending products with new properties
     final List<SuggestionItem> trendingProducts = [
@@ -186,11 +131,6 @@ class HomePage extends StatelessWidget {
             const SnackBar(content: Text('Navigate to cart')),
           );
         },
-        onSearchPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Open search')),
-          );
-        },
       ),
       body: SafeArea(
         child: ListView(
@@ -255,76 +195,11 @@ class HomePage extends StatelessWidget {
               ),
             ),
             
-            SizedBox(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final item = categories[index];
-                  return Padding(
-                    padding: EdgeInsets.only(right: index < categories.length - 1 ? 12 : 0),
-                    child: InkWell(
-                      onTap: item.onTap,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: 100,
-                        decoration: BoxDecoration(
-                          color: item.backgroundColor ?? Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (item.imageUrl != null)
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(50),
-                                  child: Image.network(
-                                    item.imageUrl!,
-                                    fit: BoxFit.cover,
-                                    width: 40,
-                                    height: 40,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        width: 40,
-                                        height: 40,
-                                        color: Colors.grey.shade200,
-                                        child: Icon(Icons.broken_image, color: Colors.grey.shade400, size: 20),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(height: 6),
-                            Text(
-                              item.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11,
-                                color: item.textColor ?? Theme.of(context).colorScheme.onSurface,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+            // Using the new HorizontalCategoryList component
+            HorizontalCategoryList(
+              categories: categories,
+              itemWidth: 100,
+              itemHeight: 120,
             ),
             
             Padding(

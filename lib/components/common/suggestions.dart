@@ -309,7 +309,6 @@ class ScrollableSuggestionRow extends StatelessWidget {
                 flex: 3,
                 child: Stack(
                   children: [
-                    // Modified: Replaced Hero with plain ClipRRect
                     ClipRRect(
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
@@ -334,7 +333,6 @@ class ScrollableSuggestionRow extends StatelessWidget {
                       ),
                     ),
                     
-                    // Badges container (discount, new, featured)
                     Positioned(
                       top: 8,
                       left: 8,
@@ -384,8 +382,6 @@ class ScrollableSuggestionRow extends StatelessWidget {
                         ],
                       ),
                     ),
-                    
-                    // Wish list button
                     Positioned(
                       top: 8,
                       right: 8,

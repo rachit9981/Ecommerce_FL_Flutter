@@ -4,7 +4,6 @@ class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   final double height;
   final VoidCallback? onCartPressed;
   final VoidCallback? onNotificationsPressed;
-  final VoidCallback? onSearchPressed;
   final int cartItemCount;
 
   const HomeAppBar({
@@ -12,7 +11,6 @@ class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.height = kToolbarHeight + 8,
     this.onCartPressed,
     this.onNotificationsPressed,
-    this.onSearchPressed,
     this.cartItemCount = 0,
   });
 
@@ -30,9 +28,6 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
   
   AnimationController? _cartAnimController;
   Animation<double>? _cartScaleAnimation;
-  
-  AnimationController? _searchAnimController;
-  Animation<double>? _searchScaleAnimation;
   
   @override
   void initState() {
@@ -84,41 +79,19 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
         weight: 1,
       ),
     ]).animate(_cartAnimController!);
-    
-    // Initialize search animation controller
-    _searchAnimController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    
-    _searchScaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.8),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.8, end: 1.05),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.05, end: 1.0),
-        weight: 1,
-      ),
-    ]).animate(_searchAnimController!);
   }
 
   @override
   void dispose() {
     _notificationAnimController?.dispose();
     _cartAnimController?.dispose();
-    _searchAnimController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     // Check if animations are initialized, if not, initialize them
-    if (_searchScaleAnimation == null) {
+    if (_notificationScaleAnimation == null) {
       _initializeAnimations();
     }
 
