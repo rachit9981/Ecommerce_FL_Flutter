@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ecom/components/app_bar/home.dart';
 import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/categories.dart';
+import 'package:ecom/pages/cart_page.dart'; // Add import for cart page
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -142,9 +143,11 @@ class HomePage extends StatelessWidget {
       appBar: HomeAppBar(
         cartItemCount: 2,
         onCartPressed: () {
-          ScaffoldMessenger.of(
+          // Navigate to cart page instead of showing a snackbar
+          Navigator.push(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Navigate to cart')));
+            MaterialPageRoute(builder: (context) => const CartPage()),
+          );
         },
       ),
       body: SafeArea(
