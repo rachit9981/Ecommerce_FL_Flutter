@@ -8,15 +8,15 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get sample categories from CategoryData
+    // Get sample categories from CategoryData class
     final categories = CategoryData.getSampleCategories(context);
-    
-    // Sample trending products with new properties
+
     final List<SuggestionItem> trendingProducts = [
       SuggestionItem(
         id: '1',
         title: 'Wireless Earbuds',
-        imageUrl: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        imageUrl:
+            'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         price: 79.99,
         originalPrice: 99.99, // Added for discount
         description: 'Noise cancellation',
@@ -33,7 +33,8 @@ class HomePage extends StatelessWidget {
       SuggestionItem(
         id: '2',
         title: 'Smart Watch',
-        imageUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        imageUrl:
+            'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         price: 199.99,
         originalPrice: 249.99,
         description: 'Fitness tracking',
@@ -50,7 +51,8 @@ class HomePage extends StatelessWidget {
       SuggestionItem(
         id: '3',
         title: 'Laptop Backpack',
-        imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        imageUrl:
+            'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         price: 49.99,
         originalPrice: 69.99,
         description: 'Water resistant',
@@ -67,7 +69,8 @@ class HomePage extends StatelessWidget {
       SuggestionItem(
         id: '4',
         title: 'Portable Charger',
-        imageUrl: 'https://images.unsplash.com/photo-1585003791087-a5aabb863540?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        imageUrl:
+            'https://images.unsplash.com/photo-1585003791087-a5aabb863540?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         price: 29.99,
         originalPrice: 39.99,
         description: '20000mAh capacity',
@@ -82,43 +85,55 @@ class HomePage extends StatelessWidget {
         },
       ),
     ];
-    
-    // Sample recommended products data
+
     final List<SuggestionItem> recommendedProducts = [
       SuggestionItem(
         id: '1',
         title: 'Coffee Maker',
-        imageUrl: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        imageUrl:
+            'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         price: 129.99,
         description: 'Automatic brewing',
         isProduct: true,
+        rating: 4.3,
+        reviewCount: 128,
+        isFeatured: true,
         onTap: () {},
       ),
       SuggestionItem(
         id: '2',
         title: 'Yoga Mat',
-        imageUrl: 'https://images.unsplash.com/photo-1590432923467-c5469804a8a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        imageUrl:
+            'https://images.unsplash.com/photo-1590432923467-c5469804a8a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         price: 24.99,
         description: 'Non-slip surface',
         isProduct: true,
+        rating: 4.0,
+        reviewCount: 86,
         onTap: () {},
       ),
       SuggestionItem(
         id: '3',
         title: 'LED Desk Lamp',
-        imageUrl: 'https://images.unsplash.com/photo-1534159559673-de7bc89fa998?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        imageUrl:
+            'https://images.unsplash.com/photo-1534159559673-de7bc89fa998?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         price: 39.99,
         description: 'Adjustable brightness',
         isProduct: true,
+        rating: 4.6,
+        reviewCount: 112,
         onTap: () {},
       ),
       SuggestionItem(
         id: '4',
         title: 'Bluetooth Speaker',
-        imageUrl: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        imageUrl:
+            'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         price: 59.99,
         description: 'Waterproof',
         isProduct: true,
+        rating: 4.4,
+        reviewCount: 95,
         onTap: () {},
       ),
     ];
@@ -127,16 +142,15 @@ class HomePage extends StatelessWidget {
       appBar: HomeAppBar(
         cartItemCount: 2,
         onCartPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Navigate to cart')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Navigate to cart')));
         },
       ),
       body: SafeArea(
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
-            // Search bar inside body
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Container(
@@ -144,10 +158,7 @@ class HomePage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.grey.shade300,
-                    width: 1,
-                  ),
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
                 ),
                 child: Row(
                   children: [
@@ -166,7 +177,9 @@ class HomePage extends StatelessWidget {
                       margin: const EdgeInsets.all(6),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
@@ -184,24 +197,34 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
-            
+
+            // Category grid section
             Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: 8,
+              ),
               child: Text(
                 'Shop by Category',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
                 ),
               ),
             ),
-            
-            // Using the new HorizontalCategoryList component
+
+            // Horizontal category list from categories.dart
             HorizontalCategoryList(
               categories: categories,
               itemWidth: 100,
               itemHeight: 120,
+              spacing: 12,
+              showShadow: true,
+              addAnimation: true,
             ),
-            
+
             Padding(
               padding: const EdgeInsets.all(16),
               child: Container(
@@ -218,7 +241,9 @@ class HomePage extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -243,17 +268,15 @@ class HomePage extends StatelessWidget {
                           const SizedBox(height: 8),
                           const Text(
                             "Up to 50% off",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
+                            style: TextStyle(color: Colors.white, fontSize: 16),
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
-                              foregroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -267,271 +290,33 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
-            
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Trending Now',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('View all trending products')),
-                      );
-                    },
-                    child: Text(
-                      'See All',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+
+            ScrollableSuggestionRow(
+              title: 'Trending Now',
+              items: trendingProducts,
+              itemHeight: 220,
+              itemWidth: 145,
+              showMore: true,
+              onMoreTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('View all trending products')),
+                );
+              },
             ),
-            
-            SizedBox(
-              height: 220,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: trendingProducts.length,
-                itemBuilder: (context, index) {
-                  final item = trendingProducts[index];
-                  return Padding(
-                    padding: EdgeInsets.only(right: index < trendingProducts.length - 1 ? 12 : 0),
-                    child: Container(
-                      width: 130,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            spreadRadius: 0,
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
-                            child: SizedBox(
-                              height: 110,
-                              width: double.infinity,
-                              child: Stack(
-                                children: [
-                                  Positioned.fill(
-                                    child: Image.network(
-                                      item.imageUrl!,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  item.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            
             const SizedBox(height: 12),
-            
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Recommended For You',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                    ),
+            ScrollableSuggestionRow(
+              title: 'Recommended For You',
+              items: recommendedProducts,
+              itemHeight: 220,
+              itemWidth: 145,
+              showMore: true,
+              onMoreTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('View all recommended products'),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('View all recommended products')),
-                      );
-                    },
-                    child: Text(
-                      'See All',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            SizedBox(
-              height: 220,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: recommendedProducts.length,
-                itemBuilder: (context, index) {
-                  final item = recommendedProducts[index];
-                  return Padding(
-                    padding: EdgeInsets.only(right: index < recommendedProducts.length - 1 ? 12 : 0),
-                    child: Container(
-                      width: 130,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            spreadRadius: 0,
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
-                            child: SizedBox(
-                              height: 110,
-                              width: double.infinity,
-                              child: Stack(
-                                children: [
-                                  Positioned.fill(
-                                    child: Image.network(
-                                      item.imageUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          color: Colors.grey.shade200,
-                                          child: Icon(
-                                            Icons.broken_image,
-                                            color: Colors.grey.shade400,
-                                            size: 24,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.9),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: IconButton(
-                                        icon: Icon(
-                                          Icons.favorite_border,
-                                          size: 18,
-                                          color: Theme.of(context).colorScheme.primary,
-                                        ),
-                                        constraints: const BoxConstraints(
-                                          minWidth: 32,
-                                          minHeight: 32,
-                                        ),
-                                        padding: EdgeInsets.zero,
-                                        onPressed: () {
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    item.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 11,
-                                      letterSpacing: -0.3,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (item.description != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: Text(
-                                        item.description!,
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 9,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  const Spacer(),
-                                  if (item.price != null)
-                                    Text(
-                                      "₹${item.price!.toStringAsFixed(2)}",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.primary,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                );
+              },
             ),
             const SizedBox(height: 24),
           ],

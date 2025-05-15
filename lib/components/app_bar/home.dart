@@ -22,7 +22,6 @@ class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
-  // Change late to nullable with initial values to avoid late initialization errors
   AnimationController? _notificationAnimController;
   Animation<double>? _notificationScaleAnimation;
   
@@ -33,12 +32,10 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     
-    // Initialize all controllers together
     _initializeAnimations();
   }
 
   void _initializeAnimations() {
-    // Initialize notification animation controller
     _notificationAnimController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
@@ -59,7 +56,6 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
       ),
     ]).animate(_notificationAnimController!);
     
-    // Initialize cart animation controller
     _cartAnimController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,

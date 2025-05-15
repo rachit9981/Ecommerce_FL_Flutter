@@ -20,7 +20,6 @@ class Category {
   });
 }
 
-/// Sample categories data that can be used throughout the app
 class CategoryData {
   static List<Category> getSampleCategories(BuildContext context) {
     return [
