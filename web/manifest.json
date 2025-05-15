@@ -1,6 +1,6 @@
 {
-    "name": "anand_mobile_app",
-    "short_name": "anand_mobile_app",
+    "name": "ecom",
+    "short_name": "ecom",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
