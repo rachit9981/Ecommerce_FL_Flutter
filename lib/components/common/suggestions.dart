@@ -74,7 +74,6 @@ class ScrollableSuggestionRow extends StatefulWidget {
 class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  final Map<String, bool> _favoriteStates = {};
 
   @override
   void initState() {
@@ -89,16 +88,6 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  void _toggleFavorite(String itemId) {
-    setState(() {
-      _favoriteStates[itemId] = !(_favoriteStates[itemId] ?? false);
-    });
-
-    if (_favoriteStates[itemId] ?? false) {
-      _controller.forward(from: 0.0);
-    }
   }
 
   @override
@@ -367,7 +356,6 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
   ) {
     final bool isSmallScreen = screenWidth < 360;
     final theme = Theme.of(context);
-    final bool isFavorite = _favoriteStates[item.id] ?? false;
 
     return Material(
       borderRadius: BorderRadius.circular(16),
@@ -390,7 +378,7 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
             children: [
               if (item.imageUrl != null)
                 Expanded(
-                  flex: 1, // Changed from 3 to 1
+                  flex: 1,
                   child: Stack(
                     children: [
                       ClipRRect(
@@ -408,8 +396,6 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
                           ),
                         ),
                       ),
-
-                      // Discount badge with improved design
                       Positioned(
                         top: 8,
                         left: 8,
@@ -445,39 +431,6 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
                                 ),
                               ),
                           ],
-                        ),
-                      ),
-
-                      // Improved wishlist button with animation
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: GestureDetector(
-                          onTap: () => _toggleFavorite(item.id),
-                          child: _buildGlassmorphicContainer(
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              transitionBuilder: (child, animation) {
-                                return ScaleTransition(
-                                  scale: animation,
-                                  child: child,
-                                );
-                              },
-                              child: Icon(
-                                isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                key: ValueKey<bool>(isFavorite),
-                                size: isSmallScreen ? 16 : 18,
-                                color:
-                                    isFavorite
-                                        ? Colors.red
-                                        : theme.colorScheme.primary,
-                              ),
-                            ),
-                            size: isSmallScreen ? 30 : 36,
-                            padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-                          ),
                         ),
                       ),
                     ],
@@ -646,52 +599,22 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
     );
   }
 
-  Widget _buildGlassmorphicContainer({
-    required Widget child,
-    required double size,
-    required EdgeInsets padding,
-  }) {
-    return Container(
-      height: size,
-      width: size,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            spreadRadius: 0,
-            offset: const Offset(0, 1),
-          ),
-        ],
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _buildRatingStars(double rating, bool isSmallScreen) {
+    Widget _buildRatingStars(double rating, bool isSmallScreen) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
-        if (index < rating.floor()) {
-          // Full star
-          return Icon(
+        if (index < rating.floor()) {          return Icon(
             Icons.star_rounded,
             size: isSmallScreen ? 10 : 12,
             color: Colors.amber,
           );
         } else if (index < rating.ceil() && rating - rating.floor() > 0) {
-          // Half star
           return Icon(
             Icons.star_half_rounded,
             size: isSmallScreen ? 10 : 12,
             color: Colors.amber,
           );
         } else {
-          // Empty star
           return Icon(
             Icons.star_border_rounded,
             size: isSmallScreen ? 10 : 12,
@@ -703,7 +626,6 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
   }
 }
 
-/// A clean network image loader with fade-in animation but no shimmer effect
 class SmoothNetworkImage extends StatefulWidget {
   final String imageUrl;
   final double? width;
