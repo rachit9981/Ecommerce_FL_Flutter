@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ecom/components/search/comps.dart';
+import 'package:ecom/components/search/search_comps.dart';
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
