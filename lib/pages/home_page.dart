@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ecom/components/app_bar/home.dart';
 import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/categories.dart';
+import 'package:ecom/components/common/infity_scroll_suggestions.dart'; // Add this import
 import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/search_page.dart';
 import 'package:ecom/pages/notification_page.dart';
@@ -469,6 +470,87 @@ class HomePage extends StatelessWidget {
       ),
     ];
 
+    // For infinite scroll products
+    final List<SuggestionItem> moreProducts = [
+      // Start with products already defined in trendingProducts
+      ...trendingProducts,
+      // Add more products
+      SuggestionItem(
+        id: 'mp1',
+        title: 'Fitness Tracker Band',
+        imageUrl:
+            'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 2499.00,
+        originalPrice: 3499.00,
+        description: 'Heart rate & sleep monitoring',
+        isProduct: true,
+        rating: 4.3,
+        reviewCount: 428,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'mp1',
+                heroTag: 'infinite_product_mp1',
+              ),
+            ),
+          );
+        },
+      ),
+      SuggestionItem(
+        id: 'mp2',
+        title: 'Digital Camera 24MP',
+        imageUrl:
+            'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 35999.00,
+        originalPrice: 41999.00,
+        description: '4K Video, 30x Optical Zoom',
+        isProduct: true,
+        rating: 4.6,
+        reviewCount: 213,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'mp2',
+                heroTag: 'infinite_product_mp2',
+              ),
+            ),
+          );
+        },
+      ),
+      // Add products from recommendedProducts as well for more variety
+      ...recommendedProducts,
+      SuggestionItem(
+        id: 'mp3',
+        title: 'Home Theater System',
+        imageUrl:
+            'https://images.unsplash.com/photo-1558403194-611308249627?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 24999.00,
+        originalPrice: 29999.00,
+        description: 'Dolby Atmos, 5.1 Channel',
+        isProduct: true,
+        rating: 4.5,
+        reviewCount: 186,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'mp3',
+                heroTag: 'infinite_product_mp3',
+              ),
+            ),
+          );
+        },
+      ),
+      // Add remaining products from topMobiles and topElectronics
+      ...topMobiles,
+      ...topElectronics,
+    ];
+
     return Scaffold(
       appBar: HomeAppBar(
         cartItemCount: 2,
@@ -724,7 +806,58 @@ class HomePage extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 24),
+            // Infinite scroll products section
+            const SizedBox(height: 24), // Increased vertical spacing
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16, // Increased top padding
+                bottom: 12, // Increased bottom padding
+              ),
+              child: Text(
+                'More Products For You',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center, // Center align the title
+              ),
+            ),
+            
+            // The height needs to be defined since we're using a ListView
+            Container(
+              height: 500, // Fixed height for the infinite grid
+              padding: const EdgeInsets.only(bottom: 24), // Increased bottom padding
+              alignment: Alignment.center, // Center align the grid content
+              child: InfiniteProductGrid(
+                initialProducts: moreProducts.take(4).toList(),
+                loadMoreProducts: (page) async {
+                  // Simulate network delay
+                  await Future.delayed(const Duration(seconds: 1));
+                  
+                  // Calculate start and end indices for pagination
+                  final startIndex = page * 4;
+                  if (startIndex >= moreProducts.length) {
+                    return []; // No more products
+                  }
+                  
+                  final endIndex = (startIndex + 4 <= moreProducts.length) 
+                      ? startIndex + 4 
+                      : moreProducts.length;
+                      
+                  return moreProducts.sublist(startIndex, endIndex);
+                },
+                crossAxisCount: 2,
+                childAspectRatio: 0.7,
+                spacing: 16,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Added vertical padding
+                showTitle: false, // We already added the title above
+                loadOnInit: true,
+              ),
+            ),
+
+            const SizedBox(height: 32), // Added more bottom padding
           ],
         ),
       ),
