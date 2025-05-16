@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:ecom/components/app_bar/home.dart';
 import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/categories.dart';
-import 'package:ecom/pages/cart_page.dart'; // Add import for cart page
+import 'package:ecom/pages/cart_page.dart';
+import 'package:ecom/pages/search_page.dart'; // Add import for search page
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -18,8 +19,8 @@ class HomePage extends StatelessWidget {
         title: 'Wireless Earbuds',
         imageUrl:
             'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 79.99,
-        originalPrice: 99.99, // Added for discount
+        price: 5999.00,
+        originalPrice: 7999.00, // Added for discount
         description: 'Noise cancellation',
         isProduct: true,
         isNew: true, // Show "NEW" badge
@@ -36,8 +37,8 @@ class HomePage extends StatelessWidget {
         title: 'Smart Watch',
         imageUrl:
             'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 199.99,
-        originalPrice: 249.99,
+        price: 12999.00,
+        originalPrice: 15999.00,
         description: 'Fitness tracking',
         isProduct: true,
         isNew: true,
@@ -54,8 +55,8 @@ class HomePage extends StatelessWidget {
         title: 'Laptop Backpack',
         imageUrl:
             'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 49.99,
-        originalPrice: 69.99,
+        price: 2799.00,
+        originalPrice: 3499.00,
         description: 'Water resistant',
         isProduct: true,
         isNew: false,
@@ -72,8 +73,8 @@ class HomePage extends StatelessWidget {
         title: 'Portable Charger',
         imageUrl:
             'https://images.unsplash.com/photo-1585003791087-a5aabb863540?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 29.99,
-        originalPrice: 39.99,
+        price: 1499.00,
+        originalPrice: 1999.00,
         description: '20000mAh capacity',
         isProduct: true,
         isNew: false,
@@ -93,7 +94,7 @@ class HomePage extends StatelessWidget {
         title: 'Coffee Maker',
         imageUrl:
             'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 129.99,
+        price: 7499.00,
         description: 'Automatic brewing',
         isProduct: true,
         rating: 4.3,
@@ -106,7 +107,7 @@ class HomePage extends StatelessWidget {
         title: 'Yoga Mat',
         imageUrl:
             'https://images.unsplash.com/photo-1590432923467-c5469804a8a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 24.99,
+        price: 1999.00,
         description: 'Non-slip surface',
         isProduct: true,
         rating: 4.0,
@@ -118,7 +119,7 @@ class HomePage extends StatelessWidget {
         title: 'LED Desk Lamp',
         imageUrl:
             'https://images.unsplash.com/photo-1534159559673-de7bc89fa998?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 39.99,
+        price: 2999.00,
         description: 'Adjustable brightness',
         isProduct: true,
         rating: 4.6,
@@ -130,7 +131,7 @@ class HomePage extends StatelessWidget {
         title: 'Bluetooth Speaker',
         imageUrl:
             'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 59.99,
+        price: 3999.00,
         description: 'Waterproof',
         isProduct: true,
         rating: 4.4,
@@ -154,49 +155,58 @@ class HomePage extends StatelessWidget {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
+            // Updated search bar to navigate to search page
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade300, width: 1),
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    Icon(Icons.search, color: Colors.grey.shade600),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Search products',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 16,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SearchPage()),
+                  );
+                },
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300, width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 16),
+                      Icon(Icons.search, color: Colors.grey.shade600),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Search products',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      margin: const EdgeInsets.all(6),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Search',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                      const Spacer(),
+                      Container(
+                        margin: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Search',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
