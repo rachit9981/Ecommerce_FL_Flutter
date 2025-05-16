@@ -96,6 +96,9 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
     final bool isSmallScreen = screenWidth < 360;
     final theme = Theme.of(context);
 
+    // Create a unique section identifier for hero tags
+    final String sectionId = widget.title?.toLowerCase().replaceAll(' ', '_') ?? 'unknown_section';
+
     final effectivePadding = EdgeInsets.symmetric(
       horizontal: isSmallScreen ? 8.0 : widget.padding.horizontal,
       vertical: widget.padding.vertical,
@@ -199,7 +202,8 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
                                         : 0,
                               ),
                               child: Hero(
-                                tag: 'product_${widget.items[index].id}',
+                                // Create a unique tag that includes section name + product id
+                                tag: '${sectionId}_product_${widget.items[index].id}',
                                 flightShuttleBuilder: (
                                   _,
                                   __,

@@ -161,6 +161,8 @@ class SearchResultItem extends StatelessWidget {
   final int reviewCount;
   final VoidCallback onTap;
   final VoidCallback onAddToCart;
+  // Add an ID parameter for unique Hero tags
+  final String id;
 
   const SearchResultItem({
     Key? key,
@@ -172,6 +174,7 @@ class SearchResultItem extends StatelessWidget {
     required this.reviewCount,
     required this.onTap,
     required this.onAddToCart,
+    required this.id,
   }) : super(key: key);
 
   @override
@@ -197,11 +200,15 @@ class SearchResultItem extends StatelessWidget {
                 ClipRRect(
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(12)),
-                  child: Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    height: 180,
-                    fit: BoxFit.cover,
+                  child: Hero(
+                    // Use a unique tag for search result items
+                    tag: 'product_image_search_$id',
+                    child: Image.network(
+                      imageUrl,
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 if (discount > 0)

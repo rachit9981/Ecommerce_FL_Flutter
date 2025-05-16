@@ -482,6 +482,7 @@ class _SearchPageState extends State<SearchPage> {
             itemBuilder: (context, index) {
               final product = _filteredProducts[index];
               return SearchResultItem(
+                id: product['id'] ?? index.toString(), // Use product ID or index as fallback
                 title: product['title'],
                 imageUrl: product['imageUrl'],
                 price: product['price'],
