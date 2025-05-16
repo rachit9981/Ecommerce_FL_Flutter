@@ -4,16 +4,85 @@ import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/categories.dart';
 import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/search_page.dart';
-import 'package:ecom/pages/notification_page.dart'; // Add import for notification page
-import 'package:ecom/pages/product_page.dart'; // Import the ProductPage
+import 'package:ecom/pages/notification_page.dart';
+import 'package:ecom/pages/product_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Get sample categories from CategoryData class
     final categories = CategoryData.getSampleCategories(context);
+
+    // Define mobile brands
+    final mobileBrands = [
+      CategoryItem(
+        id: 'samsung',
+        title: 'Samsung',
+        imageUrl:
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Samsung products')),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'apple',
+        title: 'Apple',
+        imageUrl:
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Apple products')),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'xiaomi',
+        title: 'Xiaomi',
+        imageUrl:
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Xiaomi products')),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'oneplus',
+        title: 'OnePlus',
+        imageUrl:
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('OnePlus products')),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'oppo',
+        title: 'OPPO',
+        imageUrl:
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/2560px-OPPO_LOGO_2019.svg.png',
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('OPPO products')),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'vivo',
+        title: 'Vivo',
+        imageUrl:
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Vivo_logo.svg/1024px-Vivo_logo.svg.png',
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vivo products')),
+          );
+        },
+      ),
+    ];
 
     final List<SuggestionItem> trendingProducts = [
       SuggestionItem(
@@ -199,6 +268,200 @@ class HomePage extends StatelessWidget {
               builder: (context) => ProductPage(
                 productId: '8',
                 heroTag: 'recommended_for_you_product_8',
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+
+    // New Top Mobiles section
+    final List<SuggestionItem> topMobiles = [
+      SuggestionItem(
+        id: 'm1',
+        title: 'UltraPhone Pro',
+        imageUrl:
+            'https://images.unsplash.com/photo-1598327105666-5b89351aff97?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 49999.00,
+        originalPrice: 59999.00,
+        description: '108MP Camera, 12GB RAM',
+        isProduct: true,
+        isNew: true,
+        rating: 4.7,
+        reviewCount: 1243,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '2',
+                heroTag: 'top_mobiles_m1',
+              ),
+            ),
+          );
+        },
+      ),
+      SuggestionItem(
+        id: 'm2',
+        title: 'iSuperPhone 13',
+        imageUrl:
+            'https://images.unsplash.com/photo-1605236453806-6ff36851218e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 72999.00,
+        originalPrice: 79999.00,
+        description: 'A15 Chip, Pro Camera',
+        isProduct: true,
+        rating: 4.8,
+        reviewCount: 985,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'm2',
+                heroTag: 'top_mobiles_m2',
+              ),
+            ),
+          );
+        },
+      ),
+      SuggestionItem(
+        id: 'm3',
+        title: 'Galaxy X23',
+        imageUrl:
+            'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 42999.00,
+        originalPrice: 45999.00,
+        description: '120Hz AMOLED, 5G',
+        isProduct: true,
+        rating: 4.6,
+        reviewCount: 756,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'm3',
+                heroTag: 'top_mobiles_m3',
+              ),
+            ),
+          );
+        },
+      ),
+      SuggestionItem(
+        id: 'm4',
+        title: 'Mi Note 11',
+        imageUrl:
+            'https://images.unsplash.com/photo-1543069190-f90727ac6639?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 19999.00,
+        originalPrice: 24999.00,
+        description: '64MP Quad Camera',
+        isProduct: true,
+        rating: 4.4,
+        reviewCount: 1475,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'm4',
+                heroTag: 'top_mobiles_m4',
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+
+    // New Top Electronics section
+    final List<SuggestionItem> topElectronics = [
+      SuggestionItem(
+        id: 'e1',
+        title: 'Smart 4K TV',
+        imageUrl:
+            'https://images.unsplash.com/photo-1593784991095-a205069470b6?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 42999.00,
+        originalPrice: 54999.00,
+        description: '55-inch, HDR, Dolby Vision',
+        isProduct: true,
+        isFeatured: true,
+        rating: 4.6,
+        reviewCount: 532,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'e1',
+                heroTag: 'top_electronics_e1',
+              ),
+            ),
+          );
+        },
+      ),
+      SuggestionItem(
+        id: 'e2',
+        title: 'Gaming Laptop',
+        imageUrl:
+            'https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 89999.00,
+        originalPrice: 104999.00,
+        description: 'RTX 3060, 16GB RAM',
+        isProduct: true,
+        rating: 4.5,
+        reviewCount: 328,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'e2',
+                heroTag: 'top_electronics_e2',
+              ),
+            ),
+          );
+        },
+      ),
+      SuggestionItem(
+        id: 'e3',
+        title: 'Noise-Canceling Headphones',
+        imageUrl:
+            'https://images.unsplash.com/photo-1578319439584-104c94d37305?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 24999.00,
+        originalPrice: 32999.00,
+        description: 'Wireless, 30h Battery',
+        isProduct: true,
+        rating: 4.7,
+        reviewCount: 894,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'e3',
+                heroTag: 'top_electronics_e3',
+              ),
+            ),
+          );
+        },
+      ),
+      SuggestionItem(
+        id: 'e4',
+        title: 'Smartwatch Pro',
+        imageUrl:
+            'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        price: 18999.00,
+        originalPrice: 22999.00,
+        description: 'Heart Rate, GPS, NFC',
+        isProduct: true,
+        rating: 4.4,
+        reviewCount: 672,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: 'e4',
+                heroTag: 'top_electronics_e4',
               ),
             ),
           );
@@ -403,6 +666,64 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
+            // Mobile Brands section
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 8,
+                bottom: 8,
+              ),
+              child: Text(
+                'Popular Mobile Brands',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+
+            HorizontalCategoryList(
+              categories: mobileBrands,
+              itemWidth: 80,
+              itemHeight: 100,
+              spacing: 12,
+              showShadow: true,
+              addAnimation: true,
+              brandMode: true, // Pass a flag to indicate these are brands
+            ),
+
+            // Top Mobiles section
+            const SizedBox(height: 16),
+            ScrollableSuggestionRow(
+              title: 'Top Mobiles',
+              items: topMobiles,
+              itemHeight: 220,
+              itemWidth: 145,
+              showMore: true,
+              onMoreTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('View all top mobiles')),
+                );
+              },
+            ),
+
+            // Top Electronics section
+            const SizedBox(height: 16),
+            ScrollableSuggestionRow(
+              title: 'Top Electronics',
+              items: topElectronics,
+              itemHeight: 220,
+              itemWidth: 145,
+              showMore: true,
+              onMoreTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('View all top electronics')),
+                );
+              },
+            ),
+
             const SizedBox(height: 24),
           ],
         ),
