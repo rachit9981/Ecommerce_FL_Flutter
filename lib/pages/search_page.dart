@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/search/search_comps.dart';
+import 'package:ecom/pages/product_page.dart'; // Add import for ProductPage
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
@@ -482,7 +483,7 @@ class _SearchPageState extends State<SearchPage> {
             itemBuilder: (context, index) {
               final product = _filteredProducts[index];
               return SearchResultItem(
-                id: product['id'] ?? index.toString(), // Use product ID or index as fallback
+                id: product['id'] ?? index.toString(),
                 title: product['title'],
                 imageUrl: product['imageUrl'],
                 price: product['price'],
@@ -491,9 +492,13 @@ class _SearchPageState extends State<SearchPage> {
                 reviewCount: product['reviewCount'],
                 onTap: () {
                   // Navigate to product detail page
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Product tapped: ${product['title']}'),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProductPage(
+                        productId: product['id'] ?? index.toString(),
+                        heroTag: 'search_product_${product['id'] ?? index.toString()}',
+                      ),
                     ),
                   );
                 },

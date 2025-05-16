@@ -5,6 +5,7 @@ import 'package:ecom/components/common/categories.dart';
 import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/search_page.dart';
 import 'package:ecom/pages/notification_page.dart'; // Add import for notification page
+import 'package:ecom/pages/product_page.dart'; // Import the ProductPage
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -28,8 +29,14 @@ class HomePage extends StatelessWidget {
         rating: 4.5, // Display rating
         reviewCount: 256, // Show review count
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Wireless Earbuds product tapped')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '1',
+                heroTag: 'trending_now_product_1', // Match the Hero tag format from your carousel
+              ),
+            ),
           );
         },
       ),
@@ -46,8 +53,14 @@ class HomePage extends StatelessWidget {
         rating: 4.7,
         reviewCount: 128,
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Smart Watch product tapped')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '2',
+                heroTag: 'trending_now_product_2',
+              ),
+            ),
           );
         },
       ),
@@ -64,8 +77,14 @@ class HomePage extends StatelessWidget {
         rating: 4.2,
         reviewCount: 75,
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Laptop Backpack product tapped')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '3',
+                heroTag: 'trending_now_product_3',
+              ),
+            ),
           );
         },
       ),
@@ -82,8 +101,14 @@ class HomePage extends StatelessWidget {
         rating: 4.8,
         reviewCount: 200,
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Portable Charger product tapped')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '4',
+                heroTag: 'trending_now_product_4',
+              ),
+            ),
           );
         },
       ),
@@ -91,7 +116,7 @@ class HomePage extends StatelessWidget {
 
     final List<SuggestionItem> recommendedProducts = [
       SuggestionItem(
-        id: '1',
+        id: '5',
         title: 'Coffee Maker',
         imageUrl:
             'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
@@ -101,10 +126,20 @@ class HomePage extends StatelessWidget {
         rating: 4.3,
         reviewCount: 128,
         isFeatured: true,
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '5',
+                heroTag: 'recommended_for_you_product_5',
+              ),
+            ),
+          );
+        },
       ),
       SuggestionItem(
-        id: '2',
+        id: '6',
         title: 'Yoga Mat',
         imageUrl:
             'https://images.unsplash.com/photo-1590432923467-c5469804a8a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
@@ -113,10 +148,20 @@ class HomePage extends StatelessWidget {
         isProduct: true,
         rating: 4.0,
         reviewCount: 86,
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '6',
+                heroTag: 'recommended_for_you_product_6',
+              ),
+            ),
+          );
+        },
       ),
       SuggestionItem(
-        id: '3',
+        id: '7',
         title: 'LED Desk Lamp',
         imageUrl:
             'https://images.unsplash.com/photo-1534159559673-de7bc89fa998?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
@@ -125,10 +170,20 @@ class HomePage extends StatelessWidget {
         isProduct: true,
         rating: 4.6,
         reviewCount: 112,
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '7',
+                heroTag: 'recommended_for_you_product_7',
+              ),
+            ),
+          );
+        },
       ),
       SuggestionItem(
-        id: '4',
+        id: '8',
         title: 'Bluetooth Speaker',
         imageUrl:
             'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
@@ -137,7 +192,17 @@ class HomePage extends StatelessWidget {
         isProduct: true,
         rating: 4.4,
         reviewCount: 95,
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductPage(
+                productId: '8',
+                heroTag: 'recommended_for_you_product_8',
+              ),
+            ),
+          );
+        },
       ),
     ];
 

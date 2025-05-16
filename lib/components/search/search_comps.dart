@@ -201,8 +201,7 @@ class SearchResultItem extends StatelessWidget {
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(12)),
                   child: Hero(
-                    // Use a unique tag for search result items
-                    tag: 'product_image_search_$id',
+                    tag: 'search_product_$id',
                     child: Image.network(
                       imageUrl,
                       width: double.infinity,
