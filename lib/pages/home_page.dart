@@ -3,7 +3,8 @@ import 'package:ecom/components/app_bar/home.dart';
 import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/categories.dart';
 import 'package:ecom/pages/cart_page.dart';
-import 'package:ecom/pages/search_page.dart'; // Add import for search page
+import 'package:ecom/pages/search_page.dart';
+import 'package:ecom/pages/notification_page.dart'; // Add import for notification page
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -148,6 +149,12 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CartPage()),
+          );
+        },
+        onNotificationsPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NotificationPage()),
           );
         },
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ecom/pages/notification_page.dart'; // Add import for notification page
 
 class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   final double height;
@@ -155,24 +156,57 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                 color: surfaceColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: Colors.black87,
-                  size: 22,
-                ),
-                tooltip: 'Notifications',
-                onPressed: () {
-                  _notificationAnimController?.forward(from: 0.0).then((_) {
-                    if (widget.onNotificationsPressed != null) {
-                      widget.onNotificationsPressed!();
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Notifications pressed')),
-                      );
-                    }
-                  });
-                },
+              child: Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.black87,
+                      size: 22,
+                    ),
+                    tooltip: 'Notifications',
+                    onPressed: () {
+                      _notificationAnimController?.forward(from: 0.0).then((_) {
+                        if (widget.onNotificationsPressed != null) {
+                          widget.onNotificationsPressed!();
+                        } else {
+                          // Navigate to notification page
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NotificationPage(),
+                            ),
+                          );
+                        }
+                      });
+                    },
+                  ),
+                  // Add notification badge
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: const Text(
+                        '2', // You can dynamically update this count
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
