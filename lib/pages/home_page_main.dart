@@ -652,7 +652,6 @@ class HomePage extends StatelessWidget {
               itemHeight: 120,
               spacing: 12,
               showShadow: true,
-              addAnimation: true,
             ),
 
             Padding(
@@ -772,7 +771,6 @@ class HomePage extends StatelessWidget {
               itemHeight: 100,
               spacing: 12,
               showShadow: true,
-              addAnimation: true,
               brandMode: true, // Pass a flag to indicate these are brands
             ),
 

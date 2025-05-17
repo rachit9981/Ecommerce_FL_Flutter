@@ -127,7 +127,6 @@ class CategoryGridView extends StatelessWidget {
   final double spacing;
   final double childAspectRatio;
   final EdgeInsetsGeometry padding;
-  final bool addAnimation;
 
   const CategoryGridView({
     Key? key,
@@ -137,7 +136,6 @@ class CategoryGridView extends StatelessWidget {
     this.spacing = 16.0,
     this.childAspectRatio = 0.85,
     this.padding = const EdgeInsets.all(16.0),
-    this.addAnimation = true,
   }) : super(key: key);
 
   @override
@@ -160,34 +158,11 @@ class CategoryGridView extends StatelessWidget {
         ),
         itemCount: categories.length,
         itemBuilder: (context, index) {
-          return addAnimation
-            ? _buildAnimatedItem(context, index)
-            : CategoryGridItem(
-                category: categories[index],
-                onTap: () => _handleTap(index),
-              );
+          return CategoryGridItem(
+            category: categories[index],
+            onTap: () => _handleTap(index),
+          );
         },
-      ),
-    );
-  }
-  
-  Widget _buildAnimatedItem(BuildContext context, int index) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: 1),
-      duration: Duration(milliseconds: 300 + (index * 50)),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: 0.5 + (0.5 * value),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
-        );
-      },
-      child: CategoryGridItem(
-        category: categories[index],
-        onTap: () => _handleTap(index),
       ),
     );
   }
@@ -315,7 +290,6 @@ class HorizontalCategoryList extends StatelessWidget {
   final double itemHeight;
   final double spacing;
   final bool showShadow;
-  final bool addAnimation;
   final bool brandMode; // Flag for brand styling
 
   const HorizontalCategoryList({
@@ -325,7 +299,6 @@ class HorizontalCategoryList extends StatelessWidget {
     this.itemHeight = 120,
     this.spacing = 16,
     this.showShadow = false,
-    this.addAnimation = false,
     this.brandMode = false,
   }) : super(key: key);
 
@@ -349,7 +322,7 @@ class HorizontalCategoryList extends StatelessWidget {
   }
 
   Widget _buildCategoryItem(BuildContext context, CategoryItem item, int index) {
-    final Widget categoryItem = Container(
+    return Container(
       width: itemWidth,
       height: itemHeight,
       margin: EdgeInsets.only(right: spacing, bottom: showShadow ? 4 : 0),
@@ -421,26 +394,6 @@ class HorizontalCategoryList extends StatelessWidget {
         ),
       ),
     );
-
-    if (addAnimation) {
-      return TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0.0, end: 1.0),
-        duration: Duration(milliseconds: 300 + (index * 100)),
-        curve: Curves.easeOutQuint,
-        builder: (context, value, child) {
-          return Transform.translate(
-            offset: Offset(50 * (1 - value), 0),
-            child: Opacity(
-              opacity: value,
-              child: child,
-            ),
-          );
-        },
-        child: categoryItem,
-      );
-    }
-
-    return categoryItem;
   }
 
   Widget _buildCategoryImage(String imageUrl) {

@@ -3,6 +3,7 @@ import 'package:ecom/components/common/suggestions.dart';
 
 enum LoadingStatus { idle, loading, error, noMoreData }
 
+/// Widget for displaying products in a grid with infinite scrolling capability
 class InfiniteProductGrid extends StatefulWidget {
   final List<SuggestionItem> initialProducts;
   
@@ -119,6 +120,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Title section if showTitle is true
         if (widget.showTitle && widget.title != null)
           Padding(
             padding: EdgeInsets.only(
@@ -184,6 +186,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Product image with badges
                 Expanded(
                   flex: 3,
                   child: Stack(
@@ -241,6 +244,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                   ),
                 ),
                 
+                // Product information
                 Expanded(
                   flex: 2,
                   child: Padding(
@@ -486,6 +490,8 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     );
   }
 }
+
+/// A wrapper around InfiniteProductGrid for showing products in a vertical list
 class InfiniteProductList extends StatelessWidget {
   final List<SuggestionItem> initialProducts;
   final Future<List<SuggestionItem>> Function(int page) loadMoreProducts;
@@ -520,6 +526,7 @@ class InfiniteProductList extends StatelessWidget {
   }
 }
 
+/// Usage example page for infinite scroll products
 class InfiniteProductsExample extends StatelessWidget {
   final List<SuggestionItem> sampleProducts;
   

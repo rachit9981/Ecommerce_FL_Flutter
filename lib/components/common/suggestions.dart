@@ -71,25 +71,7 @@ class ScrollableSuggestionRow extends StatefulWidget {
       _ScrollableSuggestionRowState();
 }
 
-class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -180,75 +162,49 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
                 padding: effectivePadding,
                 itemCount: widget.items.length,
                 itemBuilder: (context, index) {
-                  // Staggered animation
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 300 + (index * 50)),
-                    curve: Curves.easeOutQuint,
-                    builder: (context, value, child) {
-                      return Transform.translate(
-                        offset: Offset(20 * (1 - value), 0),
-                        child: Transform.scale(
-                          scale: 0.9 + (0.1 * value),
-                          child: Opacity(
-                            opacity: value,
-                            child: Padding(
-                              padding: EdgeInsets.only(
-                                right:
-                                    index < widget.items.length - 1
-                                        ? isSmallScreen
-                                            ? widget.spacing / 2
-                                            : widget.spacing
-                                        : 0,
-                              ),
-                              child: Hero(
-                                // Create a unique tag that includes section name + product id
-                                tag: '${sectionId}_product_${widget.items[index].id}',
-                                flightShuttleBuilder: (
-                                  _,
-                                  __,
-                                  ___,
-                                  ____,
-                                  _____,
-                                ) {
-                                  return Material(
-                                    color: Colors.transparent,
-                                    child:
-                                        widget.items[index].isProduct
-                                            ? _buildProductItem(
-                                              context,
-                                              widget.items[index],
-                                              calculatedItemWidth,
-                                              screenWidth,
-                                            )
-                                            : _buildCategoryItem(
-                                              context,
-                                              widget.items[index],
-                                              calculatedItemWidth,
-                                              screenWidth,
-                                            ),
-                                  );
-                                },
-                                child:
-                                    widget.items[index].isProduct
-                                        ? _buildProductItem(
-                                          context,
-                                          widget.items[index],
-                                          calculatedItemWidth,
-                                          screenWidth,
-                                        )
-                                        : _buildCategoryItem(
-                                          context,
-                                          widget.items[index],
-                                          calculatedItemWidth,
-                                          screenWidth,
-                                        ),
-                              ),
+                  // Remove animation and directly return the item
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: index < widget.items.length - 1
+                          ? isSmallScreen
+                              ? widget.spacing / 2
+                              : widget.spacing
+                          : 0,
+                    ),
+                    child: Hero(
+                      tag: '${sectionId}_product_${widget.items[index].id}',
+                      flightShuttleBuilder: (_, __, ___, ____, _____) {
+                        return Material(
+                          color: Colors.transparent,
+                          child: widget.items[index].isProduct
+                              ? _buildProductItem(
+                                  context,
+                                  widget.items[index],
+                                  calculatedItemWidth,
+                                  screenWidth,
+                                )
+                              : _buildCategoryItem(
+                                  context,
+                                  widget.items[index],
+                                  calculatedItemWidth,
+                                  screenWidth,
+                                ),
+                        );
+                      },
+                      child: widget.items[index].isProduct
+                          ? _buildProductItem(
+                              context,
+                              widget.items[index],
+                              calculatedItemWidth,
+                              screenWidth,
+                            )
+                          : _buildCategoryItem(
+                              context,
+                              widget.items[index],
+                              calculatedItemWidth,
+                              screenWidth,
                             ),
-                          ),
-                        ),
-                      );
-                    },
+                    ),
                   );
                 },
               ),
@@ -630,7 +586,7 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow>
   }
 }
 
-class SmoothNetworkImage extends StatefulWidget {
+class SmoothNetworkImage extends StatelessWidget {
   final String imageUrl;
   final double? width;
   final double? height;
@@ -645,104 +601,47 @@ class SmoothNetworkImage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<SmoothNetworkImage> createState() => _SmoothNetworkImageState();
-}
-
-class _SmoothNetworkImageState extends State<SmoothNetworkImage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  bool _isLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     // Make sure we have at least a minimum size for the image container
-    final double minWidth = widget.width ?? 50.0;
-    final double minHeight = widget.height ?? 50.0;
+    final double minWidth = width ?? 50.0;
+    final double minHeight = height ?? 50.0;
 
     return SizedBox(
       width: minWidth,
       height: minHeight,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Simple placeholder instead of shimmer
-          if (!_isLoaded)
-            Container(
-              color: Colors.grey.shade200,
-              child: Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                    ),
-                  ),
+      child: Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+          return Container(
+            color: Colors.grey.shade200,
+            child: Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary.withOpacity(0.5),
                 ),
               ),
             ),
-
-          // Actual image
-          Image.network(
-            widget.imageUrl,
-            width: widget.width,
-            height: widget.height,
-            fit: widget.fit,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) {
-                if (!_isLoaded) {
-                  _controller.forward();
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      setState(() {
-                        _isLoaded = true;
-                      });
-                    }
-                  });
-                }
-                return FadeTransition(opacity: _controller, child: child);
-              }
-              return const SizedBox();
-            },
-            errorBuilder: (context, error, stackTrace) {
-              if (!_isLoaded) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    setState(() {
-                      _isLoaded = true;
-                    });
-                  }
-                });
-              }
-              return Container(
-                color: Colors.grey.shade200,
-                child: Center(
-                  child: Icon(
-                    Icons.broken_image,
-                    color: Colors.grey.shade400,
-                    size: (minWidth / 3).clamp(16.0, 32.0),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey.shade200,
+            child: Center(
+              child: Icon(
+                Icons.broken_image,
+                color: Colors.grey.shade400,
+                size: (minWidth / 3).clamp(16.0, 32.0),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
