@@ -806,7 +806,6 @@ class HomePage extends StatelessWidget {
               },
             ),
 
-            // Infinite scroll products section
             const SizedBox(height: 24), // Increased vertical spacing
             Padding(
               padding: const EdgeInsets.only(

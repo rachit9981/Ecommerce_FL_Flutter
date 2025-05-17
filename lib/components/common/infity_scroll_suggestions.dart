@@ -3,34 +3,23 @@ import 'package:ecom/components/common/suggestions.dart';
 
 enum LoadingStatus { idle, loading, error, noMoreData }
 
-/// Widget for displaying products in a grid with infinite scrolling capability
 class InfiniteProductGrid extends StatefulWidget {
-  /// Initial list of products to display
   final List<SuggestionItem> initialProducts;
   
-  /// Function to call when more products need to be loaded
-  /// Returns a Future that resolves to a list of additional products
   final Future<List<SuggestionItem>> Function(int page) loadMoreProducts;
   
-  /// Number of products to display per row
   final int crossAxisCount;
   
-  /// Spacing between products
   final double spacing;
   
-  /// Child aspect ratio for the grid items
   final double childAspectRatio;
   
-  /// Padding around the grid
   final EdgeInsets padding;
   
-  /// Title to display above the grid
   final String? title;
   
-  /// Whether to show the section title
   final bool showTitle;
   
-  /// Controls if the loading is triggered on initialization
   final bool loadOnInit;
 
   const InfiniteProductGrid({
@@ -62,10 +51,8 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     super.initState();
     _products.addAll(widget.initialProducts);
     
-    // Add scroll listener to detect when user reaches bottom
     _scrollController.addListener(_scrollListener);
     
-    // Load initial batch if loadOnInit is true
     if (widget.loadOnInit && widget.initialProducts.isEmpty) {
       _loadMoreData();
     }
@@ -78,20 +65,17 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     super.dispose();
   }
   
-  // Detects when user has scrolled near the bottom of the list
   void _scrollListener() {
     if (_loadingStatus == LoadingStatus.loading || 
         _loadingStatus == LoadingStatus.noMoreData) {
       return;
     }
     
-    // Trigger load more when user is 200 pixels from bottom
     if (_scrollController.position.extentAfter < 200) {
       _loadMoreData();
     }
   }
   
-  // Load more data and handle loading states
   Future<void> _loadMoreData() async {
     if (_loadingStatus == LoadingStatus.loading || 
         _loadingStatus == LoadingStatus.noMoreData) {
@@ -123,7 +107,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     }
   }
   
-  // Retry loading after an error
   void _retryLoading() {
     setState(() {
       _loadingStatus = LoadingStatus.idle;
@@ -136,7 +119,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title section if showTitle is true
         if (widget.showTitle && widget.title != null)
           Padding(
             padding: EdgeInsets.only(
@@ -154,7 +136,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
             ),
           ),
           
-        // Main product grid with infinite scrolling
         Expanded(
           child: _products.isEmpty && !_hasInitialized
               ? const Center(child: CircularProgressIndicator())
@@ -171,12 +152,10 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                       ),
                       itemCount: _products.length + (_loadingStatus == LoadingStatus.noMoreData ? 0 : 1),
                       itemBuilder: (context, index) {
-                        // If we're at the end of the list, show loading/error/no-more-data indicator
                         if (index >= _products.length) {
                           return _buildLoadMoreIndicator();
                         }
                         
-                        // Otherwise, show product item
                         return _buildProductItem(_products[index]);
                       },
                     ),
@@ -186,8 +165,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
   }
   
   Widget _buildProductItem(SuggestionItem product) {
-    // Using the product card from ScrollableSuggestionRow
-    // Generate a unique hero tag for this view
     final heroTag = 'infinite_grid_product_${product.id}';
     
     return Hero(
@@ -207,12 +184,10 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product image with badges (discount, new, featured)
                 Expanded(
                   flex: 3,
                   child: Stack(
                     children: [
-                      // Product image
                       ClipRRect(
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(16),
@@ -230,7 +205,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                         ),
                       ),
                       
-                      // Badges (discount, new, featured)
                       if (product.discountPercentage != null || product.isNew || product.isFeatured)
                         Positioned(
                           top: 8,
@@ -238,14 +212,12 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Discount badge
                               if (product.discountPercentage != null)
                                 _buildBadge(
                                   "-${product.discountPercentage}%",
                                   [Colors.red.shade700, Colors.red.shade500],
                                 ),
                               
-                              // New badge
                               if (product.isNew)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 4),
@@ -254,8 +226,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                                     [Colors.green.shade700, Colors.green.shade500],
                                   ),
                                 ),
-                              
-                              // Featured badge
                               if (product.isFeatured)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 4),
@@ -271,7 +241,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                   ),
                 ),
                 
-                // Product information (title, price, rating)
                 Expanded(
                   flex: 2,
                   child: Padding(
@@ -279,7 +248,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Product title
                         Text(
                           product.title,
                           style: const TextStyle(
@@ -290,7 +258,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         
-                        // Product description (if available)
                         if (product.description != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
@@ -305,7 +272,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                             ),
                           ),
                         
-                        // Product rating (if available)
                         if (product.rating != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
@@ -329,7 +295,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                         
                         const Spacer(),
                         
-                        // Product price
                         if (product.price != null)
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
@@ -418,8 +383,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
         );
         
       case LoadingStatus.noMoreData:
-        // We don't actually render this since we don't add an extra item
-        // when we're out of data, but keeping this here for clarity
         return const SizedBox.shrink();
         
       default:
@@ -523,8 +486,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     );
   }
 }
-
-/// A wrapper around InfiniteProductGrid for showing products in a vertical list
 class InfiniteProductList extends StatelessWidget {
   final List<SuggestionItem> initialProducts;
   final Future<List<SuggestionItem>> Function(int page) loadMoreProducts;
@@ -559,7 +520,6 @@ class InfiniteProductList extends StatelessWidget {
   }
 }
 
-/// Usage example page for infinite scroll products
 class InfiniteProductsExample extends StatelessWidget {
   final List<SuggestionItem> sampleProducts;
   
@@ -579,11 +539,7 @@ class InfiniteProductsExample extends StatelessWidget {
         child: InfiniteProductGrid(
           initialProducts: sampleProducts.take(4).toList(),
           loadMoreProducts: (page) async {
-            // Simulate network delay
             await Future.delayed(const Duration(seconds: 1));
-            
-            // For demonstration, we'll return 4 more products for each page
-            // In a real app, this would fetch from an API
             final startIndex = page * 4;
             if (startIndex >= sampleProducts.length) {
               return []; // No more products
