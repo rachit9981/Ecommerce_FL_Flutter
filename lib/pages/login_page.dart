@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/login_signup/login_signup_comps.dart';
 import 'package:ecom/pages/signup_page.dart';
-import 'package:ecom/pages/home_page.dart';
+import 'package:ecom/pages/home_page_main.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);

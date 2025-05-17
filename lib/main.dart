@@ -1,4 +1,4 @@
-import 'package:ecom/pages/home_page.dart';
+import 'package:ecom/pages/home_page_main.dart';
 import 'package:flutter/material.dart';
 
 void main() {
