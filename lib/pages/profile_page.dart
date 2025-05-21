@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'orders.dart';
+import 'wishlist.dart';
 
 class ProfilePage extends StatelessWidget {
   final String email;
@@ -242,7 +244,13 @@ class ProfilePage extends StatelessWidget {
                         Expanded(
                           child: _ActivityButton(
                             onTap: () {
-                              // TODO: Navigate to Orders page
+                              // Navigate to Orders page
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const OrdersPage(),
+                                ),
+                              );
                             },
                             icon: Icons.shopping_bag_outlined,
                             label: 'My Orders',
@@ -254,7 +262,13 @@ class ProfilePage extends StatelessWidget {
                         Expanded(
                           child: _ActivityButton(
                             onTap: () {
-                              // TODO: Navigate to Wishlist page
+                              // Navigate to Wishlist page
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const WishlistPage(),
+                                ),
+                              );
                             },
                             icon: Icons.favorite_border,
                             label: 'Wishlist',
