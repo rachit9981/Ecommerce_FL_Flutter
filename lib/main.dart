@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
     const Color secondaryColor = Color(0xFFFFD701);
 
     return MaterialApp(
-      title: 'Themed App',
+      title: 'Anand Mobile',
       theme: ThemeData(
         brightness: Brightness.light,
         scaffoldBackgroundColor: Colors.white,

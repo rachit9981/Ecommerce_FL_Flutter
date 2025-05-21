@@ -7,6 +7,7 @@ import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/search_page.dart';
 import 'package:ecom/pages/notification_page.dart';
 import 'package:ecom/pages/product_page.dart';
+import 'package:ecom/pages/category_page.dart'; // Import the CategoryPage
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -549,6 +550,29 @@ class HomePage extends StatelessWidget {
       ...topElectronics,
     ];
 
+    // Modify the category onTap actions to navigate to the CategoryPage
+    for (var i = 0; i < categories.length; i++) {
+      final category = categories[i];
+      categories[i] = CategoryItem(
+        id: category.id,
+        title: category.title,
+        imageUrl: category.imageUrl,
+        icon: category.icon,
+        backgroundColor: category.backgroundColor,
+        iconColor: category.iconColor,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: category,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
     return Scaffold(
       appBar: HomeAppBar(
         cartItemCount: 2,
@@ -624,6 +648,7 @@ class HomePage extends StatelessWidget {
               ),
             ),
 
+            // Shop by Category section
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,
@@ -640,6 +665,7 @@ class HomePage extends StatelessWidget {
               ),
             ),
 
+            // Horizontal category list from categories.dart
             HorizontalCategoryList(
               categories: categories,
               itemWidth: 100,
