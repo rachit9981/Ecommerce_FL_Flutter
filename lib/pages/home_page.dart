@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/pages/home_page_main.dart';
 import 'package:ecom/pages/profile_page.dart';
+import 'package:ecom/pages/sell_phone.dart'; // Add import for sell phone page
 
 class HomePageBase extends StatefulWidget {
   const HomePageBase({Key? key}) : super(key: key);
@@ -18,11 +19,18 @@ class _HomePageBaseState extends State<HomePageBase> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          // Fix recursive instantiation by using HomePage instead of HomePageBase
+          // Home page
           _selectedIndex == 0 
               ? const HomePage() 
               : const SizedBox.shrink(),
+          
+          // Sell Phone page
           _selectedIndex == 1 
+              ? const SellPhonePage() 
+              : const SizedBox.shrink(),
+          
+          // Profile page
+          _selectedIndex == 2 
               ? const ProfilePage(
                   email: 'user@example.com',
                   phoneNumber: '+91 9876543210',
@@ -68,6 +76,11 @@ class _HomePageBaseState extends State<HomePageBase> {
                     icon: Icon(Icons.home_outlined),
                     activeIcon: Icon(Icons.home),
                     label: 'Home',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.sell_outlined),
+                    activeIcon: Icon(Icons.sell),
+                    label: 'Sell Phone',
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.person_outline),
