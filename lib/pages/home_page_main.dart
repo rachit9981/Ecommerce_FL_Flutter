@@ -521,7 +521,6 @@ class HomePage extends StatelessWidget {
           );
         },
       ),
-      // Add products from recommendedProducts as well for more variety
       ...recommendedProducts,
       SuggestionItem(
         id: 'mp3',
@@ -546,7 +545,6 @@ class HomePage extends StatelessWidget {
           );
         },
       ),
-      // Add remaining products from topMobiles and topElectronics
       ...topMobiles,
       ...topElectronics,
     ];
@@ -555,7 +553,6 @@ class HomePage extends StatelessWidget {
       appBar: HomeAppBar(
         cartItemCount: 2,
         onCartPressed: () {
-          // Navigate to cart page instead of showing a snackbar
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CartPage()),
@@ -572,7 +569,6 @@ class HomePage extends StatelessWidget {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
-            // Updated search bar to navigate to search page
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: InkWell(
@@ -628,7 +624,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
 
-            // Category grid section
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,
@@ -645,7 +640,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
 
-            // Horizontal category list from categories.dart
             HorizontalCategoryList(
               categories: categories,
               itemWidth: 100,
@@ -746,9 +740,7 @@ class HomePage extends StatelessWidget {
                   ),
                 );
               },
-            ),
-            // Mobile Brands section
-            const SizedBox(height: 12),
+            ),            const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,
@@ -771,10 +763,9 @@ class HomePage extends StatelessWidget {
               itemHeight: 100,
               spacing: 12,
               showShadow: true,
-              brandMode: true, // Pass a flag to indicate these are brands
+              brandMode: true,
             ),
 
-            // Top Mobiles section
             const SizedBox(height: 16),
             ScrollableSuggestionRow(
               title: 'Top Mobiles',
@@ -789,7 +780,6 @@ class HomePage extends StatelessWidget {
               },
             ),
 
-            // Top Electronics section
             const SizedBox(height: 16),
             ScrollableSuggestionRow(
               title: 'Top Electronics',
@@ -804,7 +794,7 @@ class HomePage extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 24), // Increased vertical spacing
+            const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,
@@ -821,8 +811,6 @@ class HomePage extends StatelessWidget {
                 textAlign: TextAlign.center, // Center align the title
               ),
             ),
-            
-            // The height needs to be defined since we're using a ListView
             Container(
               height: 500, // Fixed height for the infinite grid
               padding: const EdgeInsets.only(bottom: 24), // Increased bottom padding
