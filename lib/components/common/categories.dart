@@ -26,93 +26,57 @@ class CategoryData {
   static List<CategoryItem> getSampleCategories(BuildContext context) {
     return [
       CategoryItem(
-        id: 'electronics',
-        title: 'Electronics',
-        imageUrl:
-            'https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        icon: Icons.devices,
+        id: 'smartphone',
+        title: 'Smartphone',
+        icon: Icons.smartphone,
         backgroundColor: Colors.blue.shade50,
         onTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Electronics category tapped')),
+            const SnackBar(content: Text('Smartphone category tapped')),
           );
         },
       ),
       CategoryItem(
-        id: 'fashion',
-        title: 'Fashion',
-        imageUrl:
-            'https://images.unsplash.com/photo-1551232864-3f0890e580d9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        icon: Icons.checkroom,
-        backgroundColor: Colors.pink.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fashion category tapped')),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'home',
-        title: 'Home & Kitchen',
-        imageUrl:
-            'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        icon: Icons.chair,
-        backgroundColor: Colors.green.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Home & Kitchen category tapped')),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'beauty',
-        title: 'Beauty',
-        imageUrl:
-            'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        icon: Icons.face,
+        id: 'laptop',
+        title: 'Laptop',
+        icon: Icons.laptop,
         backgroundColor: Colors.purple.shade50,
         onTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Beauty category tapped')),
+            const SnackBar(content: Text('Laptop category tapped')),
           );
         },
       ),
       CategoryItem(
-        id: 'sports',
-        title: 'Sports & Outdoors',
-        imageUrl:
-            'https://images.unsplash.com/photo-1530549387789-4c1017266635?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        icon: Icons.sports_basketball,
-        backgroundColor: Colors.orange.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sports category tapped')),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'books',
-        title: 'Books',
-        imageUrl:
-            'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        icon: Icons.menu_book,
-        backgroundColor: Colors.brown.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Books category tapped')),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'toys',
-        title: 'Toys & Games',
-        imageUrl:
-            'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        icon: Icons.toys,
+        id: 'television',
+        title: 'Television',
+        icon: Icons.tv,
         backgroundColor: Colors.red.shade50,
         onTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Toys & Games category tapped')),
+            const SnackBar(content: Text('Television category tapped')),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'speaker',
+        title: 'Speaker',
+        icon: Icons.speaker,
+        backgroundColor: Colors.green.shade50,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Speaker category tapped')),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'tablet',
+        title: 'Tablet',
+        icon: Icons.tablet_android,
+        backgroundColor: Colors.orange.shade50,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tablet category tapped')),
           );
         },
       ),
