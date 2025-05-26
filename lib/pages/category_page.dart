@@ -433,6 +433,8 @@ class _CategoryPageState extends State<CategoryPage> {
   @override
   Widget build(BuildContext context) {
     final productList = _getCategoryProducts();
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
     
     return Scaffold(
       appBar: AppBar(
@@ -452,53 +454,94 @@ class _CategoryPageState extends State<CategoryPage> {
       ),
       body: Column(
         children: [
-          // Category Image Header
+          // Category Icon Header - replaced image with icon
           Container(
             height: 120,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: widget.category.backgroundColor ?? 
+                theme.colorScheme.primary.withOpacity(0.1),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  widget.category.backgroundColor ?? 
+                    theme.colorScheme.primary.withOpacity(0.15),
+                  Color.lerp(
+                    widget.category.backgroundColor ?? theme.colorScheme.primary.withOpacity(0.1),
+                    Colors.white,
+                    0.3
+                  ) ?? theme.colorScheme.primary.withOpacity(0.05),
+                ],
+              ),
             ),
             child: Stack(
               children: [
-                if (widget.category.imageUrl != null)
-                  Opacity(
-                    opacity: 0.2,
-                    child: Image.network(
-                      widget.category.imageUrl!,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      ],
+                // Background decorative elements
+                Positioned(
+                  right: -20,
+                  top: -20,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
                   ),
                 ),
+                Positioned(
+                  left: -30,
+                  bottom: -30,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                // Center content with icon and text
                 Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Category icon in circle
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: (widget.category.backgroundColor ?? 
+                                primaryColor).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          widget.category.icon ?? Icons.category,
+                          size: 32,
+                          color: widget.category.iconColor ?? primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Text(
                         widget.category.title,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Text(
                         '${productList.length} products',
                         style: TextStyle(
                           color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -699,7 +742,7 @@ class SuggestionItemCard extends StatelessWidget {
                 ),
               ),
               
-              // Product info
+              // Product info - Adjusted to handle overflow better
               Expanded(
                 flex: 2,
                 child: Padding(
@@ -707,33 +750,36 @@ class SuggestionItemCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Title - Increased max lines to 2
                       Text(
                         item.title,
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
-                        maxLines: 1,
+                        maxLines: 2, // Increased from 1 to 2
                         overflow: TextOverflow.ellipsis,
                       ),
                       
+                      // Description - Reduced top padding
                       if (item.description != null)
                         Padding(
-                          padding: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.only(top: 2), // Reduced from 4
                           child: Text(
                             item.description!,
                             style: TextStyle(
                               color: Colors.grey.shade600,
-                              fontSize: 12,
+                              fontSize: 11, // Reduced from 12
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       
+                      // Star rating - Reduced top padding
                       if (item.rating != null)
                         Padding(
-                          padding: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.only(top: 2), // Reduced from 4
                           child: Row(
                             children: [
                               for (int i = 0; i < 5; i++)
@@ -743,16 +789,16 @@ class SuggestionItemCard extends StatelessWidget {
                                       : (i < item.rating!.ceil() && i >= item.rating!.floor())
                                           ? Icons.star_half
                                           : Icons.star_border,
-                                  size: 14,
+                                  size: 12, // Reduced from 14
                                   color: Colors.amber,
                                 ),
                               if (item.reviewCount != null)
                                 Padding(
-                                  padding: const EdgeInsets.only(left: 4),
+                                  padding: const EdgeInsets.only(left: 2), // Reduced from 4
                                   child: Text(
                                     "(${item.reviewCount})",
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 9, // Reduced from 10
                                       color: Colors.grey.shade600,
                                     ),
                                   ),
@@ -763,6 +809,7 @@ class SuggestionItemCard extends StatelessWidget {
                       
                       const Spacer(),
                       
+                      // Price section - Condensed
                       if (item.price != null)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -772,7 +819,7 @@ class SuggestionItemCard extends StatelessWidget {
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 15, // Reduced from 16
                               ),
                             ),
                             if (item.originalPrice != null && item.originalPrice! > item.price!)
@@ -782,7 +829,7 @@ class SuggestionItemCard extends StatelessWidget {
                                   "₹${item.originalPrice!.toStringAsFixed(0)}",
                                   style: TextStyle(
                                     color: Colors.grey,
-                                    fontSize: 12,
+                                    fontSize: 11, // Reduced from 12
                                     decoration: TextDecoration.lineThrough,
                                   ),
                                 ),
