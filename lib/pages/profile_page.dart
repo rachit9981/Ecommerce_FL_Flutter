@@ -91,97 +91,65 @@ class ProfilePage extends StatelessWidget {
           // Profile content
           SliverToBoxAdapter(
             child: Container(
-              transform: Matrix4.translationValues(0, -30, 0),
+              // Reduced negative transform to prevent overlapping
+              transform: Matrix4.translationValues(0, -20, 0),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                // Added top padding to push content down
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
                 child: Column(
                   children: [
-                    // Avatar with name - elevated above the card
-                    Transform.translate(
-                      offset: Offset(0, -40),
-                      child: Column(
-                        children: [
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Outer decorative rings
-                              Container(
-                                width: 110,
-                                height: 110,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      secondaryColor.withOpacity(0.4),
-                                      primaryColor.withOpacity(0.4),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Avatar
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: primaryColor.withOpacity(0.3),
-                                      blurRadius: 20,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                                child: CircleAvatar(
-                                  radius: 45,
-                                  backgroundColor: primaryColor.withOpacity(0.8),
-                                  child: Text(
-                                    firstName.isNotEmpty ? firstName[0] : '',
-                                    style: TextStyle(
-                                      fontSize: 40,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '$firstName $lastName',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                    // Removed the negative transform offset and replaced with normal padding
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.2),
+                              blurRadius: 10,
+                              spreadRadius: 1,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.email_outlined,
-                                size: 16,
-                                color: primaryColor,
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              '$firstName $lastName',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                email,
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                  fontSize: 15,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.email_outlined,
+                                  size: 16,
+                                  color: primaryColor,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 6),
+                                Text(
+                                  email,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     

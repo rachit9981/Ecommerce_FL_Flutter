@@ -96,44 +96,6 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
           'My Wishlist',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.shopping_cart),
-                onPressed: () {
-                  // Navigate to cart
-                },
-              ),
-              if (_wishlistItems.where((item) => item['isAvailable']).isNotEmpty)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    child: Text(
-                      _wishlistItems.where((item) => item['isAvailable']).length.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
         elevation: 0,
       ),
       body: _wishlistItems.isEmpty

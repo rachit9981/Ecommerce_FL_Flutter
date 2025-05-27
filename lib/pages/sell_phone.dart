@@ -406,17 +406,6 @@ class _SellPhonePageState extends State<SellPhonePage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // View all models action
-                      },
-                      child: Text(
-                        'View All',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),

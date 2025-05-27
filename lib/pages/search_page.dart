@@ -15,38 +15,21 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _hasSearched = false;
   String _currentQuery = '';
-  List<String> _recentSearches = [
-    'wireless earbuds',
-    'smartphone',
-    'laptop deals',
-    'smart watch',
-  ];
-  List<String> _popularSearches = [
+  final List<String> _popularSearches = [
     'headphones',
     'gaming laptop',
     'bluetooth speaker',
     'smart tv',
-    'iphone case',
-    'wireless charger',
-  ];
+    'charger',
+    'laptop',
+    'smartphone',
+    'tablet',
+    ];
 
   // Filter state
-  String? _selectedCategory;
   RangeValues _priceRange = const RangeValues(0, 50000);
   RangeValues _selectedPriceRange = const RangeValues(0, 50000);
   double? _minRating;
-
-  // Sample categories for filtering
-  final List<String> _categories = [
-    'Electronics',
-    'Clothing',
-    'Home & Kitchen',
-    'Beauty',
-    'Sports',
-    'Toys',
-    'Books',
-    'Jewelry',
-  ];
 
   // Sample search results with Indian currency values
   final List<Map<String, dynamic>> _allProducts = [
@@ -154,15 +137,6 @@ class _SearchPageState extends State<SearchPage> {
       _currentQuery = query;
       _hasSearched = true;
 
-      // Add to recent searches if not already there
-      if (query.isNotEmpty && !_recentSearches.contains(query)) {
-        _recentSearches.insert(0, query);
-        // Keep only last 5 searches
-        if (_recentSearches.length > 5) {
-          _recentSearches.removeLast();
-        }
-      }
-
       // Filter products based on search query and filters
       _filteredProducts = _allProducts.where((product) {
         // Text search
@@ -170,10 +144,6 @@ class _SearchPageState extends State<SearchPage> {
             .toString()
             .toLowerCase()
             .contains(query.toLowerCase());
-
-        // Category filter
-        final matchesCategory = _selectedCategory == null ||
-            product['category'] == _selectedCategory;
 
         // Price filter
         final price = product['price'] as double;
@@ -184,7 +154,7 @@ class _SearchPageState extends State<SearchPage> {
         final rating = product['rating'] as double;
         final matchesRating = _minRating == null || rating >= _minRating!;
 
-        return matchesQuery && matchesCategory && matchesPrice && matchesRating;
+        return matchesQuery && matchesPrice && matchesRating;
       }).toList();
     });
   }
@@ -193,12 +163,6 @@ class _SearchPageState extends State<SearchPage> {
     setState(() {
       _hasSearched = false;
       _currentQuery = '';
-    });
-  }
-
-  void _removeRecentSearch(String search) {
-    setState(() {
-      _recentSearches.remove(search);
     });
   }
 
@@ -215,19 +179,9 @@ class _SearchPageState extends State<SearchPage> {
           return StatefulBuilder(
             builder: (context, setModalState) {
               return SearchFilters(
-                categories: _categories,
-                selectedCategory: _selectedCategory,
-                onCategoryChanged: (category) {
-                  setModalState(() {
-                    _selectedCategory = category;
-                  });
-                  setState(() {
-                    _selectedCategory = category;
-                  });
-                  if (_hasSearched) {
-                    _performSearch(_currentQuery);
-                  }
-                },
+                // Removed categories parameter
+                // Removed selectedCategory parameter
+                // Removed onCategoryChanged parameter
                 priceRange: _priceRange,
                 selectedPriceRange: _selectedPriceRange,
                 onPriceRangeChanged: (range) {
@@ -296,44 +250,6 @@ class _SearchPageState extends State<SearchPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_recentSearches.isNotEmpty) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Recent Searches',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _recentSearches.clear();
-                    });
-                  },
-                  child: const Text('Clear All'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Column(
-              children: _recentSearches
-                  .map(
-                    (search) => RecentSearchItem(
-                      searchText: search,
-                      onTap: () {
-                        _searchController.text = search;
-                        _performSearch(search);
-                      },
-                      onRemove: () => _removeRecentSearch(search),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 20),
-          ],
           const Text(
             'Popular Searches',
             style: TextStyle(
@@ -354,33 +270,6 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 )
                 .toList(),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Browse Categories',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _categories.map((category) {
-              return CustomFilterChip(
-                label: category,
-                isSelected: false,
-                onTap: () {
-                  setState(() {
-                    _selectedCategory = category;
-                  });
-                  // Search with empty query but with category filter
-                  _searchController.text = '';
-                  _performSearch('');
-                },
-              );
-            }).toList(),
           ),
         ],
       ),
@@ -408,7 +297,7 @@ class _SearchPageState extends State<SearchPage> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Try a different search term or browse categories',
+              'Try a different search term',
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 20),
@@ -427,8 +316,8 @@ class _SearchPageState extends State<SearchPage> {
 
     return Column(
       children: [
-        // Active filters
-        if (_selectedCategory != null || _minRating != null)
+        // Active filters - removed category filter
+        if (_minRating != null)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: Colors.grey.shade100,
@@ -438,41 +327,26 @@ class _SearchPageState extends State<SearchPage> {
                   'Filters: ',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                if (_selectedCategory != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Chip(
-                      label: Text(_selectedCategory!),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _selectedCategory = null;
-                        });
-                        _performSearch(_currentQuery);
-                      },
-                    ),
+                Chip(
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.star,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                      Text('${_minRating!.toInt()}+'),
+                    ],
                   ),
-                if (_minRating != null)
-                  Chip(
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                        Text('${_minRating!.toInt()}+'),
-                      ],
-                    ),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () {
-                      setState(() {
-                        _minRating = null;
-                      });
-                      _performSearch(_currentQuery);
-                    },
-                  ),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () {
+                    setState(() {
+                      _minRating = null;
+                    });
+                    _performSearch(_currentQuery);
+                  },
+                ),
               ],
             ),
           ),

@@ -319,9 +319,7 @@ class SearchResultItem extends StatelessWidget {
 
 // Filter section
 class SearchFilters extends StatelessWidget {
-  final List<String> categories;
-  final String? selectedCategory;
-  final Function(String?) onCategoryChanged;
+  // Removed categories, selectedCategory, and onCategoryChanged parameters
   final RangeValues priceRange;
   final RangeValues selectedPriceRange;
   final Function(RangeValues) onPriceRangeChanged;
@@ -330,9 +328,7 @@ class SearchFilters extends StatelessWidget {
 
   const SearchFilters({
     Key? key,
-    required this.categories,
-    required this.selectedCategory,
-    required this.onCategoryChanged,
+    // Removed category-related parameters
     required this.priceRange,
     required this.selectedPriceRange,
     required this.onPriceRangeChanged,
@@ -374,7 +370,7 @@ class SearchFilters extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  onCategoryChanged(null);
+                  // Removed onCategoryChanged(null);
                   onPriceRangeChanged(priceRange);
                   onRatingChanged(null);
                 },
@@ -383,40 +379,7 @@ class SearchFilters extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Categories section
-          const Text(
-            'Categories',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ...categories.map((category) {
-                return GestureDetector(
-                  onTap: () => onCategoryChanged(
-                    selectedCategory == category ? null : category,
-                  ),
-                  child: Chip(
-                    label: Text(category),
-                    backgroundColor: selectedCategory == category
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.grey.shade200,
-                    labelStyle: TextStyle(
-                      color: selectedCategory == category
-                          ? Colors.white
-                          : Colors.black87,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ],
-          ),
-          const SizedBox(height: 16),
+          // Removed Categories section
           // Price range section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
