@@ -1,194 +1,85 @@
 import 'package:flutter/material.dart';
+import '../../services/products.dart';
 
-/// Product model
-class Product {
-  final String id;
-  final String title;
-  final double price;
-  final double? originalPrice;
-  final String description;
-  final List<String> images;
-  final double rating;
-  final int reviewCount;
-  final bool inStock;
-  final int stockCount;
-  final List<String> sizes;
-  final List<Color> colors;
-  final Map<String, List<String>> techSpecs; // For RAM, storage options
-  final String brand;
-  final Map<String, String> specifications;
-  final List<Review> reviews;
-  final List<String> tags;
-  final String category;
+/// Custom network image widget with consistent loading and error handling
+class CustomNetworkImage extends StatelessWidget {
+  final String imageUrl;
+  final BoxFit fit;
+  final double? width;
+  final double? height;
+  final Widget? placeholder;
+  final Widget? errorWidget;
+  final BorderRadius? borderRadius;
 
-  Product({
-    required this.id,
-    required this.title,
-    required this.price,
-    this.originalPrice,
-    required this.description,
-    required this.images,
-    required this.rating,
-    required this.reviewCount,
-    this.inStock = true,
-    this.stockCount = 0,
-    this.sizes = const [],
-    this.colors = const [],
-    this.techSpecs = const {},
-    required this.brand,
-    this.specifications = const {},
-    this.reviews = const [],
-    this.tags = const [],
-    required this.category,
-  });
+  const CustomNetworkImage({
+    Key? key,
+    required this.imageUrl,
+    this.fit = BoxFit.cover,
+    this.width,
+    this.height,
+    this.placeholder,
+    this.errorWidget,
+    this.borderRadius,
+  }) : super(key: key);
 
-  // Create a sample product for testing
-  static Product getSampleProduct() {
-    return Product(
-      id: '1',
-      title: 'Premium Wireless Earbuds with Active Noise Cancellation',
-      price: 5999.0,
-      originalPrice: 7999.0,
-      description: 'Experience crystal-clear sound and complete silence from the outside world with our premium wireless earbuds. The active noise cancellation technology blocks out external noise, allowing you to focus on your music, calls, or work without distractions.\n\nThese earbuds feature Bluetooth 5.2 for stable connectivity, touch controls for easy operation, and an IPX7 waterproof rating that protects against sweat and rain. The compact charging case provides up to 24 hours of total playback time, with each charge giving you 6 hours of continuous use.\n\nThe ergonomic design ensures a secure and comfortable fit for extended wearing periods, making these earbuds perfect for workouts, commuting, or all-day use.',
-      images: [
-        'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f39?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        'https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      ],
-      rating: 4.5,
-      reviewCount: 256,
-      inStock: true,
-      stockCount: 42,
-      sizes: [],
-      colors: [
-        Colors.black,
-        Colors.white,
-        Colors.blue,
-      ],
-      techSpecs: {
-        'Storage': ['32GB', '64GB', '128GB'],
-        'Battery': ['Standard', 'Extended'],
+  @override
+  Widget build(BuildContext context) {
+    Widget imageWidget = Image.network(
+      imageUrl,
+      fit: fit,
+      width: width,
+      height: height,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return placeholder ??
+            Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
       },
-      brand: 'SoundMaster',
-      specifications: {
-        'Connectivity': 'Bluetooth 5.2',
-        'Battery Life': 'Up to 6 hours (24 hours with case)',
-        'Noise Cancellation': 'Active Noise Cancellation (ANC)',
-        'Water Resistance': 'IPX7',
-        'Charging': 'USB-C and Wireless',
-        'Weight': '5.6g per earbud, 45g charging case',
+      errorBuilder: (context, error, stackTrace) {
+        return errorWidget ??
+            Container(
+              width: width,
+              height: height,
+              color: Colors.grey.shade100,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.broken_image,
+                    size: (width != null && width! < 100) ? 24 : 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  if (width == null || width! >= 100) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Image not found',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
       },
-      reviews: [
-        Review(
-          id: '1',
-          userName: 'Rajesh S.',
-          rating: 5.0,
-          date: DateTime.now().subtract(const Duration(days: 5)),
-          comment: 'Best earbuds I have ever used. The sound quality is amazing and the ANC works great in noisy environments.',
-          helpfulCount: 24,
-        ),
-        Review(
-          id: '2',
-          userName: 'Priya M.',
-          rating: 4.0,
-          date: DateTime.now().subtract(const Duration(days: 15)),
-          comment: 'Good sound quality and comfortable fit. Battery life is as advertised. The only downside is the touch controls can be a bit sensitive.',
-          helpfulCount: 15,
-        ),
-        Review(
-          id: '3',
-          userName: 'Amit K.',
-          rating: 5.0,
-          date: DateTime.now().subtract(const Duration(days: 30)),
-          comment: 'Excellent purchase! The noise cancellation is top-notch and I can wear them all day without discomfort.',
-          helpfulCount: 32,
-        ),
-      ],
-      tags: ['Wireless', 'Earbuds', 'ANC', 'Bluetooth', 'Premium'],
-      category: 'Electronics',
     );
+
+    if (borderRadius != null) {
+      return ClipRRect(
+        borderRadius: borderRadius!,
+        child: imageWidget,
+      );
+    }
+
+    return imageWidget;
   }
-
-  // Sample smartphone product
-  static Product getSampleSmartphone() {
-    return Product(
-      id: '2',
-      title: 'UltraPhone Pro with 108MP Camera',
-      price: 49999.0,
-      originalPrice: 59999.0,
-      description: 'Meet the UltraPhone Pro, our most advanced smartphone yet. Featuring a stunning 6.7-inch AMOLED display with 120Hz refresh rate for ultra-smooth scrolling and gaming. The revolutionary 108MP main camera system lets you capture professional-quality photos in any lighting condition.\n\nPowered by the latest octa-core processor and available with up to 12GB RAM and 512GB storage, this phone handles everything from intensive gaming to multitasking with ease. The 5000mAh battery supports all-day usage, while 65W fast charging gets you back to 100% in just 35 minutes.\n\nExperience the future of mobile technology with UltraPhone Pro.',
-      images: [
-        'https://images.unsplash.com/photo-1598327105666-5b89351aff97?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        'https://images.unsplash.com/photo-1609252924198-30b8cb130dd1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      ],
-      rating: 4.7,
-      reviewCount: 1243,
-      inStock: true,
-      stockCount: 75,
-      sizes: [],
-      colors: [
-        Colors.black,
-        Colors.grey.shade200, // Silver
-        Color(0xFF1E3A8A), // Deep Blue
-      ],
-      techSpecs: {
-        'RAM': ['6GB', '8GB', '12GB'],
-        'Storage': ['128GB', '256GB', '512GB'],
-      },
-      brand: 'UltraTech',
-      specifications: {
-        'Processor': 'Octa-core 2.9GHz',
-        'Display': '6.7-inch AMOLED (120Hz)',
-        'Main Camera': '108MP + 12MP + 8MP',
-        'Front Camera': '32MP',
-        'Battery': '5000mAh',
-        'Charging': '65W Fast Charging',
-        'OS': 'Android 13',
-        'Water Resistance': 'IP68',
-      },
-      reviews: [
-        Review(
-          id: '1',
-          userName: 'Vikram R.',
-          rating: 5.0,
-          date: DateTime.now().subtract(const Duration(days: 3)),
-          comment: 'Best smartphone I\'ve ever owned. The camera quality is mind-blowing and battery life is outstanding. Worth every rupee!',
-          helpfulCount: 47,
-        ),
-        Review(
-          id: '2',
-          userName: 'Ananya K.',
-          rating: 4.0,
-          date: DateTime.now().subtract(const Duration(days: 10)),
-          comment: 'Great phone with impressive performance. The only minor issue is that it gets a bit warm during gaming sessions.',
-          helpfulCount: 23,
-        ),
-      ],
-      tags: ['Smartphone', 'Camera', 'Gaming', 'Fast Charging'],
-      category: 'Electronics',
-    );
-  }
-}
-
-/// Review model
-class Review {
-  final String id;
-  final String userName;
-  final double rating;
-  final DateTime date;
-  final String comment;
-  final int helpfulCount;
-
-  Review({
-    required this.id,
-    required this.userName,
-    required this.rating,
-    required this.date,
-    required this.comment,
-    this.helpfulCount = 0,
-  });
 }
 
 /// Image carousel for product images
@@ -251,9 +142,33 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
                     tag: index == 0 ? widget.heroTag : 'product_image_${widget.heroTag}_$index',
                     child: Container(
                       padding: const EdgeInsets.all(16),
-                      child: Image.network(
-                        widget.images[index],
+                      child: CustomNetworkImage(
+                        imageUrl: widget.images[index],
                         fit: BoxFit.contain,
+                        placeholder: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        errorWidget: Container(
+                          color: Colors.grey.shade100,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.broken_image,
+                                size: 64,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Failed to load image',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -316,11 +231,22 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: ClipRRect(
+                      child: CustomNetworkImage(
+                        imageUrl: widget.images[index],
+                        fit: BoxFit.cover,
                         borderRadius: BorderRadius.circular(6),
-                        child: Image.network(
-                          widget.images[index],
-                          fit: BoxFit.cover,
+                        placeholder: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        errorWidget: Container(
+                          color: Colors.grey.shade200,
+                          child: Icon(
+                            Icons.broken_image,
+                            color: Colors.grey.shade400,
+                            size: 24,
+                          ),
                         ),
                       ),
                     ),
@@ -391,9 +317,35 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
             minScale: 0.5,
             maxScale: 4.0,
             child: Center(
-              child: Image.network(
-                widget.images[index],
+              child: CustomNetworkImage(
+                imageUrl: widget.images[index],
                 fit: BoxFit.contain,
+                placeholder: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                ),
+                errorWidget: Container(
+                  color: Colors.grey.shade800,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.broken_image,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Failed to load image',
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           );
@@ -409,7 +361,7 @@ class ProductHeader extends StatelessWidget {
   final double price;
   final double? originalPrice;
   final double rating;
-  final int reviewCount;
+  final int reviews;
   final String brand;
   final VoidCallback onReviewsTap;
 
@@ -419,7 +371,7 @@ class ProductHeader extends StatelessWidget {
     required this.price,
     this.originalPrice,
     required this.rating,
-    required this.reviewCount,
+    required this.reviews,
     required this.brand,
     required this.onReviewsTap,
   }) : super(key: key);
@@ -486,19 +438,19 @@ class ProductHeader extends StatelessWidget {
                   Row(
                     children: List.generate(5, (index) {
                       if (index < rating.floor()) {
-                        return Icon(
+                        return const Icon(
                           Icons.star_rounded,
                           size: 20,
                           color: Colors.amber,
                         );
                       } else if (index < rating.ceil() && rating.floor() != rating.ceil()) {
-                        return Icon(
+                        return const Icon(
                           Icons.star_half_rounded,
                           size: 20,
                           color: Colors.amber,
                         );
                       } else {
-                        return Icon(
+                        return const Icon(
                           Icons.star_border_rounded,
                           size: 20,
                           color: Colors.amber,
@@ -508,7 +460,7 @@ class ProductHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '$rating ($reviewCount)',
+                    '$rating ($reviews)',
                     style: TextStyle(
                       color: Colors.grey.shade700,
                       fontWeight: FontWeight.w500,
@@ -698,38 +650,20 @@ class TechSpecSelector extends StatelessWidget {
 
 /// Color and size selector with improved UI
 class ProductVariantSelector extends StatelessWidget {
-  final List<Color> availableColors;
-  final List<String> availableSizes;
-  final Color? selectedColor;
-  final String? selectedSize;
-  final ValueChanged<Color?> onColorSelected;
-  final ValueChanged<String?> onSizeSelected;
+  final Map<String, List<String>> variants;
+  final Map<String, String> selectedVariants;
+  final Function(String, String) onVariantSelected;
 
   const ProductVariantSelector({
     Key? key,
-    required this.availableColors,
-    required this.availableSizes,
-    required this.selectedColor,
-    required this.selectedSize,
-    required this.onColorSelected,
-    required this.onSizeSelected,
+    required this.variants,
+    required this.selectedVariants,
+    required this.onVariantSelected,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> selectors = [];
-    
-    // Only add sections that have options
-    if (availableColors.isNotEmpty) {
-      selectors.add(_buildColorSelector(context));
-    }
-    
-    if (availableSizes.isNotEmpty) {
-      selectors.add(const SizedBox(height: 24));
-      selectors.add(_buildSizeSelector(context));
-    }
-    
-    if (selectors.isEmpty) return const SizedBox.shrink();
+    if (variants.isEmpty) return const SizedBox.shrink();
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -747,205 +681,124 @@ class ProductVariantSelector extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: selectors,
+        children: variants.entries.map((entry) {
+          final variantName = entry.key;
+          final variantOptions = entry.value;
+          final selectedValue = selectedVariants[variantName];
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Variant title
+              Text(
+                variantName.toUpperCase(),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Handle colors differently
+              if (variantName.toLowerCase() == 'colors')
+                _buildColorOptions(context, variantOptions, selectedValue)
+              else
+                _buildTextOptions(context, variantName, variantOptions, selectedValue),
+              
+              const SizedBox(height: 20),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildColorSelector(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text(
-              'Color',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+  Widget _buildColorOptions(BuildContext context, List<String> colors, String? selectedColor) {
+    return Wrap(
+      spacing: 12,
+      children: colors.map((colorName) {
+        final isSelected = selectedColor == colorName;
+        final color = _getColorFromName(colorName);
+        
+        return GestureDetector(
+          onTap: () => onVariantSelected('colors', colorName),
+          child: Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
+                width: isSelected ? 3 : 1,
               ),
             ),
-            if (selectedColor != null) ...[
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  // Get color name based on material color
-                  _getColorName(selectedColor!),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: availableColors.map((color) {
-            final isSelected = selectedColor == color;
-            return GestureDetector(
-              onTap: () => onColorSelected(color),
-              child: Container(
-                margin: const EdgeInsets.only(right: 16),
-                child: Column(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected 
-                              ? Theme.of(context).colorScheme.primary 
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(3),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: isSelected
-                            ? Icon(
-                                Icons.check,
-                                color: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                                size: 24,
-                              )
-                            : null,
-                      ),
-                    ),
-                    // Color indicator dot below
-                    if (isSelected)
-                      Container(
-                        margin: const EdgeInsets.only(top: 6),
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+            child: isSelected
+                ? Icon(
+                    Icons.check,
+                    color: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                  )
+                : null,
+          ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildSizeSelector(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text(
-              'Size',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+  Widget _buildTextOptions(BuildContext context, String variantName, List<String> options, String? selectedValue) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: options.map((option) {
+        final isSelected = selectedValue == option;
+        
+        return GestureDetector(
+          onTap: () => onVariantSelected(variantName, option),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSelected 
+                    ? Theme.of(context).colorScheme.primary 
+                    : Colors.grey.shade300,
+                width: 1.5,
               ),
             ),
-            if (selectedSize != null) ...[
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  selectedSize!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
+            child: Text(
+              option,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: availableSizes.map((size) {
-            final isSelected = selectedSize == size;
-            return GestureDetector(
-              onTap: () => onSizeSelected(size),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected 
-                        ? Theme.of(context).colorScheme.primary 
-                        : Colors.grey.shade300,
-                    width: 1.5,
-                  ),
-                  boxShadow: isSelected ? [
-                    BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ] : null,
-                ),
-                child: Center(
-                  child: Text(
-                    size,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
-  
-  // Get color name from material color
-  String _getColorName(Color color) {
-    if (color == Colors.black) return 'Black';
-    if (color == Colors.white) return 'White';
-    if (color == Colors.blue) return 'Blue';
-    if (color == Colors.red) return 'Red';
-    if (color == Colors.green) return 'Green';
-    if (color == Colors.yellow) return 'Yellow';
-    if (color == Colors.purple) return 'Purple';
-    if (color == Colors.pink) return 'Pink';
-    if (color == Colors.orange) return 'Orange';
-    if (color == Colors.grey) return 'Grey';
-    if (color == Colors.grey.shade200) return 'Silver';
-    // Add more color names as needed
-    
-    return 'Custom';
+
+  Color _getColorFromName(String colorName) {
+    switch (colorName.toLowerCase()) {
+      case 'black': return Colors.black;
+      case 'white': return Colors.white;
+      case 'red': return Colors.red;
+      case 'blue': return Colors.blue;
+      case 'green': return Colors.green;
+      case 'yellow': return Colors.yellow;
+      case 'purple': return Colors.purple;
+      case 'pink': return Colors.pink;
+      case 'orange': return Colors.orange;
+      case 'grey': case 'gray': return Colors.grey;
+      case 'silver': return Colors.grey.shade300;
+      case 'gold': case 'pink gold': return Colors.amber.shade300;
+      case 'cosmic black': return Colors.black87;
+      case 'urban blue': return Colors.blue.shade800;
+      case 'modernist teal': return Colors.teal;
+      default: return Colors.grey;
+    }
   }
 }
 
@@ -1021,7 +874,7 @@ class _ProductDescriptionState extends State<ProductDescription> {
 
 /// Product specifications table with improved UI
 class ProductSpecifications extends StatelessWidget {
-  final Map<String, String> specifications;
+  final Map<String, dynamic> specifications;
 
   const ProductSpecifications({
     Key? key,
@@ -1047,10 +900,10 @@ class ProductSpecifications extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Padding(
-            padding: const EdgeInsets.all(16),
+          const Padding(
+            padding: EdgeInsets.all(16),
             child: Row(
-              children: const [
+              children: [
                 Icon(Icons.description_outlined),
                 SizedBox(width: 8),
                 Text(
@@ -1086,11 +939,10 @@ class ProductSpecifications extends StatelessWidget {
                           color: Colors.grey.shade700,
                         ),
                       ),
-                    ),
-                    Expanded(
+                    ),                    Expanded(
                       flex: 3,
                       child: Text(
-                        entry.value,
+                        entry.value.toString(),
                         style: const TextStyle(
                           fontWeight: FontWeight.w500,
                         ),
@@ -1241,7 +1093,7 @@ class ProductReviews extends StatelessWidget {
                         }),
                         const SizedBox(width: 4),
                         Text(
-                          '${_formatDateToRelative(review.date)}',
+                          _formatDateToRelative(review.date),
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,

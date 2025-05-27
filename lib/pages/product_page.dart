@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/product/product_comps.dart';
+import 'package:ecom/services/products.dart';
 import 'package:ecom/pages/cart_page.dart';
 
 class ProductPage extends StatefulWidget {
@@ -17,42 +18,121 @@ class ProductPage extends StatefulWidget {
 }
 
 class _ProductPageState extends State<ProductPage> {
-  late Product _product;
-  Color? _selectedColor;
-  String? _selectedSize;
-  Map<String, String> _selectedTechSpecs = {};
+  Product? _product;
+  bool _isLoading = true;
+  String? _error;
+  Map<String, String> _selectedVariants = {};
   bool _isFavorite = false;
+  final ProductService _productService = ProductService();
   
   @override
   void initState() {
     super.initState();
-    
-    // Choose which product to show based on productId
-    if (widget.productId == '2') {
-      _product = Product.getSampleSmartphone();
-    } else {
-      _product = Product.getSampleProduct();
+    _loadProduct();
+  }
+
+  Future<void> _loadProduct() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final products = await _productService.getProducts();
+      
+      // Find product by ID
+      final product = products.firstWhere(
+        (p) => p.id == widget.productId,
+        orElse: () => products.isNotEmpty ? products.first : throw Exception('No products found'),
+      );
+
+      setState(() {
+        _product = product;
+        _isLoading = false;
+        
+        // Initialize variant selections with first option of each type
+        product.variant.forEach((key, values) {
+          if (values.isNotEmpty) {
+            _selectedVariants[key] = values.first;
+          }
+        });
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
     }
-    
-    // Initialize selections
-    if (_product.colors.isNotEmpty) {
-      _selectedColor = _product.colors.first;
-    }
-    
-    if (_product.sizes.isNotEmpty) {
-      _selectedSize = _product.sizes.first;
-    }
-    
-    // Initialize tech specs with first option of each type
-    _product.techSpecs.forEach((key, values) {
-      if (values.isNotEmpty) {
-        _selectedTechSpecs[key] = values.first;
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.grey.shade600,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load product',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadProduct,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_product == null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: const Center(
+          child: Text('Product not found'),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       extendBodyBehindAppBar: true,
@@ -99,52 +179,31 @@ class _ProductPageState extends State<ProductPage> {
               children: [
                 // Product image carousel
                 ProductImageCarousel(
-                  images: _product.images,
+                  images: _product!.images,
                   heroTag: widget.heroTag,
                 ),
                 
                 // Product header (title, price, rating)
                 ProductHeader(
-                  title: _product.title,
-                  price: _product.price,
-                  originalPrice: _product.originalPrice,
-                  rating: _product.rating,
-                  reviewCount: _product.reviewCount,
-                  brand: _product.brand,
+                  title: _product!.name,
+                  price: _product!.discountPrice,
+                  originalPrice: _product!.price,
+                  rating: _product!.rating,
+                  reviews: _product!.reviews,
+                  brand: _product!.brand,
                   onReviewsTap: _scrollToReviews,
                 ),
                 
                 const SizedBox(height: 8),
                 
-                // Tech specs selector (RAM, storage)
-                if (_product.techSpecs.isNotEmpty)
-                  TechSpecSelector(
-                    specs: _product.techSpecs,
-                    selectedSpecs: _selectedTechSpecs,
-                    onSpecSelected: (specName, value) {
-                      setState(() {
-                        _selectedTechSpecs[specName] = value;
-                      });
-                    },
-                  ),
-                
-                const SizedBox(height: 8),
-                
-                // Color and size selector
-                if (_product.colors.isNotEmpty || _product.sizes.isNotEmpty)
+                // Product variants (colors, storage, etc.)
+                if (_product!.variant.isNotEmpty)
                   ProductVariantSelector(
-                    availableColors: _product.colors,
-                    availableSizes: _product.sizes,
-                    selectedColor: _selectedColor,
-                    selectedSize: _selectedSize,
-                    onColorSelected: (color) {
+                    variants: _product!.variant,
+                    selectedVariants: _selectedVariants,
+                    onVariantSelected: (variantName, value) {
                       setState(() {
-                        _selectedColor = color;
-                      });
-                    },
-                    onSizeSelected: (size) {
-                      setState(() {
-                        _selectedSize = size;
+                        _selectedVariants[variantName] = value;
                       });
                     },
                   ),
@@ -153,26 +212,22 @@ class _ProductPageState extends State<ProductPage> {
                 
                 // Product description
                 ProductDescription(
-                  description: _product.description,
+                  description: _product!.description,
                 ),
                 
                 const SizedBox(height: 8),
                 
                 // Product specifications
-                if (_product.specifications.isNotEmpty)
+                if (_product!.specifications.isNotEmpty)
                   ProductSpecifications(
-                    specifications: _product.specifications,
+                    specifications: _product!.specifications,
                   ),
                 
                 const SizedBox(height: 8),
                 
-                // Product reviews
-                ProductReviews(
-                  rating: _product.rating,
-                  reviewCount: _product.reviewCount,
-                  reviews: _product.reviews,
-                  onViewAllTap: _showAllReviews,
-                ),
+                // Features section
+                if (_product!.features.isNotEmpty)
+                  _buildFeaturesSection(),
                 
                 // Bottom padding for add to cart button
                 const SizedBox(height: 80),
@@ -186,8 +241,8 @@ class _ProductPageState extends State<ProductPage> {
             left: 0,
             right: 0,
             child: AddToCartSection(
-              inStock: _product.inStock,
-              stockCount: _product.stockCount,
+              inStock: _product!.stock > 0,
+              stockCount: _product!.stock,
               onAddToCart: _addToCart,
               onBuyNow: _buyNow,
             ),
@@ -197,8 +252,60 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
+  Widget _buildFeaturesSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Key Features',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...(_product!.features.map((feature) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.green,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    feature,
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )).toList()),
+        ],
+      ),
+    );
+  }
+
   void _scrollToReviews() {
-    // Implementation would require ScrollController to scroll to reviews section
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Scrolling to reviews...'),
@@ -207,18 +314,7 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
-  void _showAllReviews() {
-    // In a real app, navigate to reviews page
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Showing all ${_product.reviewCount} reviews...'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
   void _addToCart() {
-    // Add to cart logic
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Added to cart'),
@@ -237,7 +333,6 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   void _buyNow() {
-    // Buy now logic
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Proceeding to checkout...'),
