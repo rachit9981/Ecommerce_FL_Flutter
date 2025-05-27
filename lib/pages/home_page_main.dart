@@ -638,56 +638,6 @@ class _HomePageState extends State<HomePage> {
               showShadow: true,
               brandMode: true,
             ),            const SizedBox(height: 16),
-            ScrollableSuggestionRow(
-              title: 'Top Mobiles',
-              items: topMobiles.isNotEmpty 
-                  ? topMobiles 
-                  : [
-                      SuggestionItem(
-                        id: 'placeholder',
-                        title: 'No mobiles available',
-                        imageUrl: '',
-                        price: 0.0,
-                        description: 'Check back later',
-                        isProduct: false,
-                        onTap: () {},
-                      ),
-                    ],
-              itemHeight: 220,
-              itemWidth: 145,
-              showMore: topMobiles.isNotEmpty,
-              onMoreTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('View all top mobiles')),
-                );
-              },
-            ),
-
-            const SizedBox(height: 16),
-            ScrollableSuggestionRow(
-              title: 'Top Electronics',
-              items: topElectronics.isNotEmpty 
-                  ? topElectronics 
-                  : [
-                      SuggestionItem(
-                        id: 'placeholder',
-                        title: 'No electronics available',
-                        imageUrl: '',
-                        price: 0.0,
-                        description: 'Check back later',
-                        isProduct: false,
-                        onTap: () {},
-                      ),
-                    ],
-              itemHeight: 220,
-              itemWidth: 145,
-              showMore: topElectronics.isNotEmpty,
-              onMoreTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('View all top electronics')),
-                );
-              },
-            ),            const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,

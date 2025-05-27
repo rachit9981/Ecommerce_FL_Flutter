@@ -9,13 +9,13 @@ class InfiniteProductGrid extends StatefulWidget {
   
   final Future<List<SuggestionItem>> Function(int page) loadMoreProducts;
   
-  final int crossAxisCount;
+  final int? crossAxisCount;
   
-  final double spacing;
+  final double? spacing;
   
-  final double childAspectRatio;
+  final double? childAspectRatio;
   
-  final EdgeInsets padding;
+  final EdgeInsets? padding;
   
   final String? title;
   
@@ -27,10 +27,10 @@ class InfiniteProductGrid extends StatefulWidget {
     Key? key,
     required this.initialProducts,
     required this.loadMoreProducts,
-    this.crossAxisCount = 2,
-    this.spacing = 16.0,
-    this.childAspectRatio = 0.7,
-    this.padding = const EdgeInsets.all(16.0),
+    this.crossAxisCount,
+    this.spacing,
+    this.childAspectRatio,
+    this.padding,
     this.title,
     this.showTitle = true,
     this.loadOnInit = false,
@@ -46,6 +46,73 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
   LoadingStatus _loadingStatus = LoadingStatus.idle;
   int _currentPage = 1;
   bool _hasInitialized = false;
+
+  // Responsive helper methods
+  int _getResponsiveCrossAxisCount(BuildContext context) {
+    if (widget.crossAxisCount != null) return widget.crossAxisCount!;
+    
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 600) {
+      return 2; // Mobile
+    } else if (screenWidth < 900) {
+      return 3; // Tablet
+    } else {
+      return 4; // Desktop
+    }
+  }
+
+  double _getResponsiveSpacing(BuildContext context) {
+    if (widget.spacing != null) return widget.spacing!;
+    
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 600) {
+      return 12.0; // Mobile
+    } else if (screenWidth < 900) {
+      return 16.0; // Tablet
+    } else {
+      return 20.0; // Desktop
+    }
+  }
+
+  double _getResponsiveChildAspectRatio(BuildContext context) {
+    if (widget.childAspectRatio != null) return widget.childAspectRatio!;
+    
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 600) {
+      return 0.65; // Mobile - taller cards
+    } else if (screenWidth < 900) {
+      return 0.7; // Tablet
+    } else {
+      return 0.75; // Desktop - wider cards
+    }
+  }
+
+  EdgeInsets _getResponsivePadding(BuildContext context) {
+    if (widget.padding != null) return widget.padding!;
+    
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 600) {
+      return const EdgeInsets.all(12.0); // Mobile
+    } else if (screenWidth < 900) {
+      return const EdgeInsets.all(16.0); // Tablet
+    } else {
+      return const EdgeInsets.all(20.0); // Desktop
+    }
+  }
+
+  double _getResponsiveFontSize(BuildContext context, double baseFontSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+    
+    double scaleFactor = 1.0;
+    if (screenWidth < 600) {
+      scaleFactor = 0.9; // Slightly smaller on mobile
+    } else if (screenWidth > 900) {
+      scaleFactor = 1.1; // Slightly larger on desktop
+    }
+    
+    return baseFontSize * scaleFactor * textScaleFactor;
+  }
 
   @override
   void initState() {
@@ -117,6 +184,8 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final responsivePadding = _getResponsivePadding(context);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -124,9 +193,9 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
         if (widget.showTitle && widget.title != null)
           Padding(
             padding: EdgeInsets.only(
-              left: widget.padding.left,
-              right: widget.padding.right,
-              top: widget.padding.top,
+              left: responsivePadding.left,
+              right: responsivePadding.right,
+              top: responsivePadding.top,
               bottom: 8,
             ),
             child: Text(
@@ -134,6 +203,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 letterSpacing: -0.5,
+                fontSize: _getResponsiveFontSize(context, 20),
               ),
             ),
           ),
@@ -143,22 +213,30 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
               ? const Center(child: CircularProgressIndicator())
               : _products.isEmpty
                   ? _buildEmptyState()
-                  : GridView.builder(
-                      controller: _scrollController,
-                      padding: widget.padding,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: widget.crossAxisCount,
-                        crossAxisSpacing: widget.spacing,
-                        mainAxisSpacing: widget.spacing,
-                        childAspectRatio: widget.childAspectRatio,
-                      ),
-                      itemCount: _products.length + (_loadingStatus == LoadingStatus.noMoreData ? 0 : 1),
-                      itemBuilder: (context, index) {
-                        if (index >= _products.length) {
-                          return _buildLoadMoreIndicator();
-                        }
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final crossAxisCount = _getResponsiveCrossAxisCount(context);
+                        final spacing = _getResponsiveSpacing(context);
+                        final childAspectRatio = _getResponsiveChildAspectRatio(context);
                         
-                        return _buildProductItem(_products[index]);
+                        return GridView.builder(
+                          controller: _scrollController,
+                          padding: responsivePadding,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: spacing,
+                            mainAxisSpacing: spacing,
+                            childAspectRatio: childAspectRatio,
+                          ),
+                          itemCount: _products.length + (_loadingStatus == LoadingStatus.noMoreData ? 0 : 1),
+                          itemBuilder: (context, index) {
+                            if (index >= _products.length) {
+                              return _buildLoadMoreIndicator();
+                            }
+                            
+                            return _buildProductItem(_products[index]);
+                          },
+                        );
                       },
                     ),
         ),
@@ -168,20 +246,22 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
   
   Widget _buildProductItem(SuggestionItem product) {
     final heroTag = 'infinite_grid_product_${product.id}';
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth > 600;
     
     return Hero(
       tag: heroTag,
       child: Material(
-        borderRadius: BorderRadius.circular(16),
-        elevation: 2,
+        borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),
+        elevation: isLargeScreen ? 3 : 2,
         shadowColor: Colors.black.withOpacity(0.1),
         child: InkWell(
           onTap: product.onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),
           child: Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,9 +272,9 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                   child: Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(isLargeScreen ? 20 : 16),
+                          topRight: Radius.circular(isLargeScreen ? 20 : 16),
                         ),
                         child: Container(
                           width: double.infinity,
@@ -204,14 +284,18 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                                   imageUrl: product.imageUrl!,
                                   fit: BoxFit.cover,
                                 )
-                              : const Icon(Icons.image, size: 40, color: Colors.grey),
+                              : Icon(
+                                  Icons.image, 
+                                  size: isLargeScreen ? 50 : 40, 
+                                  color: Colors.grey
+                                ),
                         ),
                       ),
                       
                       if (product.discountPercentage != null || product.isNew || product.isFeatured)
                         Positioned(
-                          top: 8,
-                          left: 8,
+                          top: isLargeScreen ? 12 : 8,
+                          left: isLargeScreen ? 12 : 8,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -219,6 +303,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                                 _buildBadge(
                                   "-${product.discountPercentage}%",
                                   [Colors.red.shade700, Colors.red.shade500],
+                                  isLargeScreen,
                                 ),
                               
                               if (product.isNew)
@@ -227,6 +312,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                                   child: _buildBadge(
                                     "NEW",
                                     [Colors.green.shade700, Colors.green.shade500],
+                                    isLargeScreen,
                                   ),
                                 ),
                               if (product.isFeatured)
@@ -235,6 +321,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                                   child: _buildBadge(
                                     "FEATURED",
                                     [Colors.purple.shade700, Colors.purple.shade500],
+                                    isLargeScreen,
                                   ),
                                 ),
                             ],
@@ -248,103 +335,16 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                 Expanded(
                   flex: 2,
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           product.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                            fontSize: _getResponsiveFontSize(context, 14),
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        
-                        if (product.description != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              product.description!,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 12,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        
-                        if (product.rating != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Row(
-                              children: [
-                                _buildRatingStars(product.rating!),
-                                if (product.reviewCount != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 4),
-                                    child: Text(
-                                      "(${product.reviewCount})",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        
-                        const Spacer(),
-                        
-                        if (product.price != null)
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                "₹${product.price!.toStringAsFixed(0)}",
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              if (product.originalPrice != null && product.originalPrice! > product.price!)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 4),
-                                  child: Text(
-                                    "₹${product.originalPrice!.toStringAsFixed(0)}",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                      decoration: TextDecoration.lineThrough,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildLoadMoreIndicator() {
-    switch (_loadingStatus) {
-      case LoadingStatus.loading:
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircularProgressIndicator(
                   strokeWidth: 2,

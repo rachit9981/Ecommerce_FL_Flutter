@@ -414,8 +414,7 @@ class ProductHeader extends StatelessWidget {
               ),
             ),
           ),
-          
-          // Title with improved typography
+            // Title with improved typography and responsive text handling
           const SizedBox(height: 8),
           Text(
             title,
@@ -424,6 +423,9 @@ class ProductHeader extends StatelessWidget {
               fontWeight: FontWeight.bold,
               height: 1.3,
             ),
+            maxLines: null, // Allow unlimited lines for long titles
+            overflow: TextOverflow.visible, // Show full text instead of truncating
+            softWrap: true, // Enable text wrapping
           ),
           
           // Rating with animated stars
@@ -625,8 +627,7 @@ class TechSpecSelector extends StatelessWidget {
                             color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
-                          ),
-                        ] : null,
+                          ),                        ] : null,
                       ),
                       child: Text(
                         option,
@@ -634,6 +635,10 @@ class TechSpecSelector extends StatelessWidget {
                           color: isSelected ? Colors.white : Colors.black87,
                           fontWeight: FontWeight.bold,
                         ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2, // Allow up to 2 lines for longer spec names
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                       ),
                     ),
                   );
@@ -766,13 +771,16 @@ class ProductVariantSelector extends StatelessWidget {
                     : Colors.grey.shade300,
                 width: 1.5,
               ),
-            ),
-            child: Text(
+            ),            child: Text(
               option,
               style: TextStyle(
                 color: isSelected ? Colors.white : Colors.black87,
                 fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 2, // Allow up to 2 lines for longer variant names
+              overflow: TextOverflow.ellipsis,
+              softWrap: true,
             ),
           ),
         );
@@ -930,22 +938,28 @@ class ProductSpecifications extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
+                  children: [                    Expanded(
                       flex: 2,
                       child: Text(
                         entry.key,
                         style: TextStyle(
                           color: Colors.grey.shade700,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                       ),
-                    ),                    Expanded(
+                    ),
+                    Expanded(
                       flex: 3,
                       child: Text(
                         entry.value.toString(),
                         style: const TextStyle(
                           fontWeight: FontWeight.w500,
                         ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                       ),
                     ),
                   ],
@@ -1074,13 +1088,14 @@ class ProductReviews extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  crossAxisAlignment: CrossAxisAlignment.start,                  children: [
                     Text(
                       review.userName,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Row(
                       children: [
@@ -1106,12 +1121,14 @@ class ProductReviews extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
+          const SizedBox(height: 8),          Text(
             review.comment,
             style: TextStyle(
               color: Colors.grey.shade700,
             ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            softWrap: true,
           ),
           const SizedBox(height: 8),
           Row(
@@ -1208,8 +1225,7 @@ class AddToCartSection extends StatelessWidget {
                         size: 16,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        inStock
+                      Text(                        inStock
                             ? stockCount > 0
                                 ? 'In Stock ($stockCount available)'
                                 : 'In Stock'
@@ -1219,6 +1235,9 @@ class AddToCartSection extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                       ),
                     ],
                   ),
@@ -1239,14 +1258,15 @@ class AddToCartSection extends StatelessWidget {
                         color: Colors.blue.shade700,
                         size: 16,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
+                      const SizedBox(width: 4),                      Text(
                         'Free Delivery',
                         style: TextStyle(
                           color: Colors.blue.shade700,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -1265,7 +1285,11 @@ class AddToCartSection extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: inStock ? onAddToCart : null,
                       icon: const Icon(Icons.shopping_cart_outlined),
-                      label: const Text('Add to Cart'),
+                      label: const Text(
+                        'Add to Cart',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
@@ -1284,7 +1308,11 @@ class AddToCartSection extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: inStock ? onBuyNow : null,
                       icon: const Icon(Icons.flash_on),
-                      label: const Text('Buy Now'),
+                      label: const Text(
+                        'Buy Now',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.secondary,
                         foregroundColor: Colors.black87,
