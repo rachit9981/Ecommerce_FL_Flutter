@@ -8,6 +8,7 @@ import 'package:ecom/pages/search_page.dart';
 import 'package:ecom/pages/notification_page.dart';
 import 'package:ecom/pages/product_page.dart';
 import 'package:ecom/pages/category_page.dart';
+import 'package:ecom/services/products.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -19,6 +20,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController(viewportFraction: 1.0);
   int _currentBannerIndex = 0;
+  
+  // API integration variables
+  final ProductService _productService = ProductService();
+  List<Product> _allProducts = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -27,8 +34,9 @@ class _HomePageState extends State<HomePage> {
     Future.delayed(Duration.zero, () {
       _startAutoScroll();
     });
+    // Load products from API
+    _loadProducts();
   }
-
   void _startAutoScroll() {
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
@@ -50,17 +58,88 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _loadProducts() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final products = await _productService.getProducts();
+      
+      setState(() {
+        _allProducts = products;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  SuggestionItem _convertProductToSuggestionItem(Product product, String heroTagPrefix) {
+    return SuggestionItem(
+      id: product.id,
+      title: product.name,
+      imageUrl: product.images.isNotEmpty ? product.images.first : '',
+      price: product.discountPrice,
+      originalPrice: product.price != product.discountPrice ? product.price : null,
+      description: product.description,
+      isProduct: true,
+      isNew: product.featured == true,
+      rating: product.rating,
+      reviewCount: product.reviews,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductPage(
+              productId: product.id,
+              heroTag: '${heroTagPrefix}_${product.id}',
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<SuggestionItem> _getProductsByCategory(String category, {int limit = 4, String heroTagPrefix = 'product'}) {
+    final categoryProducts = _allProducts
+        .where((product) => product.category.toLowerCase() == category.toLowerCase())
+        .take(limit)
+        .toList();
+    
+    return categoryProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
+  }
+
+  List<SuggestionItem> _getFeaturedProducts({int limit = 4, String heroTagPrefix = 'featured'}) {
+    final featuredProducts = _allProducts
+        .where((product) => product.featured == true)
+        .take(limit)
+        .toList();
+    
+    return featuredProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
+  }
+
+  List<SuggestionItem> _getRandomProducts({int limit = 4, String heroTagPrefix = 'random'}) {
+    final shuffledProducts = List<Product>.from(_allProducts)..shuffle();
+    final randomProducts = shuffledProducts.take(limit).toList();
+    
+    return randomProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final categories = CategoryData.getSampleCategories(context);
 
-    // Define mobile brands
+    // Define mobile brands with navigation to CategoryPage
     final mobileBrands = [
       CategoryItem(
         id: 'samsung',
@@ -68,9 +147,18 @@ class _HomePageState extends State<HomePage> {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(
+          Navigator.push(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Samsung products')));
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'samsung',
+                  title: 'Samsung',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
+                ),
+              ),
+            ),
+          );
         },
       ),
       CategoryItem(
@@ -79,9 +167,18 @@ class _HomePageState extends State<HomePage> {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(
+          Navigator.push(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Apple products')));
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'apple',
+                  title: 'Apple',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
+                ),
+              ),
+            ),
+          );
         },
       ),
       CategoryItem(
@@ -90,9 +187,18 @@ class _HomePageState extends State<HomePage> {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(
+          Navigator.push(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Xiaomi products')));
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'xiaomi',
+                  title: 'Xiaomi',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
+                ),
+              ),
+            ),
+          );
         },
       ),
       CategoryItem(
@@ -101,9 +207,18 @@ class _HomePageState extends State<HomePage> {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
         onTap: () {
-          ScaffoldMessenger.of(
+          Navigator.push(
             context,
-          ).showSnackBar(const SnackBar(content: Text('OnePlus products')));
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'oneplus',
+                  title: 'OnePlus',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
+                ),
+              ),
+            ),
+          );
         },
       ),
       CategoryItem(
@@ -112,9 +227,18 @@ class _HomePageState extends State<HomePage> {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/2560px-OPPO_LOGO_2019.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(
+          Navigator.push(
             context,
-          ).showSnackBar(const SnackBar(content: Text('OPPO products')));
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'oppo',
+                  title: 'OPPO',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/2560px-OPPO_LOGO_2019.svg.png',
+                ),
+              ),
+            ),
+          );
         },
       ),
       CategoryItem(
@@ -123,488 +247,31 @@ class _HomePageState extends State<HomePage> {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Vivo_logo.svg/1024px-Vivo_logo.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Vivo products')));
-        },
-      ),
-    ];
-
-    final List<SuggestionItem> trendingProducts = [
-      SuggestionItem(
-        id: '1',
-        title: 'Wireless Earbuds',
-        imageUrl:
-            'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 5999.00,
-        originalPrice: 7999.00, // Added for discount
-        description: 'Noise cancellation',
-        isProduct: true,
-        isNew: true, // Show "NEW" badge
-        rating: 4.5, // Display rating
-        reviewCount: 256, // Show review count
-        onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: '1',
-                    heroTag:
-                        'trending_now_product_1', // Match the Hero tag format from your carousel
-                  ),
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'vivo',
+                  title: 'Vivo',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Vivo_logo.svg/1024px-Vivo_logo.svg.png',
+                ),
+              ),
             ),
           );
         },
       ),
-      SuggestionItem(
-        id: '2',
-        title: 'Smart Watch',
-        imageUrl:
-            'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 12999.00,
-        originalPrice: 15999.00,
-        description: 'Fitness tracking',
-        isProduct: true,
-        isNew: true,
-        rating: 4.7,
-        reviewCount: 128,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: '2',
-                    heroTag: 'trending_now_product_2',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '3',
-        title: 'Laptop Backpack',
-        imageUrl:
-            'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 2799.00,
-        originalPrice: 3499.00,
-        description: 'Water resistant',
-        isProduct: true,
-        isNew: false,
-        rating: 4.2,
-        reviewCount: 75,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: '3',
-                    heroTag: 'trending_now_product_3',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '4',
-        title: 'Portable Charger',
-        imageUrl:
-            'https://images.unsplash.com/photo-1585003791087-a5aabb863540?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 1499.00,
-        originalPrice: 1999.00,
-        description: '20000mAh capacity',
-        isProduct: true,
-        isNew: false,
-        rating: 4.8,
-        reviewCount: 200,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: '4',
-                    heroTag: 'trending_now_product_4',
-                  ),
-            ),
-          );
-        },
-      ),
-    ];
-
-    final List<SuggestionItem> recommendedProducts = [
-      SuggestionItem(
-        id: '5',
-        title: 'Coffee Maker',
-        imageUrl:
-            'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 7499.00,
-        description: 'Automatic brewing',
-        isProduct: true,
-        rating: 4.3,
-        reviewCount: 128,
-        isFeatured: true,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: '5',
-                    heroTag: 'recommended_for_you_product_5',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '6',
-        title: 'Yoga Mat',
-        imageUrl:
-            'https://images.unsplash.com/photo-1590432923467-c5469804a8a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 1999.00,
-        description: 'Non-slip surface',
-        isProduct: true,
-        rating: 4.0,
-        reviewCount: 86,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: '6',
-                    heroTag: 'recommended_for_you_product_6',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '7',
-        title: 'LED Desk Lamp',
-        imageUrl:
-            'https://images.unsplash.com/photo-1534159559673-de7bc89fa998?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 2999.00,
-        description: 'Adjustable brightness',
-        isProduct: true,
-        rating: 4.6,
-        reviewCount: 112,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: '7',
-                    heroTag: 'recommended_for_you_product_7',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: '8',
-        title: 'Bluetooth Speaker',
-        imageUrl:
-            'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 3999.00,
-        description: 'Waterproof',
-        isProduct: true,
-        rating: 4.4,
-        reviewCount: 95,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: '8',
-                    heroTag: 'recommended_for_you_product_8',
-                  ),
-            ),
-          );
-        },
-      ),
-    ];
-
-    // New Top Mobiles section
-    final List<SuggestionItem> topMobiles = [
-      SuggestionItem(
-        id: 'm1',
-        title: 'UltraPhone Pro',
-        imageUrl:
-            'https://images.unsplash.com/photo-1598327105666-5b89351aff97?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 49999.00,
-        originalPrice: 59999.00,
-        description: '108MP Camera, 12GB RAM',
-        isProduct: true,
-        isNew: true,
-        rating: 4.7,
-        reviewCount: 1243,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      ProductPage(productId: '2', heroTag: 'top_mobiles_m1'),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: 'm2',
-        title: 'iSuperPhone 13',
-        imageUrl:
-            'https://images.unsplash.com/photo-1605236453806-6ff36851218e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 72999.00,
-        originalPrice: 79999.00,
-        description: 'A15 Chip, Pro Camera',
-        isProduct: true,
-        rating: 4.8,
-        reviewCount: 985,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      ProductPage(productId: 'm2', heroTag: 'top_mobiles_m2'),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: 'm3',
-        title: 'Galaxy X23',
-        imageUrl:
-            'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 42999.00,
-        originalPrice: 45999.00,
-        description: '120Hz AMOLED, 5G',
-        isProduct: true,
-        rating: 4.6,
-        reviewCount: 756,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      ProductPage(productId: 'm3', heroTag: 'top_mobiles_m3'),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: 'm4',
-        title: 'Mi Note 11',
-        imageUrl:
-            'https://images.unsplash.com/photo-1543069190-f90727ac6639?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 19999.00,
-        originalPrice: 24999.00,
-        description: '64MP Quad Camera',
-        isProduct: true,
-        rating: 4.4,
-        reviewCount: 1475,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      ProductPage(productId: 'm4', heroTag: 'top_mobiles_m4'),
-            ),
-          );
-        },
-      ),
-    ];
-
-    // New Top Electronics section
-    final List<SuggestionItem> topElectronics = [
-      SuggestionItem(
-        id: 'e1',
-        title: 'Smart 4K TV',
-        imageUrl:
-            'https://images.unsplash.com/photo-1593784991095-a205069470b6?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 42999.00,
-        originalPrice: 54999.00,
-        description: '55-inch, HDR, Dolby Vision',
-        isProduct: true,
-        isFeatured: true,
-        rating: 4.6,
-        reviewCount: 532,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: 'e1',
-                    heroTag: 'top_electronics_e1',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: 'e2',
-        title: 'Gaming Laptop',
-        imageUrl:
-            'https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 89999.00,
-        originalPrice: 104999.00,
-        description: 'RTX 3060, 16GB RAM',
-        isProduct: true,
-        rating: 4.5,
-        reviewCount: 328,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: 'e2',
-                    heroTag: 'top_electronics_e2',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: 'e3',
-        title: 'Noise-Canceling Headphones',
-        imageUrl:
-            'https://images.unsplash.com/photo-1578319439584-104c94d37305?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 24999.00,
-        originalPrice: 32999.00,
-        description: 'Wireless, 30h Battery',
-        isProduct: true,
-        rating: 4.7,
-        reviewCount: 894,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: 'e3',
-                    heroTag: 'top_electronics_e3',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: 'e4',
-        title: 'Smartwatch Pro',
-        imageUrl:
-            'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 18999.00,
-        originalPrice: 22999.00,
-        description: 'Heart Rate, GPS, NFC',
-        isProduct: true,
-        rating: 4.4,
-        reviewCount: 672,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: 'e4',
-                    heroTag: 'top_electronics_e4',
-                  ),
-            ),
-          );
-        },
-      ),
-    ];
-
-    // For infinite scroll products
-    final List<SuggestionItem> moreProducts = [
-      // Start with products already defined in trendingProducts
-      ...trendingProducts,
-      // Add more products
-      SuggestionItem(
-        id: 'mp1',
-        title: 'Fitness Tracker Band',
-        imageUrl:
-            'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 2499.00,
-        originalPrice: 3499.00,
-        description: 'Heart rate & sleep monitoring',
-        isProduct: true,
-        rating: 4.3,
-        reviewCount: 428,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: 'mp1',
-                    heroTag: 'infinite_product_mp1',
-                  ),
-            ),
-          );
-        },
-      ),
-      SuggestionItem(
-        id: 'mp2',
-        title: 'Digital Camera 24MP',
-        imageUrl:
-            'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 35999.00,
-        originalPrice: 41999.00,
-        description: '4K Video, 30x Optical Zoom',
-        isProduct: true,
-        rating: 4.6,
-        reviewCount: 213,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: 'mp2',
-                    heroTag: 'infinite_product_mp2',
-                  ),
-            ),
-          );
-        },
-      ),
-      ...recommendedProducts,
-      SuggestionItem(
-        id: 'mp3',
-        title: 'Home Theater System',
-        imageUrl:
-            'https://images.unsplash.com/photo-1558403194-611308249627?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        price: 24999.00,
-        originalPrice: 29999.00,
-        description: 'Dolby Atmos, 5.1 Channel',
-        isProduct: true,
-        rating: 4.5,
-        reviewCount: 186,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => ProductPage(
-                    productId: 'mp3',
-                    heroTag: 'infinite_product_mp3',
-                  ),
-            ),
-          );
-        },
-      ),
-      ...topMobiles,
-      ...topElectronics,
-    ];
+    ];    
+    // Get dynamic product data from API
+    final trendingProducts = _getRandomProducts(limit: 4, heroTagPrefix: 'trending_now_product');
+    final recommendedProducts = _getFeaturedProducts(limit: 4, heroTagPrefix: 'recommended_for_you_product');
+    final topMobiles = _getProductsByCategory('mobiles', limit: 4, heroTagPrefix: 'top_mobiles');
+    final topElectronics = _getProductsByCategory('electronics', limit: 4, heroTagPrefix: 'top_electronics');
+    
+    // For infinite scroll products - combine all available products
+    final moreProducts = List<SuggestionItem>.from(_allProducts.map(
+      (product) => _convertProductToSuggestionItem(product, 'infinite_product'),
+    ));
 
     // Modify the category onTap actions to navigate to the CategoryPage
     for (var i = 0; i < categories.length; i++) {
@@ -625,9 +292,7 @@ class _HomePageState extends State<HomePage> {
           );
         },
       );
-    }
-
-    return Scaffold(
+    }    return Scaffold(
       appBar: HomeAppBar(
         cartItemCount: 2,
         onCartPressed: () {
@@ -644,9 +309,43 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       body: SafeArea(
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Failed to load products',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _error!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadProducts,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )                : RefreshIndicator(
+                    onRefresh: _loadProducts,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: InkWell(
@@ -863,14 +562,24 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
-            ),
-
-            ScrollableSuggestionRow(
+            ),            ScrollableSuggestionRow(
               title: 'Trending Now',
-              items: trendingProducts,
+              items: trendingProducts.isNotEmpty 
+                  ? trendingProducts 
+                  : [
+                      SuggestionItem(
+                        id: 'placeholder',
+                        title: 'No products available',
+                        imageUrl: '',
+                        price: 0.0,
+                        description: 'Check back later',
+                        isProduct: false,
+                        onTap: () {},
+                      ),
+                    ],
               itemHeight: 220,
               itemWidth: 145,
-              showMore: true,
+              showMore: trendingProducts.isNotEmpty,
               onMoreTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('View all trending products')),
@@ -880,10 +589,22 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             ScrollableSuggestionRow(
               title: 'Recommended For You',
-              items: recommendedProducts,
+              items: recommendedProducts.isNotEmpty 
+                  ? recommendedProducts 
+                  : [
+                      SuggestionItem(
+                        id: 'placeholder',
+                        title: 'No products available',
+                        imageUrl: '',
+                        price: 0.0,
+                        description: 'Check back later',
+                        isProduct: false,
+                        onTap: () {},
+                      ),
+                    ],
               itemHeight: 220,
               itemWidth: 145,
-              showMore: true,
+              showMore: recommendedProducts.isNotEmpty,
               onMoreTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -916,15 +637,25 @@ class _HomePageState extends State<HomePage> {
               spacing: 12,
               showShadow: true,
               brandMode: true,
-            ),
-
-            const SizedBox(height: 16),
+            ),            const SizedBox(height: 16),
             ScrollableSuggestionRow(
               title: 'Top Mobiles',
-              items: topMobiles,
+              items: topMobiles.isNotEmpty 
+                  ? topMobiles 
+                  : [
+                      SuggestionItem(
+                        id: 'placeholder',
+                        title: 'No mobiles available',
+                        imageUrl: '',
+                        price: 0.0,
+                        description: 'Check back later',
+                        isProduct: false,
+                        onTap: () {},
+                      ),
+                    ],
               itemHeight: 220,
               itemWidth: 145,
-              showMore: true,
+              showMore: topMobiles.isNotEmpty,
               onMoreTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('View all top mobiles')),
@@ -935,18 +666,28 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             ScrollableSuggestionRow(
               title: 'Top Electronics',
-              items: topElectronics,
+              items: topElectronics.isNotEmpty 
+                  ? topElectronics 
+                  : [
+                      SuggestionItem(
+                        id: 'placeholder',
+                        title: 'No electronics available',
+                        imageUrl: '',
+                        price: 0.0,
+                        description: 'Check back later',
+                        isProduct: false,
+                        onTap: () {},
+                      ),
+                    ],
               itemHeight: 220,
               itemWidth: 145,
-              showMore: true,
+              showMore: topElectronics.isNotEmpty,
               onMoreTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('View all top electronics')),
                 );
               },
-            ),
-
-            const SizedBox(height: 24),
+            ),            const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,
@@ -969,38 +710,67 @@ class _HomePageState extends State<HomePage> {
                 bottom: 24,
               ), // Increased bottom padding
               alignment: Alignment.center, // Center align the grid content
-              child: InfiniteProductGrid(
-                initialProducts: moreProducts.take(4).toList(),
-                loadMoreProducts: (page) async {
-                  await Future.delayed(const Duration(seconds: 1));
+              child: moreProducts.isNotEmpty
+                  ? InfiniteProductGrid(
+                      initialProducts: moreProducts.take(4).toList(),
+                      loadMoreProducts: (page) async {
+                        await Future.delayed(const Duration(seconds: 1));
 
-                  final startIndex = page * 4;
-                  if (startIndex >= moreProducts.length) {
-                    return [];
-                  }
+                        final startIndex = page * 4;
+                        if (startIndex >= moreProducts.length) {
+                          return [];
+                        }
 
-                  final endIndex =
-                      (startIndex + 4 <= moreProducts.length)
-                          ? startIndex + 4
-                          : moreProducts.length;
+                        final endIndex =
+                            (startIndex + 4 <= moreProducts.length)
+                                ? startIndex + 4
+                                : moreProducts.length;
 
-                  return moreProducts.sublist(startIndex, endIndex);
-                },
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                spacing: 16,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ), // Added vertical padding
-                showTitle: false, // We already added the title above
-                loadOnInit: true,
-              ),
-            ),
-
-            const SizedBox(height: 32), // Added more bottom padding
-          ],
-        ),
+                        return moreProducts.sublist(startIndex, endIndex);
+                      },
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.7,
+                      spacing: 16,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ), // Added vertical padding
+                      showTitle: false, // We already added the title above
+                      loadOnInit: true,
+                    )
+                  : const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No products available',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Check back later for new arrivals',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),            const SizedBox(height: 32), // Added more bottom padding
+                      ],
+                    ),
+                  ),
       ),
     );
   }
