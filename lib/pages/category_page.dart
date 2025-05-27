@@ -433,8 +433,6 @@ class _CategoryPageState extends State<CategoryPage> {
   @override
   Widget build(BuildContext context) {
     final productList = _getCategoryProducts();
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
     
     return Scaffold(
       appBar: AppBar(
@@ -454,104 +452,6 @@ class _CategoryPageState extends State<CategoryPage> {
       ),
       body: Column(
         children: [
-          // Category Icon Header - replaced image with icon
-          Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: widget.category.backgroundColor ?? 
-                theme.colorScheme.primary.withOpacity(0.1),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  widget.category.backgroundColor ?? 
-                    theme.colorScheme.primary.withOpacity(0.15),
-                  Color.lerp(
-                    widget.category.backgroundColor ?? theme.colorScheme.primary.withOpacity(0.1),
-                    Colors.white,
-                    0.3
-                  ) ?? theme.colorScheme.primary.withOpacity(0.05),
-                ],
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Background decorative elements
-                Positioned(
-                  right: -20,
-                  top: -20,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: -30,
-                  bottom: -30,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                // Center content with icon and text
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Category icon in circle
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: (widget.category.backgroundColor ?? 
-                                primaryColor).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          widget.category.icon ?? Icons.category,
-                          size: 32,
-                          color: widget.category.iconColor ?? primaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.category.title,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${productList.length} products',
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Active filters indicators
           if (_selectedSubcategory != null || _sortOption != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

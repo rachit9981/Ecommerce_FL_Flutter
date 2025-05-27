@@ -2,15 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:ecom/components/app_bar/home.dart';
 import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/categories.dart';
-import 'package:ecom/components/common/infity_scroll_suggestions.dart'; // Add this import
+import 'package:ecom/components/common/infity_scroll_suggestions.dart';
 import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/search_page.dart';
 import 'package:ecom/pages/notification_page.dart';
 import 'package:ecom/pages/product_page.dart';
-import 'package:ecom/pages/category_page.dart'; // Import the CategoryPage
+import 'package:ecom/pages/category_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final PageController _pageController = PageController(viewportFraction: 1.0);
+  int _currentBannerIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-scroll the banner every 3 seconds
+    Future.delayed(Duration.zero, () {
+      _startAutoScroll();
+    });
+  }
+
+  void _startAutoScroll() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        if (_currentBannerIndex < 2) {
+          _pageController.animateToPage(
+            _currentBannerIndex + 1,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.fastOutSlowIn,
+          );
+        } else {
+          _pageController.animateToPage(
+            0,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.fastOutSlowIn,
+          );
+        }
+        _startAutoScroll();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +68,9 @@ class HomePage extends StatelessWidget {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Samsung products')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Samsung products')));
         },
       ),
       CategoryItem(
@@ -35,9 +79,9 @@ class HomePage extends StatelessWidget {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Apple products')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Apple products')));
         },
       ),
       CategoryItem(
@@ -46,9 +90,9 @@ class HomePage extends StatelessWidget {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Xiaomi products')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Xiaomi products')));
         },
       ),
       CategoryItem(
@@ -57,9 +101,9 @@ class HomePage extends StatelessWidget {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('OnePlus products')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('OnePlus products')));
         },
       ),
       CategoryItem(
@@ -68,9 +112,9 @@ class HomePage extends StatelessWidget {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/2560px-OPPO_LOGO_2019.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('OPPO products')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('OPPO products')));
         },
       ),
       CategoryItem(
@@ -79,9 +123,9 @@ class HomePage extends StatelessWidget {
         imageUrl:
             'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Vivo_logo.svg/1024px-Vivo_logo.svg.png',
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vivo products')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Vivo products')));
         },
       ),
     ];
@@ -103,10 +147,12 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '1',
-                heroTag: 'trending_now_product_1', // Match the Hero tag format from your carousel
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: '1',
+                    heroTag:
+                        'trending_now_product_1', // Match the Hero tag format from your carousel
+                  ),
             ),
           );
         },
@@ -127,10 +173,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '2',
-                heroTag: 'trending_now_product_2',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: '2',
+                    heroTag: 'trending_now_product_2',
+                  ),
             ),
           );
         },
@@ -151,10 +198,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '3',
-                heroTag: 'trending_now_product_3',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: '3',
+                    heroTag: 'trending_now_product_3',
+                  ),
             ),
           );
         },
@@ -175,10 +223,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '4',
-                heroTag: 'trending_now_product_4',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: '4',
+                    heroTag: 'trending_now_product_4',
+                  ),
             ),
           );
         },
@@ -201,10 +250,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '5',
-                heroTag: 'recommended_for_you_product_5',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: '5',
+                    heroTag: 'recommended_for_you_product_5',
+                  ),
             ),
           );
         },
@@ -223,10 +273,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '6',
-                heroTag: 'recommended_for_you_product_6',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: '6',
+                    heroTag: 'recommended_for_you_product_6',
+                  ),
             ),
           );
         },
@@ -245,10 +296,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '7',
-                heroTag: 'recommended_for_you_product_7',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: '7',
+                    heroTag: 'recommended_for_you_product_7',
+                  ),
             ),
           );
         },
@@ -267,10 +319,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '8',
-                heroTag: 'recommended_for_you_product_8',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: '8',
+                    heroTag: 'recommended_for_you_product_8',
+                  ),
             ),
           );
         },
@@ -295,10 +348,9 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: '2',
-                heroTag: 'top_mobiles_m1',
-              ),
+              builder:
+                  (context) =>
+                      ProductPage(productId: '2', heroTag: 'top_mobiles_m1'),
             ),
           );
         },
@@ -318,10 +370,9 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'm2',
-                heroTag: 'top_mobiles_m2',
-              ),
+              builder:
+                  (context) =>
+                      ProductPage(productId: 'm2', heroTag: 'top_mobiles_m2'),
             ),
           );
         },
@@ -341,10 +392,9 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'm3',
-                heroTag: 'top_mobiles_m3',
-              ),
+              builder:
+                  (context) =>
+                      ProductPage(productId: 'm3', heroTag: 'top_mobiles_m3'),
             ),
           );
         },
@@ -364,10 +414,9 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'm4',
-                heroTag: 'top_mobiles_m4',
-              ),
+              builder:
+                  (context) =>
+                      ProductPage(productId: 'm4', heroTag: 'top_mobiles_m4'),
             ),
           );
         },
@@ -392,10 +441,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'e1',
-                heroTag: 'top_electronics_e1',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: 'e1',
+                    heroTag: 'top_electronics_e1',
+                  ),
             ),
           );
         },
@@ -415,10 +465,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'e2',
-                heroTag: 'top_electronics_e2',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: 'e2',
+                    heroTag: 'top_electronics_e2',
+                  ),
             ),
           );
         },
@@ -438,10 +489,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'e3',
-                heroTag: 'top_electronics_e3',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: 'e3',
+                    heroTag: 'top_electronics_e3',
+                  ),
             ),
           );
         },
@@ -461,10 +513,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'e4',
-                heroTag: 'top_electronics_e4',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: 'e4',
+                    heroTag: 'top_electronics_e4',
+                  ),
             ),
           );
         },
@@ -491,10 +544,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'mp1',
-                heroTag: 'infinite_product_mp1',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: 'mp1',
+                    heroTag: 'infinite_product_mp1',
+                  ),
             ),
           );
         },
@@ -514,10 +568,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'mp2',
-                heroTag: 'infinite_product_mp2',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: 'mp2',
+                    heroTag: 'infinite_product_mp2',
+                  ),
             ),
           );
         },
@@ -538,10 +593,11 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductPage(
-                productId: 'mp3',
-                heroTag: 'infinite_product_mp3',
-              ),
+              builder:
+                  (context) => ProductPage(
+                    productId: 'mp3',
+                    heroTag: 'infinite_product_mp3',
+                  ),
             ),
           );
         },
@@ -564,9 +620,7 @@ class HomePage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CategoryPage(
-                category: category,
-              ),
+              builder: (context) => CategoryPage(category: category),
             ),
           );
         },
@@ -674,68 +728,139 @@ class HomePage extends StatelessWidget {
               showShadow: true,
             ),
 
+            // Image carousel with auto-scroll
             Padding(
               padding: const EdgeInsets.all(16),
               child: Container(
-                height: 140,
+                height: 160,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
-                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.3),
+                      color: Colors.black.withOpacity(0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: 20,
-                      top: 25,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                child: PageView.builder(
+                  itemCount: 3,
+                  controller: _pageController,
+                  allowImplicitScrolling: true,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentBannerIndex = index;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    // List of promotional banners
+                    final List<Map<String, dynamic>> banners = [
+                      {
+                        'image': 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
+                        'title': 'Summer Sale',
+                        'subtitle': 'Up to 50% off',
+                        'buttonText': 'Shop Now',
+                        'color': Theme.of(context).colorScheme.primary,
+                      },
+                      {
+                        'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
+                        'title': 'New Arrivals',
+                        'subtitle': 'Discover the latest',
+                        'buttonText': 'Explore Now',
+                        'color': Theme.of(context).colorScheme.secondary,
+                      },
+                      {
+                        'image': 'https://images.unsplash.com/photo-1546027658-7aa750153465?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
+                        'title': 'Tech Deals',
+                        'subtitle': 'Save up to 30%',
+                        'buttonText': 'Buy Now',
+                        'color': Colors.blue,
+                      },
+                    ];
+                    
+                    final banner = banners[index];
+                    
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
                         children: [
-                          const Text(
-                            "Summer Sale",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "Up to 50% off",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                          Image.network(
+                            banner['image'],
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: 160,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: banner['color'],
+                              child: const Center(
+                                child: Text(
+                                  'Image not available',
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
-                            child: const Text("Shop Now"),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            },
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Colors.black.withOpacity(0.6),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            left: 20,
+                            top: 25,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  banner['title'],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  banner['subtitle'],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: () {},
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: banner['color'],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Text(banner['buttonText']),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -766,7 +891,8 @@ class HomePage extends StatelessWidget {
                   ),
                 );
               },
-            ),            const SizedBox(height: 12),
+            ),
+            const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,
@@ -839,28 +965,34 @@ class HomePage extends StatelessWidget {
             ),
             Container(
               height: 500, // Fixed height for the infinite grid
-              padding: const EdgeInsets.only(bottom: 24), // Increased bottom padding
+              padding: const EdgeInsets.only(
+                bottom: 24,
+              ), // Increased bottom padding
               alignment: Alignment.center, // Center align the grid content
               child: InfiniteProductGrid(
                 initialProducts: moreProducts.take(4).toList(),
                 loadMoreProducts: (page) async {
                   await Future.delayed(const Duration(seconds: 1));
-                  
+
                   final startIndex = page * 4;
                   if (startIndex >= moreProducts.length) {
                     return [];
                   }
-                  
-                  final endIndex = (startIndex + 4 <= moreProducts.length) 
-                      ? startIndex + 4 
-                      : moreProducts.length;
-                      
+
+                  final endIndex =
+                      (startIndex + 4 <= moreProducts.length)
+                          ? startIndex + 4
+                          : moreProducts.length;
+
                   return moreProducts.sublist(startIndex, endIndex);
                 },
                 crossAxisCount: 2,
                 childAspectRatio: 0.7,
                 spacing: 16,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Added vertical padding
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ), // Added vertical padding
                 showTitle: false, // We already added the title above
                 loadOnInit: true,
               ),
