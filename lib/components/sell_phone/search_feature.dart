@@ -205,6 +205,26 @@ class PhoneModelItem extends StatelessWidget {
     required this.onTap,
   }) : super(key: key);
 
+  // Helper method to get the highest price from variantPrices
+  String _getHighestPrice(PhoneModel model) {
+    if (model.variantPrices.isEmpty) {
+      return "₹0";
+    }
+    
+    int highestPrice = 0;
+    
+    // Find the highest price across all storage and condition combinations
+    model.variantPrices.forEach((storage, conditions) {
+      conditions.forEach((condition, price) {
+        if (price > highestPrice) {
+          highestPrice = price;
+        }
+      });
+    });
+    
+    return "₹$highestPrice";
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -267,9 +287,8 @@ class PhoneModelItem extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Up to ₹${model.estimatedPrices.isNotEmpty ? model.estimatedPrices.values.reduce((a, b) => a > b ? a : b).toStringAsFixed(0) : "0"}',
+                  const SizedBox(height: 4),                  Text(
+                    _getHighestPrice(model),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
