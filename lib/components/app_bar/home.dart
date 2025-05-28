@@ -130,9 +130,8 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
         ),
       ),
       title: const Text(''), // Empty title
-      centerTitle: true,
-      elevation: 0, // Modern design: no elevation
-      shadowColor: darkVariant.withOpacity(0.3),
+      centerTitle: true,      elevation: 0, // Modern design: no elevation
+      shadowColor: darkVariant.withValues(alpha: 0.3),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
@@ -149,11 +148,10 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                 scale: _notificationScaleAnimation?.value ?? 1.0,
                 child: child,
               );
-            },
-            child: Container(
+            },            child: Container(
               margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: surfaceColor.withOpacity(0.1),
+                color: surfaceColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
@@ -192,11 +190,10 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                 scale: _cartScaleAnimation?.value ?? 1.0,
                 child: child,
               );
-            },
-            child: Container(
+            },            child: Container(
               margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: surfaceColor.withOpacity(0.1),
+                color: surfaceColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Stack(

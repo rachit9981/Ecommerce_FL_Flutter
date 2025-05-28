@@ -22,6 +22,9 @@ class InfiniteProductGrid extends StatefulWidget {
   final bool showTitle;
   
   final bool loadOnInit;
+  
+  // Add centerLoading parameter
+  final bool centerLoading;
 
   const InfiniteProductGrid({
     Key? key,
@@ -34,6 +37,7 @@ class InfiniteProductGrid extends StatefulWidget {
     this.title,
     this.showTitle = true,
     this.loadOnInit = false,
+    this.centerLoading = false,
   }) : super(key: key);
 
   @override
@@ -253,16 +257,15 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
       tag: heroTag,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),
-          boxShadow: [
+          borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),          boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: isLargeScreen ? 12 : 8,
               offset: const Offset(0, 4),
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: isLargeScreen ? 6 : 4,
               offset: const Offset(0, 2),
               spreadRadius: 0,
@@ -497,29 +500,56 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
   Widget _buildLoadMoreIndicator() {
     switch (_loadingStatus) {
       case LoadingStatus.loading:
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary,
+        return widget.centerLoading 
+          ? Container(
+              width: double.infinity,
+              height: double.infinity,
+              alignment: Alignment.center,
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width, // Take full width
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center, // Center horizontally
+                  children: [
+                    CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.primary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Loading more products...',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'Loading more products...',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        );
+            )
+          : Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Loading more products...',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
 
       case LoadingStatus.error:
         return Center(
@@ -664,6 +694,7 @@ class InfiniteProductList extends StatelessWidget {
   final bool showTitle;
   final EdgeInsets? padding;
   final bool loadOnInit;
+  final bool centerLoading;  // Add centerLoading parameter here too
 
   const InfiniteProductList({
     Key? key,
@@ -673,6 +704,7 @@ class InfiniteProductList extends StatelessWidget {
     this.showTitle = true,
     this.padding,
     this.loadOnInit = false,
+    this.centerLoading = false,  // Default to false
   }) : super(key: key);
 
   @override
@@ -689,6 +721,7 @@ class InfiniteProductList extends StatelessWidget {
       title: title,
       showTitle: showTitle,
       loadOnInit: loadOnInit,
+      centerLoading: centerLoading,  // Pass the parameter
     );
   }
 }

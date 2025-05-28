@@ -81,10 +81,9 @@ class CartItemCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(16),        boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -169,9 +168,8 @@ class CartItemCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
                                 vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withOpacity(0.1),
+                              ),                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -334,14 +332,13 @@ class _QuantityButton extends StatelessWidget {
       height: isSmallScreen ? 28 : 32,
       width: isSmallScreen ? 28 : 32,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: onPressed == null
+        shape: BoxShape.circle,        color: onPressed == null
             ? Colors.grey.shade200
-            : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         border: Border.all(
           color: onPressed == null
               ? Colors.grey.shade300
-              : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -397,10 +394,9 @@ class CartSummary extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),        boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -565,9 +561,8 @@ class EmptyCartView extends StatelessWidget {
             // Empty cart icon
             Container(
               width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+              height: 120,              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

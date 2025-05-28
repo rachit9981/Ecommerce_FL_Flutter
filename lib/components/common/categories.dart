@@ -152,13 +152,12 @@ class CategoryGridItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final defaultColor = theme.colorScheme.primary;
-    final bgColor = category.backgroundColor ?? 
-        theme.colorScheme.primary.withOpacity(0.1);
+    final defaultColor = theme.colorScheme.primary;    final bgColor = category.backgroundColor ?? 
+        theme.colorScheme.primary.withValues(alpha: 0.1);
     
     return Card(
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -186,10 +185,9 @@ class CategoryGridItem extends StatelessWidget {
                 padding: const EdgeInsets.all(10), // Reduced padding
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
+                  shape: BoxShape.circle,                  boxShadow: [
                     BoxShadow(
-                      color: defaultColor.withOpacity(0.1),
+                      color: defaultColor.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -327,10 +325,9 @@ class HorizontalCategoryList extends StatelessWidget {
                   ] else if (item.icon != null) ...[
                     Container(
                       width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
+                      height: 48,                      decoration: BoxDecoration(
                         color: item.backgroundColor ??
-                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

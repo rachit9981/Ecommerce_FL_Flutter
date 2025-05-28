@@ -79,6 +79,274 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Method to get dynamic categories from product data
+  List<CategoryItem> _getDynamicCategories(BuildContext context) {
+    // Extract unique categories from products
+    final Set<String> uniqueCategories = _allProducts
+        .map((product) => product.category.toLowerCase())
+        .toSet();
+    
+    // Map of category names to their respective icons and colors
+    final Map<String, IconData> categoryIcons = {
+      'mobiles': Icons.smartphone,
+      'mobile': Icons.smartphone,
+      'phones': Icons.smartphone,
+      'phone': Icons.smartphone,
+      'electronics': Icons.devices,
+      'laptops': Icons.laptop,
+      'laptop': Icons.laptop,
+      'computer': Icons.computer,
+      'computers': Icons.computer,
+      'accessories': Icons.headphones,
+      'audio': Icons.headphones,
+      'watches': Icons.watch,
+      'watch': Icons.watch,
+      'wearables': Icons.watch,
+      'clothing': Icons.checkroom,
+      'clothes': Icons.checkroom,
+      'fashion': Icons.checkroom,
+      'apparel': Icons.checkroom,
+      'shoes': Icons.hiking,
+      'footwear': Icons.hiking,
+      'home': Icons.home,
+      'furniture': Icons.chair,
+      'appliances': Icons.kitchen,
+      'books': Icons.book,
+      'book': Icons.book,
+      'sports': Icons.sports_basketball,
+      'toys': Icons.toys,
+      'beauty': Icons.face,
+      'health': Icons.health_and_safety,
+      'grocery': Icons.local_grocery_store,
+      'food': Icons.fastfood,
+      'automotive': Icons.directions_car,
+      'car': Icons.directions_car,
+      'tools': Icons.build,
+      'garden': Icons.yard,
+    };
+    
+    // Default color list for categories
+    final List<Color> colorOptions = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
+      Colors.amber,
+      Colors.cyan,
+    ];
+    
+    // Convert unique categories to CategoryItem objects
+    List<CategoryItem> categoryItems = [];
+    int colorIndex = 0;
+    
+    for (var category in uniqueCategories) {
+      // Find the normalized category for icon mapping
+      String normalizedCategory = category.toLowerCase();
+      IconData icon = Icons.category; // Default icon
+      
+      // Try to find a matching icon
+      for (var key in categoryIcons.keys) {
+        if (normalizedCategory.contains(key)) {
+          icon = categoryIcons[key]!;
+          break;
+        }
+      }
+      
+      // Create category item with rotating colors
+      categoryItems.add(
+        CategoryItem(
+          id: category,
+          title: category.substring(0, 1).toUpperCase() + category.substring(1),
+          icon: icon,
+          backgroundColor: colorOptions[colorIndex % colorOptions.length].withOpacity(0.2),
+          iconColor: colorOptions[colorIndex % colorOptions.length],
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CategoryPage(
+                  category: CategoryItem(
+                    id: category,
+                    title: category.substring(0, 1).toUpperCase() + category.substring(1),
+                    icon: icon,
+                    backgroundColor: colorOptions[colorIndex % colorOptions.length].withOpacity(0.2),
+                    iconColor: colorOptions[colorIndex % colorOptions.length],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      
+      colorIndex++;
+    }
+    
+    return categoryItems;
+  }
+  
+  // Method to get dynamic mobile brands from product data
+  List<CategoryItem> _getDynamicBrands(BuildContext context) {
+    // Extract unique brands from mobile products
+    final Set<String> uniqueBrands = _allProducts
+        .where((product) => 
+            product.category.toLowerCase() == 'mobiles' || 
+            product.category.toLowerCase() == 'mobile' || 
+            product.category.toLowerCase() == 'smartphone' ||
+            product.category.toLowerCase() == 'phone' ||
+            product.category.toLowerCase() == 'phones')
+        .map((product) => product.brand.toLowerCase())
+        .toSet();
+    
+    // Map of brand names to their logo URLs
+    final Map<String, String> brandLogos = {
+      'samsung': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
+      'apple': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
+      'xiaomi': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
+      'oneplus': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
+      'oppo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/2560px-OPPO_LOGO_2019.svg.png',
+      'vivo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Vivo_logo.svg/1024px-Vivo_logo.svg.png',
+      'google': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png',
+      'huawei': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Huawei.svg/1280px-Huawei.svg.png',
+      'motorola': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Motorola_logo.svg/2560px-Motorola_logo.svg.png',
+      'realme': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Realme_logo.svg/2560px-Realme_logo.svg.png',
+      'nokia': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Nokia_wordmark.svg/1280px-Nokia_wordmark.svg.png',
+      'sony': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Sony_logo.svg/2560px-Sony_logo.svg.png',
+      'asus': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/ASUS_Logo.svg/2560px-ASUS_Logo.svg.png',
+      'htc': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/HTC_logo.svg/1024px-HTC_logo.svg.png',
+    };
+    
+    // Convert unique brands to CategoryItem objects
+    List<CategoryItem> brandItems = [];
+    
+    for (var brand in uniqueBrands) {
+      String logoUrl = '';
+      
+      // Try to find a matching logo
+      for (var key in brandLogos.keys) {
+        if (brand.toLowerCase().contains(key)) {
+          logoUrl = brandLogos[key]!;
+          break;
+        }
+      }
+      
+      // Use default logo if no match found
+      if (logoUrl.isEmpty) {
+        logoUrl = 'https://via.placeholder.com/200x100?text=${brand.toUpperCase()}';
+      }
+      
+      brandItems.add(
+        CategoryItem(
+          id: brand,
+          title: brand.substring(0, 1).toUpperCase() + brand.substring(1),
+          imageUrl: logoUrl,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CategoryPage(
+                  category: CategoryItem(
+                    id: brand,
+                    title: brand.substring(0, 1).toUpperCase() + brand.substring(1),
+                    imageUrl: logoUrl,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+    
+    return brandItems;
+  }
+  
+  // Fallback method to provide brand items if API data is unavailable
+  List<CategoryItem> _getFallbackBrandItems(BuildContext context) {
+    return [
+      CategoryItem(
+        id: 'samsung',
+        title: 'Samsung',
+        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
+        onTap: () {
+          Navigator.push(
+            context, 
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'samsung',
+                  title: 'Samsung',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'apple',
+        title: 'Apple',
+        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
+        onTap: () {
+          Navigator.push(
+            context, 
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'apple',
+                  title: 'Apple',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'xiaomi',
+        title: 'Xiaomi',
+        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
+        onTap: () {
+          Navigator.push(
+            context, 
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'xiaomi',
+                  title: 'Xiaomi',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      CategoryItem(
+        id: 'oneplus',
+        title: 'OnePlus',
+        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
+        onTap: () {
+          Navigator.push(
+            context, 
+            MaterialPageRoute(
+              builder: (context) => CategoryPage(
+                category: CategoryItem(
+                  id: 'oneplus',
+                  title: 'OnePlus',
+                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+  }
+
   SuggestionItem _convertProductToSuggestionItem(Product product, String heroTagPrefix) {
     return SuggestionItem(
       id: product.id,
@@ -129,170 +397,34 @@ class _HomePageState extends State<HomePage> {
     
     return randomProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
   }
-
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
-    final categories = CategoryData.getSampleCategories(context);
+    // Generate dynamic categories and brands from product data
+    final categories = _allProducts.isNotEmpty 
+        ? _getDynamicCategories(context) 
+        : CategoryData.getSampleCategories(context);
 
-    // Define mobile brands with navigation to CategoryPage
-    final mobileBrands = [
-      CategoryItem(
-        id: 'samsung',
-        title: 'Samsung',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategoryPage(
-                category: CategoryItem(
-                  id: 'samsung',
-                  title: 'Samsung',
-                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png',
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'apple',
-        title: 'Apple',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategoryPage(
-                category: CategoryItem(
-                  id: 'apple',
-                  title: 'Apple',
-                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png',
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'xiaomi',
-        title: 'Xiaomi',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategoryPage(
-                category: CategoryItem(
-                  id: 'xiaomi',
-                  title: 'Xiaomi',
-                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/1024px-Xiaomi_logo_%282021-%29.svg.png',
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'oneplus',
-        title: 'OnePlus',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategoryPage(
-                category: CategoryItem(
-                  id: 'oneplus',
-                  title: 'OnePlus',
-                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Oneplus-logo.jpg/2560px-Oneplus-logo.jpg',
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'oppo',
-        title: 'OPPO',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/2560px-OPPO_LOGO_2019.svg.png',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategoryPage(
-                category: CategoryItem(
-                  id: 'oppo',
-                  title: 'OPPO',
-                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/2560px-OPPO_LOGO_2019.svg.png',
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-      CategoryItem(
-        id: 'vivo',
-        title: 'Vivo',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Vivo_logo.svg/1024px-Vivo_logo.svg.png',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategoryPage(
-                category: CategoryItem(
-                  id: 'vivo',
-                  title: 'Vivo',
-                  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Vivo_logo.svg/1024px-Vivo_logo.svg.png',
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    ];    
-    // Get dynamic product data from API
+    // Generate dynamic mobile brands from product data
+    final mobileBrands = _allProducts.isNotEmpty 
+        ? _getDynamicBrands(context) 
+        : _getFallbackBrandItems(context);
+    
+    // Get dynamic product data from API for different sections
     final trendingProducts = _getRandomProducts(limit: 4, heroTagPrefix: 'trending_now_product');
     final recommendedProducts = _getFeaturedProducts(limit: 4, heroTagPrefix: 'recommended_for_you_product');
-    final topMobiles = _getProductsByCategory('mobiles', limit: 4, heroTagPrefix: 'top_mobiles');
-    final topElectronics = _getProductsByCategory('electronics', limit: 4, heroTagPrefix: 'top_electronics');
     
     // For infinite scroll products - combine all available products
     final moreProducts = List<SuggestionItem>.from(_allProducts.map(
       (product) => _convertProductToSuggestionItem(product, 'infinite_product'),
     ));
 
-    // Modify the category onTap actions to navigate to the CategoryPage
-    for (var i = 0; i < categories.length; i++) {
-      final category = categories[i];
-      categories[i] = CategoryItem(
-        id: category.id,
-        title: category.title,
-        imageUrl: category.imageUrl,
-        icon: category.icon,
-        backgroundColor: category.backgroundColor,
-        iconColor: category.iconColor,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategoryPage(category: category),
-            ),
-          );
-        },
-      );
-    }    return Scaffold(
+    return Scaffold(
       appBar: HomeAppBar(
         cartItemCount: 2,
         onCartPressed: () {
@@ -612,8 +744,62 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               },
-            ),
-            const SizedBox(height: 12),
+            ),            const SizedBox(height: 12),
+            
+            // Display products by category if available
+            if (_allProducts.any((p) => p.category.toLowerCase() == 'mobiles' || 
+                                        p.category.toLowerCase() == 'mobile')) ...[
+              ScrollableSuggestionRow(
+                title: 'Top Mobile Phones',
+                items: _getProductsByCategory('mobiles', limit: 4, heroTagPrefix: 'top_mobiles').isNotEmpty
+                    ? _getProductsByCategory('mobiles', limit: 4, heroTagPrefix: 'top_mobiles')
+                    : _getProductsByCategory('mobile', limit: 4, heroTagPrefix: 'top_mobiles'),
+                itemHeight: 220,
+                itemWidth: 145,
+                showMore: true,
+                onMoreTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryPage(
+                        category: CategoryItem(
+                          id: 'mobiles',
+                          title: 'Mobile Phones',
+                          icon: Icons.smartphone,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+            
+            if (_allProducts.any((p) => p.category.toLowerCase() == 'electronics')) ...[
+              ScrollableSuggestionRow(
+                title: 'Electronics',
+                items: _getProductsByCategory('electronics', limit: 4, heroTagPrefix: 'top_electronics'),
+                itemHeight: 220,
+                itemWidth: 145,
+                showMore: true,
+                onMoreTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryPage(
+                        category: CategoryItem(
+                          id: 'electronics',
+                          title: 'Electronics',
+                          icon: Icons.devices,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+            
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,
@@ -637,7 +823,8 @@ class _HomePageState extends State<HomePage> {
               spacing: 12,
               showShadow: true,
               brandMode: true,
-            ),            const SizedBox(height: 16),
+            ),
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,
@@ -687,6 +874,7 @@ class _HomePageState extends State<HomePage> {
                       ), // Added vertical padding
                       showTitle: false, // We already added the title above
                       loadOnInit: true,
+                      centerLoading: true, // Add this parameter to center align the loading indicator
                     )
                   : const Center(
                       child: Column(
