@@ -500,52 +500,56 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
         return Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.primary,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Loading more products...',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Loading more products...',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
           ),
         );
-        
+
       case LoadingStatus.error:
         return Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 30),
-                const SizedBox(height: 8),
-                const Text('Failed to load more products'),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _retryLoading,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 30),
+                  const SizedBox(height: 8),
+                  const Text('Failed to load more products'),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _retryLoading,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Retry'),
                   ),
-                  child: const Text('Retry'),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
-        
+
       case LoadingStatus.noMoreData:
         return const SizedBox.shrink();
-        
+
       default:
         return const SizedBox(height: 80);
     }
