@@ -384,7 +384,7 @@ class _HomePageState extends State<HomePage> {
 
   List<SuggestionItem> _getFeaturedProducts({int limit = 4, String heroTagPrefix = 'featured'}) {
     final featuredProducts = _allProducts
-        .where((product) => product.featured == true)
+        // .where((product) => product.featured == true)
         .take(limit)
         .toList();
     

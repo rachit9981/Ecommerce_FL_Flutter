@@ -122,24 +122,6 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                           horizontal: isSmallScreen ? 10.0 : 14.0,
                           vertical: 8.0,
                         ),
-                        child: Row(
-                          children: [
-                            Text(
-                              'See All',
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: isSmallScreen ? 12 : 14,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              size: isSmallScreen ? 12 : 14,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),

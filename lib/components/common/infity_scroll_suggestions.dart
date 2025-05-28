@@ -235,7 +235,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                           itemCount: _products.length + (_loadingStatus == LoadingStatus.noMoreData ? 0 : 1),
                           itemBuilder: (context, index) {
                             if (index >= _products.length) {
-                              return _buildLoadMoreIndicator();
+                              return Center(child: _buildLoadMoreIndicator());
                             }
                             
                             return _buildProductItem(_products[index]);
