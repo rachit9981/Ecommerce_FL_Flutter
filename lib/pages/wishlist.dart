@@ -61,13 +61,6 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         backgroundColor: Theme.of(context).primaryColor,
-        action: SnackBarAction(
-          label: 'UNDO',
-          textColor: Colors.white,
-          onPressed: () {
-            // Implement undo logic here
-          },
-        ),
       ),
     );
   }
