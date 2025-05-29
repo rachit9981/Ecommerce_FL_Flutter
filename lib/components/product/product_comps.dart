@@ -704,49 +704,14 @@ class ProductVariantSelector extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               
-              // Handle colors differently
-              if (variantName.toLowerCase() == 'colors')
-                _buildColorOptions(context, variantOptions, selectedValue)
-              else
-                _buildTextOptions(context, variantName, variantOptions, selectedValue),
+              // All variants use the same text-based layout
+              _buildTextOptions(context, variantName, variantOptions, selectedValue),
               
               const SizedBox(height: 20),
             ],
           );
         }).toList(),
       ),
-    );
-  }
-
-  Widget _buildColorOptions(BuildContext context, List<String> colors, String? selectedColor) {
-    return Wrap(
-      spacing: 12,
-      children: colors.map((colorName) {
-        final isSelected = selectedColor == colorName;
-        final color = _getColorFromName(colorName);
-        
-        return GestureDetector(
-          onTap: () => onVariantSelected('colors', colorName),
-          child: Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
-                width: isSelected ? 3 : 1,
-              ),
-            ),
-            child: isSelected
-                ? Icon(
-                    Icons.check,
-                    color: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                  )
-                : null,
-          ),
-        );
-      }).toList(),
     );
   }
 
@@ -771,14 +736,15 @@ class ProductVariantSelector extends StatelessWidget {
                     : Colors.grey.shade300,
                 width: 1.5,
               ),
-            ),            child: Text(
+            ),
+            child: Text(
               option,
               style: TextStyle(
                 color: isSelected ? Colors.white : Colors.black87,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
-              maxLines: 2, // Allow up to 2 lines for longer variant names
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               softWrap: true,
             ),
@@ -786,27 +752,6 @@ class ProductVariantSelector extends StatelessWidget {
         );
       }).toList(),
     );
-  }
-
-  Color _getColorFromName(String colorName) {
-    switch (colorName.toLowerCase()) {
-      case 'black': return Colors.black;
-      case 'white': return Colors.white;
-      case 'red': return Colors.red;
-      case 'blue': return Colors.blue;
-      case 'green': return Colors.green;
-      case 'yellow': return Colors.yellow;
-      case 'purple': return Colors.purple;
-      case 'pink': return Colors.pink;
-      case 'orange': return Colors.orange;
-      case 'grey': case 'gray': return Colors.grey;
-      case 'silver': return Colors.grey.shade300;
-      case 'gold': case 'pink gold': return Colors.amber.shade300;
-      case 'cosmic black': return Colors.black87;
-      case 'urban blue': return Colors.blue.shade800;
-      case 'modernist teal': return Colors.teal;
-      default: return Colors.grey;
-    }
   }
 }
 
@@ -1192,7 +1137,7 @@ class AddToCartSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -1207,7 +1152,6 @@ class AddToCartSection extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Stock status with improved styling
             Row(
               children: [
                 Container(

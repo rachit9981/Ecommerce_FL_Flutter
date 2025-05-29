@@ -471,7 +471,8 @@ class _ProductPageState extends State<ProductPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Product Header Section
-          Padding(
+          Container(
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: ProductHeader(
               title: _product!.name,
@@ -484,16 +485,9 @@ class _ProductPageState extends State<ProductPage>
             ),
           ),
 
-          // Divider
-          Container(
-            height: 1,
-            color: Colors.grey.shade200,
-            margin: const EdgeInsets.symmetric(vertical: 16),
-          ),
-
-          // Product Variants
           if (_product!.variant.isNotEmpty) ...[
-            Padding(
+            Container(
+              width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: ProductVariantSelector(
                 variants: _product!.variant,
@@ -505,11 +499,6 @@ class _ProductPageState extends State<ProductPage>
                 },
               ),
             ),
-            Container(
-              height: 1,
-              color: Colors.grey.shade200,
-              margin: const EdgeInsets.symmetric(vertical: 16),
-            ),
           ],
 
           // Product Description
@@ -520,17 +509,10 @@ class _ProductPageState extends State<ProductPage>
             ),
           ),
 
-          // Specifications Section
           if (_product!.specifications.isNotEmpty) ...[
-            Container(
-              height: 1,
-              color: Colors.grey.shade200,
-              margin: const EdgeInsets.symmetric(vertical: 24),
-            ),
             _buildConnectedSpecifications(),
           ],
 
-          // Features Section
           if (_product!.features.isNotEmpty) ...[
             Container(
               height: 1,
