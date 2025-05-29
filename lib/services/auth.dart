@@ -74,7 +74,7 @@ class AuthService {
       }
 
       final response = await http.post(
-        Uri.parse('$apiUrl/users/login/'),
+        Uri.parse('$apiUrl/users/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(body),
       );
