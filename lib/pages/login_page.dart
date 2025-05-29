@@ -159,16 +159,6 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
                 const SizedBox(height: 20),
-                const DividerWithText(text: 'OR'),
-                const SizedBox(height: 20),
-                SocialLoginButton(
-                  text: 'Continue with Google',
-                  icon: Icons.g_mobiledata,
-                  onPressed: _isLoading ? null : () {
-                    _googleLogin();
-                  },
-                ),
-                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
