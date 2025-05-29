@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ecom/components/login_signup/login_signup_comps.dart';
 import 'package:ecom/pages/signup_page.dart';
 import 'package:ecom/pages/home_page_main.dart';
+import 'package:ecom/services/auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -14,6 +16,8 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -22,12 +26,83 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _login() {
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      // Perform login logic here
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final response = await _authService.login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+
+        _showSuccess(response.message);
+        
+        // Store user data and token in shared preferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', response.token);
+        await prefs.setString('user_id', response.user.userId);
+        await prefs.setString('user_email', response.user.email);
+        await prefs.setString('user_first_name', response.user.firstName);
+        await prefs.setString('user_last_name', response.user.lastName);
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+      } catch (e) {
+        _showError(e.toString().replaceFirst('Exception: ', ''));
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _googleLogin() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // TODO: Implement Google Sign-In to get idToken
+      // final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      // final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+      // final idToken = googleAuth?.idToken;
+      
+      // For now, show a placeholder message
+      _showError('Google Sign-In not implemented yet');
+      
+      // Once implemented:
+      // final response = await _authService.login(idToken: idToken);
+      // _showSuccess(response.message);
+      // Navigate to home page
+    } catch (e) {
+      _showError(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -78,8 +153,10 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
                 CustomButton(
-                  text: 'Login',
-                  onPressed: _login,
+                  text: _isLoading ? 'Logging in...' : 'Login',
+                  onPressed: _isLoading ? null : () {
+                    _login();
+                  },
                 ),
                 const SizedBox(height: 20),
                 const DividerWithText(text: 'OR'),
@@ -87,8 +164,8 @@ class _LoginPageState extends State<LoginPage> {
                 SocialLoginButton(
                   text: 'Continue with Google',
                   icon: Icons.g_mobiledata,
-                  onPressed: () {
-                    // Google login logic
+                  onPressed: _isLoading ? null : () {
+                    _googleLogin();
                   },
                 ),
                 const SizedBox(height: 20),
@@ -97,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const Text("Don't have an account?"),
                     TextButton(
-                      onPressed: () {
+                      onPressed: _isLoading ? null : () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => const SignupPage(),

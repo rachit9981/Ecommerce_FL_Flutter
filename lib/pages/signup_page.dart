@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ecom/components/login_signup/login_signup_comps.dart';
 import 'package:ecom/pages/login_page.dart';
 import 'package:ecom/pages/home_page_main.dart';
+import 'package:ecom/services/auth.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({Key? key}) : super(key: key);
@@ -16,6 +18,8 @@ class _SignupPageState extends State<SignupPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,12 +30,80 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
-  void _signup() {
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  List<String> _splitName(String fullName) {
+    final parts = fullName.trim().split(' ');
+    final firstName = parts.isNotEmpty ? parts[0] : '';
+    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+    return [firstName, lastName];
+  }
+
+  Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
-      // Perform signup logic here
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final nameParts = _splitName(_nameController.text);
+        final firstName = nameParts[0];
+        final lastName = nameParts[1];
+
+        // Validate that we have all required fields
+        if (firstName.isEmpty) {
+          throw Exception('Please enter at least a first name');
+        }
+
+        print('Sending signup data:');
+        print('Email: ${_emailController.text.trim()}');
+        print('Password: ${_passwordController.text.isNotEmpty ? "***" : "empty"}');
+        print('First Name: $firstName');
+        print('Last Name: $lastName');
+
+        final response = await _authService.signup(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          firstName: firstName,
+          lastName: lastName.isEmpty ? ' ' : lastName, // Ensure lastName is not empty
+        );
+
+        _showSuccess(response.message);
+        
+        // Store user data and token in shared preferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', response.token);
+        await prefs.setString('user_id', response.user.userId);
+        await prefs.setString('user_email', response.user.email);
+        await prefs.setString('user_first_name', response.user.firstName);
+        await prefs.setString('user_last_name', response.user.lastName);
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+      } catch (e) {
+        _showError(e.toString().replaceFirst('Exception: ', ''));
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -57,6 +129,9 @@ class _SignupPageState extends State<SignupPage> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your name';
+                    }
+                    if (value.trim().split(' ').isEmpty) {
+                      return 'Please enter at least your first name';
                     }
                     return null;
                   },
@@ -108,17 +183,9 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 const SizedBox(height: 20),
                 CustomButton(
-                  text: 'Sign Up',
-                  onPressed: _signup,
-                ),
-                const SizedBox(height: 20),
-                const DividerWithText(text: 'OR'),
-                const SizedBox(height: 20),
-                SocialLoginButton(
-                  text: 'Continue with Google',
-                  icon: Icons.g_mobiledata_outlined,
-                  onPressed: () {
-                    // Google signup logic
+                  text: _isLoading ? 'Creating Account...' : 'Sign Up',
+                  onPressed: _isLoading ? null : () {
+                    _signup();
                   },
                 ),
                 const SizedBox(height: 20),
@@ -127,7 +194,7 @@ class _SignupPageState extends State<SignupPage> {
                   children: [
                     const Text('Already have an account?'),
                     TextButton(
-                      onPressed: () {
+                      onPressed: _isLoading ? null : () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => const LoginPage(),

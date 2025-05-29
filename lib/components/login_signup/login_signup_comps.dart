@@ -50,7 +50,7 @@ class CustomTextField extends StatelessWidget {
 // Custom button for login, signup, and other actions
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isOutlined;
 
   const CustomButton({
@@ -92,7 +92,7 @@ class CustomButton extends StatelessWidget {
 class SocialLoginButton extends StatelessWidget {
   final String text;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const SocialLoginButton({
     Key? key,
