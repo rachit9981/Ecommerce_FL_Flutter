@@ -1,4 +1,5 @@
 import 'package:ecom/pages/home_page.dart';
+import 'package:ecom/pages/login_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
           secondary: secondaryColor,
         ),
       ),
-      home: HomePageBase(),
+      home: LoginPage(),
     );
   }
 }

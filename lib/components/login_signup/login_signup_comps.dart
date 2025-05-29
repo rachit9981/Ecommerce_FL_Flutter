@@ -108,7 +108,7 @@ class SocialLoginButton extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: OutlinedButton.icon(
         onPressed: onPressed,
-        icon: Icon(icon),
+        icon: Icon(icon, size: 32,),
         label: Text(text),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),

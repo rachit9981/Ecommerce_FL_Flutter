@@ -16,7 +16,6 @@ class _SignupPageState extends State<SignupPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _agreeToTerms = false;
 
   @override
   void dispose() {
@@ -28,16 +27,10 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   void _signup() {
-    if (_formKey.currentState!.validate() && _agreeToTerms) {
+    if (_formKey.currentState!.validate()) {
       // Perform signup logic here
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => HomePage()),
-      );
-    } else if (!_agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please agree to the Terms and Conditions'),
-        ),
       );
     }
   }
@@ -113,36 +106,6 @@ class _SignupPageState extends State<SignupPage> {
                     return null;
                   },
                 ),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _agreeToTerms,
-                      onChanged: (value) {
-                        setState(() {
-                          _agreeToTerms = value ?? false;
-                        });
-                      },
-                      activeColor: Theme.of(context).colorScheme.primary,
-                    ),
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: TextStyle(color: Colors.grey[700]),
-                          children: [
-                            const TextSpan(text: 'I agree to the '),
-                            TextSpan(
-                              text: 'Terms & Conditions',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 20),
                 CustomButton(
                   text: 'Sign Up',
@@ -153,16 +116,9 @@ class _SignupPageState extends State<SignupPage> {
                 const SizedBox(height: 20),
                 SocialLoginButton(
                   text: 'Continue with Google',
-                  icon: Icons.g_mobiledata,
+                  icon: Icons.g_mobiledata_outlined,
                   onPressed: () {
                     // Google signup logic
-                  },
-                ),
-                SocialLoginButton(
-                  text: 'Continue with Facebook',
-                  icon: Icons.facebook,
-                  onPressed: () {
-                    // Facebook signup logic
                   },
                 ),
                 const SizedBox(height: 20),

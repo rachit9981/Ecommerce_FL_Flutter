@@ -14,7 +14,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _rememberMe = false;
 
   @override
   void dispose() {
@@ -77,37 +76,7 @@ class _LoginPageState extends State<LoginPage> {
                     return null;
                   },
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              _rememberMe = value ?? false;
-                            });
-                          },
-                          activeColor: Theme.of(context).colorScheme.primary,
-                        ),
-                        const Text('Remember me'),
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // Navigate to forgot password page
-                      },
-                      child: Text(
-                        'Forgot Password?',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 CustomButton(
                   text: 'Login',
                   onPressed: _login,
@@ -120,13 +89,6 @@ class _LoginPageState extends State<LoginPage> {
                   icon: Icons.g_mobiledata,
                   onPressed: () {
                     // Google login logic
-                  },
-                ),
-                SocialLoginButton(
-                  text: 'Continue with Facebook',
-                  icon: Icons.facebook,
-                  onPressed: () {
-                    // Facebook login logic
                   },
                 ),
                 const SizedBox(height: 20),
