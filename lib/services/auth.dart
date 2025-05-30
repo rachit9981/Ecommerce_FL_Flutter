@@ -116,18 +116,27 @@ class AuthService {
   Future<void> logout({BuildContext? context}) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.remove('token');
-      await prefs.remove('user_id');
-      await prefs.remove('user_email');
-      await prefs.remove('user_first_name');
-      await prefs.remove('user_last_name');
+      
+      // Remove all stored user data
+      await Future.wait([
+        prefs.remove('token'),
+        prefs.remove('user_id'),
+        prefs.remove('user_email'),
+        prefs.remove('user_first_name'),
+        prefs.remove('user_last_name'),
+        prefs.remove('user_phone_number'),
+      ]);
       
       // Clear user data from provider if context is provided
       if (context != null) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         userProvider.clearUserData();
+        userProvider.setAuthenticationState(false);
       }
+      
+      print('User successfully logged out');
     } catch (e) {
+      print('Error during logout: $e');
       throw Exception('Failed to logout: $e');
     }
   }
@@ -208,22 +217,40 @@ class AuthService {
     }
   }
 
+  // Enhanced method to check authentication status
   Future<bool> isLoggedIn() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('token');
-      return token != null && token.isNotEmpty;
+      String? userId = prefs.getString('user_id');
+      
+      // Check if both token and user ID exist
+      return token != null && token.isNotEmpty && userId != null && userId.isNotEmpty;
     } catch (e) {
+      print('Error checking login status: $e');
       return false;
     }
   }
 
-  Future<String?> getToken() async {
+  // Method to clear all user data (used for complete logout)
+  Future<void> clearAllUserData() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      return prefs.getString('token');
+      
+      // Get all keys that start with 'user_' or are 'token'
+      final keysToRemove = prefs.getKeys().where((key) => 
+        key.startsWith('user_') || key == 'token'
+      ).toList();
+      
+      // Remove all user-related data
+      for (String key in keysToRemove) {
+        await prefs.remove(key);
+      }
+      
+      print('All user data cleared from SharedPreferences');
     } catch (e) {
-      return null;
+      print('Error clearing user data: $e');
+      throw Exception('Failed to clear user data: $e');
     }
   }
 

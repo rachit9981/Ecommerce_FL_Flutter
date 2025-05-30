@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/user.dart';
+import '../services/auth.dart';
 import 'orders.dart';
 import 'wishlist.dart';
+import 'edit_profile.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -13,6 +15,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final AuthService _authService = AuthService();
+  
   @override
   void initState() {
     super.initState();
@@ -341,7 +345,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Text('Complete your profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orange.shade700)),
             const SizedBox(height: 4),
             TextButton(
-              onPressed: () => _showEditProfileDialog(context),
+              onPressed: () => _navigateToEditProfile(),
               child: Text('Add name and details'),
             ),
           ] else ...[
@@ -388,7 +392,7 @@ class _ProfilePageState extends State<ProfilePage> {
           label: 'Phone Number',
           value: profile?.phoneNumber ?? 'Not provided',
           hasValue: profile?.phoneNumber != null,
-          onTap: () => _showEditProfileDialog(context),
+          onTap: () => _navigateToEditProfile(),
           primaryColor: primaryColor,
         ),
         const SizedBox(height: 12),
@@ -399,7 +403,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ? '${defaultAddress.streetAddress}, ${defaultAddress.city}'
               : 'No address added',
           hasValue: defaultAddress != null,
-          onTap: () => _showAddAddressDialog(context),
+          onTap: () => _navigateToEditProfile(initialTab: 1),
           primaryColor: primaryColor,
         ),
         const SizedBox(height: 12),
@@ -408,7 +412,7 @@ class _ProfilePageState extends State<ProfilePage> {
           label: 'Pincode',
           value: defaultAddress?.postalCode ?? 'Not provided',
           hasValue: defaultAddress?.postalCode != null,
-          onTap: () => _showAddAddressDialog(context),
+          onTap: () => _navigateToEditProfile(initialTab: 1),
           primaryColor: primaryColor,
         ),
       ],
@@ -457,47 +461,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showEditProfileDialog(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final profile = userProvider.userProfile;
-    
-    final firstNameController = TextEditingController(text: profile?.firstName ?? '');
-    final lastNameController = TextEditingController(text: profile?.lastName ?? '');
-    final phoneController = TextEditingController(text: profile?.phoneNumber ?? '');
-
+  void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Edit Profile'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        title: Row(
           children: [
-            TextField(
-              controller: firstNameController,
-              decoration: InputDecoration(
-                labelText: 'First Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: lastNameController,
-              decoration: InputDecoration(
-                labelText: 'Last Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: phoneController,
-              decoration: InputDecoration(
-                labelText: 'Phone Number',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.phone,
-            ),
+            Icon(Icons.logout, color: Colors.red.shade600),
+            const SizedBox(width: 8),
+            Text('Logout'),
           ],
         ),
+        content: Text('Are you sure you want to logout? You will need to login again to access your account.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -505,60 +480,8 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final success = await userProvider.updateProfile(
-                firstName: firstNameController.text.trim().isNotEmpty ? firstNameController.text.trim() : null,
-                lastName: lastNameController.text.trim().isNotEmpty ? lastNameController.text.trim() : null,
-                phoneNumber: phoneController.text.trim().isNotEmpty ? phoneController.text.trim() : null,
-              );
-              
-              Navigator.pop(context);
-              
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Profile updated successfully!')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed to update profile'), backgroundColor: Colors.red),
-                );
-              }
-            },
-            child: Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddAddressDialog(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Address management feature coming soon!'),
-        action: SnackBarAction(
-          label: 'OK',
-          onPressed: () {},
-        ),
-      ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Logout'),
-        content: Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final userProvider = Provider.of<UserProvider>(context, listen: false);
-              userProvider.clearUserData();
-              Navigator.pop(context);
-              // Navigate to login screen
+              Navigator.pop(context); // Close dialog first
+              await _performLogout();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text('Logout', style: TextStyle(color: Colors.white)),
@@ -567,6 +490,113 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  Future<void> _performLogout() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text('Logging out...'),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Perform logout through AuthService
+      await _authService.logout(context: context);
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('Logged out successfully'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate to login screen or home
+      // You can replace this with your actual login/welcome screen navigation
+      _navigateToLoginScreen();
+
+    } catch (e) {
+      // Close loading dialog if it's still open
+      Navigator.pop(context);
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Logout failed: ${e.toString()}')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _navigateToLoginScreen() {
+    // Replace with your actual navigation logic
+    // For now, we'll just show a snackbar indicating where to navigate
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Please navigate to login screen'),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {},
+        ),
+      ),
+    );
+    
+    // Example navigation (uncomment and modify as needed):
+    // Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    // or
+    // Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginPage()));
+  }
+
+  void _navigateToEditProfile({int initialTab = 0}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditProfilePage(),
+      ),
+    ).then((_) {
+      // Refresh user data when returning from edit profile
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.refreshUserData();
+    });
+  }
+
+  // Remove the old dialog methods
+  // void _showEditProfileDialog(BuildContext context) { ... }
+  // void _showAddAddressDialog(BuildContext context) { ... }
 }
 
 /// Simplified information tile without animations

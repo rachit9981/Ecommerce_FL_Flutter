@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ecom/components/login_signup/login_signup_comps.dart';
 import 'package:ecom/pages/signup_page.dart';
-import 'package:ecom/pages/home_page_main.dart';
+import 'package:ecom/pages/home_page.dart';
 import 'package:ecom/services/auth.dart';
 
 class LoginPage extends StatefulWidget {
@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('user_last_name', response.user.lastName);
 
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => HomePageBase()),
         );
       } catch (e) {
         _showError(e.toString().replaceFirst('Exception: ', ''));
@@ -76,33 +76,6 @@ class _LoginPageState extends State<LoginPage> {
           _isLoading = false;
         });
       }
-    }
-  }
-
-  Future<void> _googleLogin() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // TODO: Implement Google Sign-In to get idToken
-      // final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      // final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-      // final idToken = googleAuth?.idToken;
-      
-      // For now, show a placeholder message
-      _showError('Google Sign-In not implemented yet');
-      
-      // Once implemented:
-      // final response = await _authService.login(idToken: idToken);
-      // _showSuccess(response.message);
-      // Navigate to home page
-    } catch (e) {
-      _showError(e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 

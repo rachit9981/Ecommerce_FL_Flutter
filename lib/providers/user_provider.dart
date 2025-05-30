@@ -277,9 +277,11 @@ class UserProvider with ChangeNotifier {
     _profileError = null;
     _addressError = null;
     _isAuthenticated = false;
+    
+    print('UserProvider: All user data cleared');
     notifyListeners();
   }
-  
+
   // Clear errors
   void clearProfileError() {
     _profileError = null;
@@ -290,6 +292,26 @@ class UserProvider with ChangeNotifier {
     _addressError = null;
     notifyListeners();
   }
+
+  // Method to force authentication state (useful for logout)
+  void setAuthenticationState(bool isAuth) {
+    _isAuthenticated = isAuth;
+    
+    if (!isAuth) {
+      // If setting to unauthenticated, clear all data
+      _userProfile = null;
+      _addresses = [];
+      _defaultAddress = null;
+      _profileError = 'User not authenticated';
+      _addressError = 'User not authenticated';
+    }
+    
+    print('UserProvider: Authentication state set to $isAuth');
+    notifyListeners();
+  }
+
+  // Method to check if we have any user data
+  bool get hasUserData => _userProfile != null || _addresses.isNotEmpty;
   
   // Check if user has addresses
   bool get hasAddresses => _addresses.isNotEmpty;
@@ -339,12 +361,6 @@ class UserProvider with ChangeNotifier {
   void setUserProfile(UserProfile profile) {
     _userProfile = profile;
     _isAuthenticated = true;
-    notifyListeners();
-  }
-  
-  // Method to set authentication state
-  void setAuthenticationState(bool isAuth) {
-    _isAuthenticated = isAuth;
     notifyListeners();
   }
 }
