@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../services/user.dart';
 import 'orders.dart';
 import 'wishlist.dart';
 
-class ProfilePage extends StatelessWidget {
-  final String email;
-  final String phoneNumber;
-  final String address;
-  final int pincode;
-  final String firstName;
-  final String lastName;
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({Key? key}) : super(key: key);
 
-  const ProfilePage({
-    Key? key,
-    this.email = 'john.doe@example.com',
-    this.phoneNumber = '+91 9876543210',
-    this.address = '123, Main Street, Mumbai',
-    this.pincode = 400001,
-    this.firstName = 'John',
-    this.lastName = 'Doe',
-  }) : super(key: key);
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize user data when page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.userProfile == null && userProvider.isAuthenticated) {
+        userProvider.initializeUserData();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,248 +32,536 @@ class ProfilePage extends StatelessWidget {
     final secondaryColor = theme.colorScheme.secondary;
     
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // Stylish app bar with gradient
-          SliverAppBar(
-            expandedHeight: 180.0,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              centerTitle: true,
-              title: Text(
-                'My Profile',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      primaryColor,
-                      secondaryColor,
-                    ],
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Decorative background elements
-                    Positioned(
-                      top: -20,
-                      left: -20,
-                      child: Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: -50,
-                      right: -30,
-                      child: Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          
-          // Profile content
-          SliverToBoxAdapter(
-            child: Container(
-              // Reduced negative transform to prevent overlapping
-              transform: Matrix4.translationValues(0, -20, 0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-              ),
-              child: Padding(
-                // Added top padding to push content down
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                child: Column(
-                  children: [
-                    // Removed the negative transform offset and replaced with normal padding
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: primaryColor.withOpacity(0.2),
-                              blurRadius: 10,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              '$firstName $lastName',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.email_outlined,
-                                  size: 16,
-                                  color: primaryColor,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  email,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade700,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Contact Information",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _ProfileInfoTile(
-                      icon: Icons.phone_android,
-                      label: 'Phone Number',
-                      value: phoneNumber,
-                      primaryColor: primaryColor,
-                    ),
-                    const SizedBox(height: 12),
-                    _ProfileInfoTile(
-                      icon: Icons.location_on_outlined,
-                      label: 'Address',
-                      value: address,
-                      primaryColor: primaryColor,
-                    ),
-                    const SizedBox(height: 12),
-                    _ProfileInfoTile(
-                      icon: Icons.pin_drop_outlined,
-                      label: 'Pincode',
-                      value: pincode.toString(),
-                      primaryColor: primaryColor,
-                    ),
-                    const SizedBox(height: 32),
+      body: Consumer<UserProvider>(
+        builder: (context, userProvider, child) {
+          // Check if user is not authenticated
+          if (!userProvider.isAuthenticated && 
+              userProvider.userProfile == null && 
+              !userProvider.isProfileLoading &&
+              (userProvider.profileError?.contains('Authentication failed') == true ||
+               userProvider.profileError?.contains('No authentication token found') == true)) {
+            return _buildAuthRequiredState(primaryColor, secondaryColor);
+          }
 
-                    // Activity section
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4, bottom: 12),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "My Activity",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
+          // Show loading state
+          if (userProvider.isProfileLoading && userProvider.userProfile == null) {
+            return _buildLoadingState(primaryColor, secondaryColor);
+          }
+
+          // Show error state
+          if (userProvider.profileError != null && userProvider.userProfile == null) {
+            return _buildErrorState(userProvider, primaryColor, secondaryColor);
+          }
+
+          final profile = userProvider.userProfile;
+          final defaultAddress = userProvider.defaultAddress;
+
+          return CustomScrollView(
+            slivers: [
+              // Stylish app bar with gradient
+              SliverAppBar(
+                expandedHeight: 180.0,
+                floating: false,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: true,
+                  title: Text(
+                    'My Profile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [primaryColor, secondaryColor],
                       ),
                     ),
-                    
-                    // Orders and Wishlist buttons
-                    Row(
+                    child: Stack(
                       children: [
-                        Expanded(
-                          child: _ActivityButton(
-                            onTap: () {
-                              // Navigate to Orders page
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const OrdersPage(),
-                                ),
-                              );
-                            },
-                            icon: Icons.shopping_bag_outlined,
-                            label: 'My Orders',
-                            description: '5 orders placed',
-                            color: primaryColor,
+                        // Decorative background elements
+                        Positioned(
+                          top: -20,
+                          left: -20,
+                          child: Container(
+                            width: 150,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _ActivityButton(
-                            onTap: () {
-                              // Navigate to Wishlist page
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const WishlistPage(),
-                                ),
-                              );
-                            },
-                            icon: Icons.favorite_border,
-                            label: 'Wishlist',
-                            description: '12 items saved',
-                            color: secondaryColor,
+                        Positioned(
+                          bottom: -50,
+                          right: -30,
+                          child: Container(
+                            width: 180,
+                            height: 180,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    
-                    const SizedBox(height: 20),
-                    
-                    // Logout button
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO: Implement logout
-                      },
-                      icon: Icon(Icons.exit_to_app),
-                      label: Text('Logout'),
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                        foregroundColor: Colors.red.shade600,
-                        side: BorderSide(color: Colors.red.shade200),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
+                  ),
+                ),
+              ),
+              
+              // Profile content
+              SliverToBoxAdapter(
+                child: Container(
+                  // Reduced negative transform to prevent overlapping
+                  transform: Matrix4.translationValues(0, -20, 0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                  ),
+                  child: Padding(
+                    // Added top padding to push content down
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                    child: Column(
+                      children: [
+                        // User profile header
+                        _buildProfileHeader(profile, primaryColor),
+                        const SizedBox(height: 24),
+                        
+                        // Contact Information section
+                        _buildSectionHeader('Contact Information'),
+                        const SizedBox(height: 12),
+                        _buildContactInfo(profile, defaultAddress, primaryColor),
+                        const SizedBox(height: 32),
+
+                        // Activity section
+                        _buildSectionHeader('My Activity'),
+                        const SizedBox(height: 12),
+                        _buildActivityButtons(context, primaryColor, secondaryColor),
+                        const SizedBox(height: 20),
+                        
+                        // Logout button
+                        _buildLogoutButton(),
+                      ],
                     ),
-                  ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAuthRequiredState(Color primaryColor, Color secondaryColor) {
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          expandedHeight: 180.0,
+          floating: false,
+          pinned: true,
+          flexibleSpace: FlexibleSpaceBar(
+            centerTitle: true,
+            title: Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            background: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [primaryColor, secondaryColor],
                 ),
               ),
             ),
+          ),
+        ),
+        SliverFillRemaining(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.login, size: 64, color: primaryColor),
+                  const SizedBox(height: 16),
+                  Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('Please login to view your profile', style: TextStyle(color: Colors.grey.shade600), textAlign: TextAlign.center),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Navigate to login screen
+                      // You can implement navigation to login screen here
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Please navigate to login screen')),
+                      );
+                    },
+                    child: Text('Login'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingState(Color primaryColor, Color secondaryColor) {
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          expandedHeight: 180.0,
+          floating: false,
+          pinned: true,
+          flexibleSpace: FlexibleSpaceBar(
+            centerTitle: true,
+            title: Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            background: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [primaryColor, secondaryColor],
+                ),
+              ),
+            ),
+          ),
+        ),
+        SliverFillRemaining(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: primaryColor),
+                const SizedBox(height: 16),
+                Text('Loading profile...', style: TextStyle(color: Colors.grey.shade600)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorState(UserProvider userProvider, Color primaryColor, Color secondaryColor) {
+    final isAuthError = userProvider.profileError?.contains('Authentication failed') == true ||
+                       userProvider.profileError?.contains('No authentication token found') == true;
+    
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          expandedHeight: 180.0,
+          floating: false,
+          pinned: true,
+          flexibleSpace: FlexibleSpaceBar(
+            centerTitle: true,
+            title: Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            background: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [primaryColor, secondaryColor],
+                ),
+              ),
+            ),
+          ),
+        ),
+        SliverFillRemaining(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isAuthError ? Icons.login : Icons.error_outline, 
+                    size: 64, 
+                    color: isAuthError ? primaryColor : Colors.red.shade400
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isAuthError ? 'Authentication Required' : 'Failed to load profile', 
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isAuthError ? 'Please login to continue' : (userProvider.profileError ?? 'Unknown error'), 
+                    style: TextStyle(color: Colors.grey.shade600), 
+                    textAlign: TextAlign.center
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: isAuthError 
+                      ? () {
+                          // Navigate to login screen
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Please navigate to login screen')),
+                          );
+                        }
+                      : () => userProvider.fetchProfile(),
+                    child: Text(isAuthError ? 'Login' : 'Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileHeader(UserProfile? profile, Color primaryColor) {
+    final hasCompleteProfile = profile?.firstName != null && profile?.lastName != null;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.2),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          if (!hasCompleteProfile) ...[
+            Icon(Icons.account_circle_outlined, size: 48, color: Colors.grey.shade400),
+            const SizedBox(height: 8),
+            Text('Complete your profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orange.shade700)),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () => _showEditProfileDialog(context),
+              child: Text('Add name and details'),
+            ),
+          ] else ...[
+            Text(
+              profile!.fullName,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+            const SizedBox(height: 4),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.email_outlined, size: 16, color: primaryColor),
+              const SizedBox(width: 6),
+              Text(
+                profile?.email ?? 'No email',
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 15),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactInfo(UserProfile? profile, Address? defaultAddress, Color primaryColor) {
+    return Column(
+      children: [
+        _ProfileInfoTile(
+          icon: Icons.phone_android,
+          label: 'Phone Number',
+          value: profile?.phoneNumber ?? 'Not provided',
+          hasValue: profile?.phoneNumber != null,
+          onTap: () => _showEditProfileDialog(context),
+          primaryColor: primaryColor,
+        ),
+        const SizedBox(height: 12),
+        _ProfileInfoTile(
+          icon: Icons.location_on_outlined,
+          label: 'Address',
+          value: defaultAddress != null 
+              ? '${defaultAddress.streetAddress}, ${defaultAddress.city}'
+              : 'No address added',
+          hasValue: defaultAddress != null,
+          onTap: () => _showAddAddressDialog(context),
+          primaryColor: primaryColor,
+        ),
+        const SizedBox(height: 12),
+        _ProfileInfoTile(
+          icon: Icons.pin_drop_outlined,
+          label: 'Pincode',
+          value: defaultAddress?.postalCode ?? 'Not provided',
+          hasValue: defaultAddress?.postalCode != null,
+          onTap: () => _showAddAddressDialog(context),
+          primaryColor: primaryColor,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityButtons(BuildContext context, Color primaryColor, Color secondaryColor) {
+    return Row(
+      children: [
+        Expanded(
+          child: _ActivityButton(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OrdersPage())),
+            icon: Icons.shopping_bag_outlined,
+            label: 'My Orders',
+            description: '5 orders placed',
+            color: primaryColor,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _ActivityButton(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const WishlistPage())),
+            icon: Icons.favorite_border,
+            label: 'Wishlist',
+            description: '12 items saved',
+            color: secondaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return OutlinedButton.icon(
+      onPressed: () {
+        _showLogoutDialog(context);
+      },
+      icon: Icon(Icons.exit_to_app),
+      label: Text('Logout'),
+      style: OutlinedButton.styleFrom(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+        foregroundColor: Colors.red.shade600,
+        side: BorderSide(color: Colors.red.shade200),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final profile = userProvider.userProfile;
+    
+    final firstNameController = TextEditingController(text: profile?.firstName ?? '');
+    final lastNameController = TextEditingController(text: profile?.lastName ?? '');
+    final phoneController = TextEditingController(text: profile?.phoneNumber ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Profile'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: firstNameController,
+              decoration: InputDecoration(
+                labelText: 'First Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: lastNameController,
+              decoration: InputDecoration(
+                labelText: 'Last Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              decoration: InputDecoration(
+                labelText: 'Phone Number',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final success = await userProvider.updateProfile(
+                firstName: firstNameController.text.trim().isNotEmpty ? firstNameController.text.trim() : null,
+                lastName: lastNameController.text.trim().isNotEmpty ? lastNameController.text.trim() : null,
+                phoneNumber: phoneController.text.trim().isNotEmpty ? phoneController.text.trim() : null,
+              );
+              
+              Navigator.pop(context);
+              
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Profile updated successfully!')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to update profile'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddAddressDialog(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Address management feature coming soon!'),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Logout'),
+        content: Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final userProvider = Provider.of<UserProvider>(context, listen: false);
+              userProvider.clearUserData();
+              Navigator.pop(context);
+              // Navigate to login screen
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -281,6 +574,8 @@ class _ProfileInfoTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final bool hasValue;
+  final VoidCallback onTap;
   final Color primaryColor;
 
   const _ProfileInfoTile({
@@ -288,69 +583,90 @@ class _ProfileInfoTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.hasValue,
+    required this.onTap,
     required this.primaryColor,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 12,
-            spreadRadius: 2,
-            offset: const Offset(0, 3),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 12,
+              spreadRadius: 2,
+              offset: const Offset(0, 3),
+            ),
+          ],
+          border: Border.all(
+            color: hasValue ? Colors.grey.shade100 : Colors.orange.shade200,
+            width: hasValue ? 1 : 2,
           ),
-        ],
-        border: Border.all(
-          color: Colors.grey.shade100,
-          width: 1,
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: (hasValue ? primaryColor : Colors.orange).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: hasValue ? primaryColor : Colors.orange, size: 22),
             ),
-            child: Icon(icon, color: primaryColor, size: 22),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      if (!hasValue) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
+                      ],
+                    ],
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: hasValue ? Colors.black87 : Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                  if (!hasValue)
+                    Text(
+                      'Tap to add',
+                      style: TextStyle(
+                        color: Colors.orange.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          Icon(
-            Icons.arrow_forward_ios,
-            color: Colors.grey.shade400,
-            size: 16,
-          ),
-        ],
+            Icon(
+              hasValue ? Icons.edit : Icons.add,
+              color: hasValue ? Colors.grey.shade400 : Colors.orange,
+              size: 16,
+            ),
+          ],
+        ),
       ),
     );
   }

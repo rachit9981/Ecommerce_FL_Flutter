@@ -31,14 +31,7 @@ class _HomePageBaseState extends State<HomePageBase> {
           
           // Profile page
           _selectedIndex == 2 
-              ? const ProfilePage(
-                  email: 'user@example.com',
-                  phoneNumber: '+91 9876543210',
-                  address: '123 Main Street, Mumbai',
-                  pincode: 400001,
-                  firstName: 'Anubhav',
-                  lastName: 'Choubey',
-                ) 
+              ? const ProfilePage()
               : const SizedBox.shrink(),
         ],
       ),

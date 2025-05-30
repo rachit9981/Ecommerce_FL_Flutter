@@ -15,6 +15,9 @@ class UserProvider with ChangeNotifier {
   String? _addressError;
   Address? _defaultAddress;
   
+  // Authentication state
+  bool _isAuthenticated = false;
+  
   // Getters for Profile
   UserProfile? get userProfile => _userProfile;
   bool get isProfileLoading => _isProfileLoading;
@@ -26,6 +29,9 @@ class UserProvider with ChangeNotifier {
   String? get addressError => _addressError;
   Address? get defaultAddress => _defaultAddress;
   
+  // Authentication getter
+  bool get isAuthenticated => _isAuthenticated;
+  
   // Profile Methods
   Future<void> fetchProfile() async {
     _isProfileLoading = true;
@@ -35,9 +41,17 @@ class UserProvider with ChangeNotifier {
     try {
       _userProfile = await _userService.getProfile();
       _profileError = null;
+      _isAuthenticated = true;
     } catch (e) {
       _profileError = e.toString();
       _userProfile = null;
+      
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication failed') || 
+          e.toString().contains('No authentication token found')) {
+        _isAuthenticated = false;
+        _handleAuthenticationFailure();
+      }
     } finally {
       _isProfileLoading = false;
       notifyListeners();
@@ -66,10 +80,19 @@ class UserProvider with ChangeNotifier {
         confirmNewPassword: confirmNewPassword,
       );
       _profileError = null;
+      _isAuthenticated = true;
       notifyListeners();
       return true;
     } catch (e) {
       _profileError = e.toString();
+      
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication failed') || 
+          e.toString().contains('No authentication token found')) {
+        _isAuthenticated = false;
+        _handleAuthenticationFailure();
+      }
+      
       _isProfileLoading = false;
       notifyListeners();
       return false;
@@ -88,9 +111,17 @@ class UserProvider with ChangeNotifier {
       _addresses = await _userService.getAddresses();
       _updateDefaultAddress();
       _addressError = null;
+      _isAuthenticated = true;
     } catch (e) {
       _addressError = e.toString();
       _addresses = [];
+      
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication failed') || 
+          e.toString().contains('No authentication token found')) {
+        _isAuthenticated = false;
+        _handleAuthenticationFailure();
+      }
     } finally {
       _isAddressesLoading = false;
       notifyListeners();
@@ -102,10 +133,19 @@ class UserProvider with ChangeNotifier {
       final newAddress = await _userService.addAddress(address);
       _addresses.add(newAddress);
       _updateDefaultAddress();
+      _isAuthenticated = true;
       notifyListeners();
       return true;
     } catch (e) {
       _addressError = e.toString();
+      
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication failed') || 
+          e.toString().contains('No authentication token found')) {
+        _isAuthenticated = false;
+        _handleAuthenticationFailure();
+      }
+      
       notifyListeners();
       return false;
     }
@@ -118,11 +158,20 @@ class UserProvider with ChangeNotifier {
       if (index != -1) {
         _addresses[index] = updatedAddress;
         _updateDefaultAddress();
+        _isAuthenticated = true;
         notifyListeners();
       }
       return true;
     } catch (e) {
       _addressError = e.toString();
+      
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication failed') || 
+          e.toString().contains('No authentication token found')) {
+        _isAuthenticated = false;
+        _handleAuthenticationFailure();
+      }
+      
       notifyListeners();
       return false;
     }
@@ -134,11 +183,20 @@ class UserProvider with ChangeNotifier {
       if (success) {
         _addresses.removeWhere((addr) => addr.id == addressId);
         _updateDefaultAddress();
+        _isAuthenticated = true;
         notifyListeners();
       }
       return success;
     } catch (e) {
       _addressError = e.toString();
+      
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication failed') || 
+          e.toString().contains('No authentication token found')) {
+        _isAuthenticated = false;
+        _handleAuthenticationFailure();
+      }
+      
       notifyListeners();
       return false;
     }
@@ -157,11 +215,20 @@ class UserProvider with ChangeNotifier {
           }
         }
         _updateDefaultAddress();
+        _isAuthenticated = true;
         notifyListeners();
       }
       return success;
     } catch (e) {
       _addressError = e.toString();
+      
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication failed') || 
+          e.toString().contains('No authentication token found')) {
+        _isAuthenticated = false;
+        _handleAuthenticationFailure();
+      }
+      
       notifyListeners();
       return false;
     }
@@ -174,6 +241,16 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       _defaultAddress = null;
     }
+  }
+  
+  // Handle authentication failure
+  void _handleAuthenticationFailure() {
+    // Clear all user data when authentication fails
+    _userProfile = null;
+    _addresses = [];
+    _defaultAddress = null;
+    _profileError = 'Authentication failed. Please login again.';
+    _addressError = 'Authentication failed. Please login again.';
   }
   
   // Get address by ID
@@ -199,6 +276,7 @@ class UserProvider with ChangeNotifier {
     _isAddressesLoading = false;
     _profileError = null;
     _addressError = null;
+    _isAuthenticated = false;
     notifyListeners();
   }
   
@@ -237,10 +315,19 @@ class UserProvider with ChangeNotifier {
   
   // Initialize user data (call this when user logs in)
   Future<void> initializeUserData() async {
-    await Future.wait([
-      fetchProfile(),
-      fetchAddresses(),
-    ]);
+    // Only initialize if we're authenticated or have stored profile data
+    if (_userProfile != null || _isAuthenticated) {
+      await Future.wait([
+        fetchProfile(),
+        fetchAddresses(),
+      ]);
+    } else {
+      // Try to fetch profile first to check authentication
+      await fetchProfile();
+      if (_isAuthenticated && _userProfile != null) {
+        await fetchAddresses();
+      }
+    }
   }
   
   // Refresh all user data
@@ -251,6 +338,13 @@ class UserProvider with ChangeNotifier {
   // Method to set user profile directly (used by AuthService)
   void setUserProfile(UserProfile profile) {
     _userProfile = profile;
+    _isAuthenticated = true;
+    notifyListeners();
+  }
+  
+  // Method to set authentication state
+  void setAuthenticationState(bool isAuth) {
+    _isAuthenticated = isAuth;
     notifyListeners();
   }
 }

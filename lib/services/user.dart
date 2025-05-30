@@ -1,18 +1,44 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
 
 class UserService {
+  // Helper method to get auth headers with token
+  Future<Map<String, String>> _getAuthHeaders() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+      
+      if (token == null || token.isEmpty) {
+        throw Exception('No authentication token found');
+      }
+      
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+    } catch (e) {
+      throw Exception('Failed to get authentication token: $e');
+    }
+  }
+
   // Address Management Methods
   Future<List<Address>> getAddresses() async {
     try {
-      final response = await http.get(Uri.parse('$apiUrl/users/addresses/'));
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$apiUrl/users/addresses/'),
+        headers: headers,
+      );
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> addressesJson = data['addresses'];
         
         return addressesJson.map((json) => Address.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
       } else {
         throw Exception('Failed to load addresses: ${response.statusCode}');
       }
@@ -23,15 +49,18 @@ class UserService {
 
   Future<Address> addAddress(Address address) async {
     try {
+      final headers = await _getAuthHeaders();
       final response = await http.post(
         Uri.parse('$apiUrl/users/addresses/add/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(address.toJson()),
       );
       
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> data = json.decode(response.body);
         return Address.fromJson(data['address']);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
       } else {
         final errorData = json.decode(response.body);
         throw Exception('Failed to add address: ${errorData['error']}');
@@ -43,15 +72,18 @@ class UserService {
 
   Future<Address> updateAddress(String addressId, Address address) async {
     try {
+      final headers = await _getAuthHeaders();
       final response = await http.put(
         Uri.parse('$apiUrl/users/addresses/update/$addressId/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(address.toJson()),
       );
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         return Address.fromJson(data['address']);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
       } else {
         final errorData = json.decode(response.body);
         throw Exception('Failed to update address: ${errorData['error']}');
@@ -63,12 +95,16 @@ class UserService {
 
   Future<bool> deleteAddress(String addressId) async {
     try {
+      final headers = await _getAuthHeaders();
       final response = await http.delete(
         Uri.parse('$apiUrl/users/addresses/delete/$addressId/'),
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
         return true;
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
       } else {
         final errorData = json.decode(response.body);
         throw Exception('Failed to delete address: ${errorData['error']}');
@@ -80,13 +116,16 @@ class UserService {
 
   Future<bool> setDefaultAddress(String addressId) async {
     try {
+      final headers = await _getAuthHeaders();
       final response = await http.post(
         Uri.parse('$apiUrl/users/addresses/set-default/$addressId/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
         return true;
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
       } else {
         final errorData = json.decode(response.body);
         throw Exception('Failed to set default address: ${errorData['error']}');
@@ -99,11 +138,17 @@ class UserService {
   // Profile Management Methods
   Future<UserProfile> getProfile() async {
     try {
-      final response = await http.get(Uri.parse('$apiUrl/users/profile/'));
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$apiUrl/users/profile/'),
+        headers: headers,
+      );
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         return UserProfile.fromJson(data);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
       } else {
         throw Exception('Failed to load profile: ${response.statusCode}');
       }
@@ -130,15 +175,18 @@ class UserService {
       if (newPassword != null) updateData['new_password'] = newPassword;
       if (confirmNewPassword != null) updateData['confirm_new_password'] = confirmNewPassword;
 
+      final headers = await _getAuthHeaders();
       final response = await http.post(
         Uri.parse('$apiUrl/users/profile/update/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(updateData),
       );
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         return UserProfile.fromJson(data['user']);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
       } else {
         final errorData = json.decode(response.body);
         throw Exception('Failed to update profile: ${errorData['error']}');
