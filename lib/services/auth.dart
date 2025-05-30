@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import '../providers/user_provider.dart';
+import '../services/user.dart';
 import 'config.dart';
 
 class AuthService {
@@ -11,6 +15,7 @@ class AuthService {
     String? lastName,
     String? phoneNumber,
     String? idToken,
+    BuildContext? context,
   }) async {
     try {
       Map<String, dynamic> body = {};
@@ -41,7 +46,15 @@ class AuthService {
       final Map<String, dynamic> data = json.decode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return AuthResponse.fromJson(data);
+        final authResponse = AuthResponse.fromJson(data);
+        await _saveUserData(authResponse);
+        
+        // Initialize user data in provider if context is provided
+        if (context != null) {
+          await _initializeUserProvider(context, authResponse);
+        }
+        
+        return authResponse;
       } else {
         print(data['error']);
         throw Exception(data['error'] ?? 'Signup failed');
@@ -55,6 +68,7 @@ class AuthService {
     String? email,
     String? password,
     String? idToken,
+    BuildContext? context,
   }) async {
     try {
       Map<String, dynamic> body = {};
@@ -82,7 +96,15 @@ class AuthService {
       final Map<String, dynamic> data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return AuthResponse.fromJson(data);
+        final authResponse = AuthResponse.fromJson(data);
+        await _saveUserData(authResponse);
+        
+        // Initialize user data in provider if context is provided
+        if (context != null) {
+          await _initializeUserProvider(context, authResponse);
+        }
+        
+        return authResponse;
       } else {
         throw Exception(data['error'] ?? 'Login failed');
       }
@@ -91,7 +113,7 @@ class AuthService {
     }
   }
 
-  Future<void> logout() async {
+  Future<void> logout({BuildContext? context}) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.remove('token');
@@ -99,8 +121,90 @@ class AuthService {
       await prefs.remove('user_email');
       await prefs.remove('user_first_name');
       await prefs.remove('user_last_name');
+      
+      // Clear user data from provider if context is provided
+      if (context != null) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.clearUserData();
+      }
     } catch (e) {
       throw Exception('Failed to logout: $e');
+    }
+  }
+
+  // Private method to save user data to SharedPreferences
+  Future<void> _saveUserData(AuthResponse authResponse) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', authResponse.token);
+    await prefs.setString('user_id', authResponse.user.userId);
+    await prefs.setString('user_email', authResponse.user.email);
+    await prefs.setString('user_first_name', authResponse.user.firstName);
+    await prefs.setString('user_last_name', authResponse.user.lastName);
+    if (authResponse.user.phoneNumber != null) {
+      await prefs.setString('user_phone_number', authResponse.user.phoneNumber!);
+    }
+  }
+
+  // Private method to initialize user data in UserProvider
+  Future<void> _initializeUserProvider(BuildContext context, AuthResponse authResponse) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      
+      // Create UserProfile from auth response
+      final userProfile = UserProfile(
+        userId: authResponse.user.userId,
+        email: authResponse.user.email,
+        firstName: authResponse.user.firstName,
+        lastName: authResponse.user.lastName,
+        phoneNumber: authResponse.user.phoneNumber,
+        authProvider: 'email', // or determine from response
+        uid: null,
+      );
+      
+      // Set the user profile directly in provider
+      userProvider.setUserProfile(userProfile);
+      
+      // Initialize user data (fetch addresses and complete profile)
+      await userProvider.initializeUserData();
+    } catch (e) {
+      print('Error initializing user provider: $e');
+      // Don't throw error here as auth was successful
+    }
+  }
+
+  // Method to restore user session on app startup
+  Future<void> restoreUserSession(BuildContext context) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+      String? userId = prefs.getString('user_id');
+      String? email = prefs.getString('user_email');
+      String? firstName = prefs.getString('user_first_name');
+      String? lastName = prefs.getString('user_last_name');
+      String? phoneNumber = prefs.getString('user_phone_number');
+      
+      if (token != null && userId != null && email != null && firstName != null && lastName != null) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        
+        // Create UserProfile from stored data
+        final userProfile = UserProfile(
+          userId: userId,
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          phoneNumber: phoneNumber,
+          authProvider: 'email',
+          uid: null,
+        );
+        
+        // Set the user profile in provider
+        userProvider.setUserProfile(userProfile);
+        
+        // Initialize user data
+        await userProvider.initializeUserData();
+      }
+    } catch (e) {
+      print('Error restoring user session: $e');
     }
   }
 

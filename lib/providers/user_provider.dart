@@ -247,4 +247,10 @@ class UserProvider with ChangeNotifier {
   Future<void> refreshUserData() async {
     await initializeUserData();
   }
+  
+  // Method to set user profile directly (used by AuthService)
+  void setUserProfile(UserProfile profile) {
+    _userProfile = profile;
+    notifyListeners();
+  }
 }
