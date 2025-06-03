@@ -3,6 +3,7 @@ import 'package:ecom/components/product/product_comps.dart';
 import 'package:ecom/services/products.dart';
 import 'package:ecom/services/cart_wishlist.dart';
 import 'package:ecom/pages/cart_page.dart';
+import 'package:ecom/pages/wishlist.dart';
 
 class ProductPage extends StatefulWidget {
   final String productId;
@@ -23,6 +24,7 @@ class _ProductPageState extends State<ProductPage>
   Map<String, String> _selectedVariants = {};
   bool _isFavorite = false;
   bool _isAddingToCart = false;
+  bool _isTogglingWishlist = false;
 
   final ProductService _productService = ProductService();
   final CartWishlistService _cartService = CartWishlistService();
@@ -90,6 +92,9 @@ class _ProductPageState extends State<ProductPage>
                     : throw Exception('No products found'),
       );
 
+      // Check if product is in wishlist
+      await _checkWishlistStatus(product.id);
+
       setState(() {
         _product = product;
         _isLoading = false;
@@ -111,6 +116,28 @@ class _ProductPageState extends State<ProductPage>
         _isLoading = false;
         _error = e.toString();
       });
+    }
+  }
+
+  Future<void> _checkWishlistStatus(String productId) async {
+    try {
+      final wishlistItems = await _cartService.getWishlist();
+      final isInWishlist = wishlistItems.any(
+        (item) => item.productId == productId,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isFavorite = isInWishlist;
+        });
+      }
+    } catch (e) {
+      // Silently fail, keep wishlist status as false
+      if (mounted) {
+        setState(() {
+          _isFavorite = false;
+        });
+      }
     }
   }
 
@@ -384,64 +411,42 @@ class _ProductPageState extends State<ProductPage>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
-                    icon: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      transitionBuilder: (child, animation) {
-                        return ScaleTransition(
-                          scale: animation,
-                          child: RotationTransition(
-                            turns: animation,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Icon(
-                        _isFavorite
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        key: ValueKey<bool>(_isFavorite),
-                        color:
-                            _isFavorite
-                                ? Colors.red.shade500
-                                : Colors.grey.shade800,
-                        size: 20,
-                      ),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isFavorite = !_isFavorite;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              Icon(
+                    icon:
+                        _isTogglingWishlist
+                            ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.red.shade300,
+                                ),
+                              ),
+                            )
+                            : AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              transitionBuilder: (child, animation) {
+                                return ScaleTransition(
+                                  scale: animation,
+                                  child: RotationTransition(
+                                    turns: animation,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Icon(
                                 _isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: Colors.white,
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                key: ValueKey<bool>(_isFavorite),
+                                color:
+                                    _isFavorite
+                                        ? Colors.red.shade500
+                                        : Colors.grey.shade800,
                                 size: 20,
                               ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _isFavorite
-                                    ? 'Added to favorites'
-                                    : 'Removed from favorites',
-                              ),
-                            ],
-                          ),
-                          backgroundColor:
-                              _isFavorite
-                                  ? Colors.red.shade400
-                                  : Colors.grey.shade600,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                            ),
+                    onPressed: _toggleWishlist,
                   ),
                 ),
               ],
@@ -450,6 +455,140 @@ class _ProductPageState extends State<ProductPage>
         ),
       ),
     );
+  }
+
+  Future<void> _toggleWishlist() async {
+    if (_product == null || _isTogglingWishlist) return;
+
+    setState(() {
+      _isTogglingWishlist = true;
+    });
+
+    try {
+      if (_isFavorite) {
+        // Get wishlist to find the item ID
+        final wishlistItems = await _cartService.getWishlist();
+        final wishlistItem = wishlistItems.firstWhere(
+          (item) => item.productId == _product!.id,
+          orElse: () => throw Exception('Item not found in wishlist'),
+        );
+
+        // Remove from wishlist
+        await _cartService.removeFromWishlist(wishlistItem.itemId);
+
+        if (mounted) {
+          setState(() {
+            _isFavorite = false;
+            _isTogglingWishlist = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.favorite_border, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Text('Removed from favorites'),
+                ],
+              ),
+              backgroundColor: Colors.grey.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        // Add to wishlist
+        await _cartService.addToWishlist(_product!.id);
+
+        if (mounted) {
+          setState(() {
+            _isFavorite = true;
+            _isTogglingWishlist = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.favorite, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text('Added to favorites')),
+                  TextButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WishlistPage(),
+                        ),
+                      ).then((_) {
+                        // Refresh wishlist status when returning
+                        if (_product != null) {
+                          _checkWishlistStatus(_product!.id);
+                        }
+                      });
+                    },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'VIEW WISHLIST',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.red.shade400,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isTogglingWishlist = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Failed to update favorites: ${e.toString().replaceAll('Exception: ', '')}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildConnectedImageCarousel() {

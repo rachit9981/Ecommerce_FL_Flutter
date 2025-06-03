@@ -16,6 +16,9 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final AuthService _authService = AuthService();
+  bool _isLoadingAddresses = false;
+  List<Address>? _addresses;
+  String? _addressError;
   
   @override
   void initState() {
@@ -26,7 +29,58 @@ class _ProfilePageState extends State<ProfilePage> {
       if (userProvider.userProfile == null && userProvider.isAuthenticated) {
         userProvider.initializeUserData();
       }
+      
+      // Fetch addresses
+      _loadAddresses();
     });
+  }
+
+  Future<void> _loadAddresses() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (!userProvider.isAuthenticated) return;
+    
+    setState(() {
+      _isLoadingAddresses = true;
+      _addressError = null;
+    });
+    
+    try {
+      final userService = UserService();
+      final addresses = await userService.getAddresses();
+      
+      if (mounted) {
+        setState(() {
+          _addresses = addresses;
+          _isLoadingAddresses = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _addressError = e.toString().replaceAll('Exception: ', '');
+          _isLoadingAddresses = false;
+        });
+      }
+    }
+  }
+
+  // Get the default address from the address list
+  Address? get _defaultAddress {
+    if (_addresses == null || _addresses!.isEmpty) return null;
+    
+    // Try to find the default address
+    final defaultAddress = _addresses!.firstWhere(
+      (address) => address.isDefault,
+      orElse: () => _addresses!.first, // Use the first address if no default is set
+    );
+    
+    return defaultAddress;
+  }
+
+  // Count orders (for now using a placeholder, would be fetched from an orders service)
+  int get _orderCount {
+    // This would be replaced with actual order count from API
+    return 0;
   }
 
   @override
@@ -58,104 +112,154 @@ class _ProfilePageState extends State<ProfilePage> {
           }
 
           final profile = userProvider.userProfile;
-          final defaultAddress = userProvider.defaultAddress;
 
-          return CustomScrollView(
-            slivers: [
-              // Stylish app bar with gradient
-              SliverAppBar(
-                expandedHeight: 180.0,
-                floating: false,
-                pinned: true,
-                flexibleSpace: FlexibleSpaceBar(
-                  centerTitle: true,
-                  title: Text(
-                    'My Profile',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [primaryColor, secondaryColor],
+          return RefreshIndicator(
+            onRefresh: () async {
+              userProvider.refreshUserData();
+              await _loadAddresses();
+            },
+            child: CustomScrollView(
+              slivers: [
+                // Stylish app bar with gradient
+                SliverAppBar(
+                  expandedHeight: 180.0,
+                  floating: false,
+                  pinned: true,
+                  flexibleSpace: FlexibleSpaceBar(
+                    centerTitle: true,
+                    title: Text(
+                      'My Profile',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
-                    child: Stack(
-                      children: [
-                        // Decorative background elements
-                        Positioned(
-                          top: -20,
-                          left: -20,
-                          child: Container(
-                            width: 150,
-                            height: 150,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              shape: BoxShape.circle,
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [primaryColor, secondaryColor],
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Decorative background elements
+                          Positioned(
+                            top: -20,
+                            left: -20,
+                            child: Container(
+                              width: 150,
+                              height: 150,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          bottom: -50,
-                          right: -30,
-                          child: Container(
-                            width: 180,
-                            height: 180,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              shape: BoxShape.circle,
+                          Positioned(
+                            bottom: -50,
+                            right: -30,
+                            child: Container(
+                              width: 180,
+                              height: 180,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              
-              // Profile content
-              SliverToBoxAdapter(
-                child: Container(
-                  // Reduced negative transform to prevent overlapping
-                  transform: Matrix4.translationValues(0, -20, 0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  ),
-                  child: Padding(
-                    // Added top padding to push content down
-                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                    child: Column(
-                      children: [
-                        // User profile header
-                        _buildProfileHeader(profile, primaryColor),
-                        const SizedBox(height: 24),
-                        
-                        // Contact Information section
-                        _buildSectionHeader('Contact Information'),
-                        const SizedBox(height: 12),
-                        _buildContactInfo(profile, defaultAddress, primaryColor),
-                        const SizedBox(height: 32),
+                
+                // Profile content
+                SliverToBoxAdapter(
+                  child: Container(
+                    // Reduced negative transform to prevent overlapping
+                    transform: Matrix4.translationValues(0, -20, 0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                    ),
+                    child: Padding(
+                      // Added top padding to push content down
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                      child: Column(
+                        children: [
+                          // User profile header
+                          _buildProfileHeader(profile, primaryColor),
+                          const SizedBox(height: 24),
+                          
+                          // Contact Information section
+                          _buildSectionHeader('Contact Information'),
+                          const SizedBox(height: 12),
+                          
+                          // Show loading indicator while fetching addresses
+                          if (_isLoadingAddresses)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          else if (_addressError != null)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.error_outline, color: Colors.orange, size: 40),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Failed to load addresses',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                                      child: Text(
+                                        _addressError!,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                      ),
+                                    ),
+                                    SizedBox(height: 12),
+                                    TextButton.icon(
+                                      onPressed: _loadAddresses,
+                                      icon: Icon(Icons.refresh),
+                                      label: Text('Retry'),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            _buildContactInfo(profile, _defaultAddress, primaryColor),
+                            
+                          const SizedBox(height: 32),
 
-                        // Activity section
-                        _buildSectionHeader('My Activity'),
-                        const SizedBox(height: 12),
-                        _buildActivityButtons(context, primaryColor, secondaryColor),
-                        const SizedBox(height: 20),
-                        
-                        // Logout button
-                        _buildLogoutButton(),
-                      ],
+                          // Activity section
+                          _buildSectionHeader('My Activity'),
+                          const SizedBox(height: 12),
+                          _buildActivityButtons(context, primaryColor, secondaryColor),
+                          const SizedBox(height: 20),
+                          
+                          // Logout button
+                          _buildLogoutButton(),
+                          
+                          // Bottom padding to ensure all content is visible
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -391,7 +495,7 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: Icons.phone_android,
           label: 'Phone Number',
           value: profile?.phoneNumber ?? 'Not provided',
-          hasValue: profile?.phoneNumber != null,
+          hasValue: profile?.phoneNumber != null && profile!.phoneNumber!.isNotEmpty,
           onTap: () => _navigateToEditProfile(),
           primaryColor: primaryColor,
         ),
@@ -411,7 +515,7 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: Icons.pin_drop_outlined,
           label: 'Pincode',
           value: defaultAddress?.postalCode ?? 'Not provided',
-          hasValue: defaultAddress?.postalCode != null,
+          hasValue: defaultAddress?.postalCode != null && defaultAddress!.postalCode.isNotEmpty,
           onTap: () => _navigateToEditProfile(initialTab: 1),
           primaryColor: primaryColor,
         ),
@@ -427,17 +531,23 @@ class _ProfilePageState extends State<ProfilePage> {
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OrdersPage())),
             icon: Icons.shopping_bag_outlined,
             label: 'My Orders',
-            description: '5 orders placed',
+            description: _orderCount > 0 ? '$_orderCount orders placed' : 'No orders yet',
             color: primaryColor,
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: _ActivityButton(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const WishlistPage())),
+            onTap: () => Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (context) => const WishlistPage())
+            ).then((_) {
+              // Refresh the data when returning from wishlist page
+              Provider.of<UserProvider>(context, listen: false).refreshUserData();
+            }),
             icon: Icons.favorite_border,
             label: 'Wishlist',
-            description: '12 items saved',
+            description: 'View saved items',
             color: secondaryColor,
           ),
         ),
@@ -585,12 +695,16 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditProfilePage(),
+        // Fix the parameter name to match what's defined in EditProfilePage
+        builder: (context) => EditProfilePage(initialTab: initialTab),
       ),
     ).then((_) {
       // Refresh user data when returning from edit profile
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.refreshUserData();
+      
+      // Reload addresses as well
+      _loadAddresses();
     });
   }
 

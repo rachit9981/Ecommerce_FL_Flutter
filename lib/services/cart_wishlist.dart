@@ -92,7 +92,7 @@ class CartWishlistService {
     try {
       final headers = await _getAuthHeaders();
       final response = await http.post(
-        Uri.parse('$apiUrl/wishlist/add/$productId/'),
+        Uri.parse('$apiUrl/users/wishlist/add/$productId/'),
         headers: headers
       );
       
@@ -112,7 +112,7 @@ class CartWishlistService {
     try {
       final headers = await _getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$apiUrl/wishlist/'),
+        Uri.parse('$apiUrl/users/wishlist/'),
         headers: headers
       );
       
@@ -134,7 +134,7 @@ class CartWishlistService {
     try {
       final headers = await _getAuthHeaders();
       final response = await http.delete(
-        Uri.parse('$apiUrl/wishlist/remove/$itemId/'),
+        Uri.parse('$apiUrl/users/wishlist/remove/$itemId/'),
         headers: headers
       );
       
