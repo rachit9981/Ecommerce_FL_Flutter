@@ -23,15 +23,17 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize user data when page loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       if (userProvider.userProfile == null && userProvider.isAuthenticated) {
-        userProvider.initializeUserData();
+        await userProvider.initializeUserData();
+        await Future.delayed(const Duration(milliseconds: 500));
+        // await _refreshUserData();
       }
-      
-      // Fetch addresses
-      _loadAddresses();
+      await _refreshUserData();
+      if (mounted && userProvider.isAuthenticated) {
+        _loadAddresses();
+      }
     });
   }
 
@@ -60,6 +62,13 @@ class _ProfilePageState extends State<ProfilePage> {
           _addressError = e.toString().replaceAll('Exception: ', '');
           _isLoadingAddresses = false;
         });
+        
+        // Auto-retry loading addresses after 3 seconds if there was an error
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted && _addressError != null) {
+            _loadAddresses();
+          }
+        });
       }
     }
   }
@@ -81,6 +90,20 @@ class _ProfilePageState extends State<ProfilePage> {
   int get _orderCount {
     // This would be replaced with actual order count from API
     return 0;
+  }
+
+  // Modify the refresh method to be more reliable
+  Future<void> _refreshUserData() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
+    // First refresh the user profile
+    await userProvider.refreshUserData();
+    
+    // Then refresh addresses with a slight delay to ensure authentication is ready
+    if (mounted) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      await _loadAddresses();
+    }
   }
 
   @override
@@ -114,10 +137,7 @@ class _ProfilePageState extends State<ProfilePage> {
           final profile = userProvider.userProfile;
 
           return RefreshIndicator(
-            onRefresh: () async {
-              userProvider.refreshUserData();
-              await _loadAddresses();
-            },
+            onRefresh: _refreshUserData, // Use our new method instead of chaining
             child: CustomScrollView(
               slivers: [
                 // Stylish app bar with gradient
@@ -695,22 +715,20 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        // Fix the parameter name to match what's defined in EditProfilePage
         builder: (context) => EditProfilePage(initialTab: initialTab),
       ),
-    ).then((_) {
+    ).then((_) async {
       // Refresh user data when returning from edit profile
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.refreshUserData();
+      await userProvider.refreshUserData();
       
-      // Reload addresses as well
+      // Add a small delay before loading addresses
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Then reload addresses
       _loadAddresses();
     });
   }
-
-  // Remove the old dialog methods
-  // void _showEditProfileDialog(BuildContext context) { ... }
-  // void _showAddAddressDialog(BuildContext context) { ... }
 }
 
 /// Simplified information tile without animations
