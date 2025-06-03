@@ -148,6 +148,7 @@ class CartSummary extends StatelessWidget {
   final double discountAmount;
   final double shippingCost;
   final VoidCallback onCheckout;
+  final bool isAddressLoading; // New property for address loading state
 
   const CartSummary({
     Key? key,
@@ -155,6 +156,7 @@ class CartSummary extends StatelessWidget {
     required this.discountAmount,
     required this.shippingCost,
     required this.onCheckout,
+    this.isAddressLoading = false, // Default to false
   }) : super(key: key);
 
   double get subtotal {
@@ -210,12 +212,12 @@ class CartSummary extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           
-          // Checkout button
+          // Checkout button with loading state
           SizedBox(
             width: double.infinity,
             height: 54,
             child: ElevatedButton(
-              onPressed: onCheckout,
+              onPressed: isAddressLoading ? null : onCheckout,
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -223,21 +225,44 @@ class CartSummary extends StatelessWidget {
                 elevation: 2,
                 shadowColor: Theme.of(context).primaryColor.withOpacity(0.4),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Proceed to Checkout',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
+              child: isAddressLoading 
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20, 
+                          height: 20, 
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          'Loading Addresses...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Proceed to Checkout',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.arrow_forward_rounded, size: 18),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(Icons.arrow_forward_rounded, size: 18),
-                ],
-              ),
             ),
           ),
         ],

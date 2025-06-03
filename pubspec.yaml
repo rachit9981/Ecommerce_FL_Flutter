@@ -38,6 +38,7 @@ dependencies:
   http: ^1.2.1
   shared_preferences: ^2.0.15
   provider: ^6.1.5
+  razorpay_flutter: ^1.4.0
   
 dev_dependencies:
   flutter_test:

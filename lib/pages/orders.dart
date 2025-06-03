@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/orders.dart';
+import '../providers/user_provider.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({Key? key}) : super(key: key);
@@ -9,43 +12,12 @@ class OrdersPage extends StatefulWidget {
 
 class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
+  final OrderService _orderService = OrderService();
   
-  // Sample order data - replace with your actual data fetching logic
-  final List<Map<String, dynamic>> _orders = [
-    {
-      'id': 'ORD-1234',
-      'date': '15 May 2023',
-      'total': 178.99,
-      'status': 'Delivered',
-      'statusColor': Colors.green,
-      'items': 3,
-    },
-    {
-      'id': 'ORD-5678',
-      'date': '02 May 2023',
-      'total': 245.50,
-      'status': 'Processing',
-      'statusColor': Colors.orange,
-      'items': 4,
-    },
-    {
-      'id': 'ORD-9012',
-      'date': '28 Apr 2023',
-      'total': 99.99,
-      'status': 'Shipped',
-      'statusColor': Colors.blue,
-      'items': 1,
-    },
-    {
-      'id': 'ORD-3456',
-      'date': '15 Apr 2023',
-      'total': 352.75,
-      'status': 'Cancelled',
-      'statusColor': Colors.red,
-      'items': 5,
-    },
-  ];
-
+  List<Order> _orders = [];
+  bool _isLoading = true;
+  String? _error;
+  
   @override
   void initState() {
     super.initState();
@@ -53,7 +25,36 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _animationController.forward();
+    
+    // Fetch orders when the page initializes
+    _fetchOrders();
+  }
+
+  Future<void> _fetchOrders() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    
+    try {
+      final orders = await _orderService.getUserOrders();
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+          _isLoading = false;
+        });
+        _animationController.forward(from: 0.0);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -62,8 +63,119 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'processing':
+      case 'pending_payment':
+        return Colors.orange;
+      case 'shipped':
+        return Colors.blue;
+      case 'delivered':
+      case 'payment_successful':
+        return Colors.green;
+      case 'cancelled':
+      case 'payment_failed':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getFormattedStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending_payment':
+        return 'Pending Payment';
+      case 'payment_successful':
+        return 'Payment Confirmed';
+      case 'payment_failed':
+        return 'Payment Failed';
+      default:
+        // Capitalize first letter of each word
+        return status.split('_')
+            .map((word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+            .join(' ');
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'processing':
+      case 'pending_payment':
+        return Icons.pending_outlined;
+      case 'shipped':
+        return Icons.local_shipping_outlined;
+      case 'delivered':
+      case 'payment_successful':
+        return Icons.check_circle_outline;
+      case 'cancelled':
+      case 'payment_failed':
+        return Icons.cancel_outlined;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  int _getCurrentStep(String status) {
+    switch (status.toLowerCase()) {
+      case 'processing':
+      case 'pending_payment':
+      case 'payment_successful':
+        return 0;
+      case 'shipped':
+        return 1;
+      case 'delivered':
+        return 2;
+      default:
+        return -1;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final isAuthenticated = userProvider.isAuthenticated;
+    
+    // Check authentication status
+    if (!isAuthenticated) {
+      return Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          title: const Text('My Orders'),
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                size: 80,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Please sign in to view your orders',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/login');
+                },
+                child: const Text('Sign In'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -75,7 +187,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             Text(
-              '${_orders.length} orders',
+              _isLoading ? 'Loading...' : '${_orders.length} orders',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withOpacity(0.8),
@@ -85,11 +197,67 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
           ],
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _isLoading ? null : _fetchOrders,
+            tooltip: 'Refresh Orders',
+          ),
+        ],
       ),
-      body: _orders.isEmpty
-          ? _buildEmptyOrders(context)
-          : _buildOrdersList(context),
+      body: _buildBody(context),
     );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 60,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading orders',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red[800],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Colors.grey[700]),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _fetchOrders,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    if (_orders.isEmpty) {
+      return _buildEmptyOrders(context);
+    }
+    
+    return _buildOrdersList(context);
   }
 
   Widget _buildEmptyOrders(BuildContext context) {
@@ -171,28 +339,31 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   }
 
   Widget _buildOrdersList(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _orders.length,
-      itemBuilder: (context, index) {
-        final order = _orders[index];
-        
-        // Create staggered animation for each item
-        final Animation<double> animation = CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(
-            (1 / _orders.length) * index,
-            1.0,
-            curve: Curves.easeOut,
-          ),
-        );
-        
-        return _buildAnimatedOrder(context, order, animation);
-      },
+    return RefreshIndicator(
+      onRefresh: _fetchOrders,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _orders.length,
+        itemBuilder: (context, index) {
+          final order = _orders[index];
+          
+          // Create staggered animation for each item
+          final Animation<double> animation = CurvedAnimation(
+            parent: _animationController,
+            curve: Interval(
+              (1 / _orders.length) * index,
+              1.0,
+              curve: Curves.easeOut,
+            ),
+          );
+          
+          return _buildAnimatedOrder(context, order, animation);
+        },
+      ),
     );
   }
 
-  Widget _buildAnimatedOrder(BuildContext context, Map<String, dynamic> order, Animation<double> animation) {
+  Widget _buildAnimatedOrder(BuildContext context, Order order, Animation<double> animation) {
     return FadeTransition(
       opacity: animation,
       child: SlideTransition(
@@ -208,9 +379,10 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildOrderCard(BuildContext context, Map<String, dynamic> order) {
+  Widget _buildOrderCard(BuildContext context, Order order) {
     final theme = Theme.of(context);
-    final statusColor = order['statusColor'];
+    final statusColor = _getStatusColor(order.status);
+    final formattedStatus = _getFormattedStatus(order.status);
     
     return Container(
       decoration: BoxDecoration(
@@ -235,7 +407,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               Navigator.pushNamed(
                 context, 
                 '/detailed-order',
-                arguments: order,
+                arguments: order.orderId,
               );
             },
             splashColor: statusColor.withOpacity(0.1),
@@ -262,7 +434,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Order #${order['id']}',
+                            'Order #${order.orderId.substring(0, min(8, order.orderId.length))}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -271,7 +443,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Placed on ${order['date']}',
+                            'Placed on ${order.createdAt ?? 'N/A'}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.9),
                               fontSize: 14,
@@ -279,7 +451,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                           ),
                         ],
                       ),
-                      _buildStatusBadge(order['status']),
+                      _buildStatusBadge(formattedStatus, order.status),
                     ],
                   ),
                 ),
@@ -306,7 +478,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                           ),
                           const SizedBox(width: 16),
                           Text(
-                            '${order['items']} item${order['items'] > 1 ? 's' : ''}',
+                            '${order.itemCount} item${order.itemCount > 1 ? 's' : ''}',
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
                               color: Colors.grey[800],
@@ -318,8 +490,9 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                       const SizedBox(height: 16),
                       
                       // Order progress
-                      if (order['status'] != 'Cancelled')
-                        _buildOrderProgress(order['status']),
+                      if (!order.status.toLowerCase().contains('cancelled') && 
+                          !order.status.toLowerCase().contains('failed'))
+                        _buildOrderProgress(order.status),
                         
                       const SizedBox(height: 16),
                       
@@ -339,7 +512,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '\$${order['total'].toStringAsFixed(2)}',
+                                '${order.currency} ${order.totalAmount.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
@@ -354,7 +527,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                               Navigator.pushNamed(
                                 context, 
                                 '/detailed-order',
-                                arguments: order,
+                                arguments: order.orderId,
                               );
                             },
                             icon: const Icon(Icons.visibility_outlined, size: 18),
@@ -383,32 +556,9 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    Color bgColor;
-    Color textColor = Colors.white;
-    IconData icon;
-    
-    switch (status) {
-      case 'Processing':
-        bgColor = Colors.orange;
-        icon = Icons.pending_outlined;
-        break;
-      case 'Shipped':
-        bgColor = Colors.blue;
-        icon = Icons.local_shipping_outlined;
-        break;
-      case 'Delivered':
-        bgColor = Colors.green;
-        icon = Icons.check_circle_outline;
-        break;
-      case 'Cancelled':
-        bgColor = Colors.red;
-        icon = Icons.cancel_outlined;
-        break;
-      default:
-        bgColor = Colors.grey;
-        icon = Icons.info_outline;
-    }
+  Widget _buildStatusBadge(String displayStatus, String originalStatus) {
+    final statusColor = _getStatusColor(originalStatus);
+    final icon = _getStatusIcon(originalStatus);
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -422,13 +572,13 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
           Icon(
             icon,
             size: 16,
-            color: textColor,
+            color: Colors.white,
           ),
           const SizedBox(width: 6),
           Text(
-            status,
-            style: TextStyle(
-              color: textColor,
+            displayStatus,
+            style: const TextStyle(
+              color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),
@@ -439,21 +589,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   }
 
   Widget _buildOrderProgress(String status) {
-    int currentStep;
-    
-    switch (status) {
-      case 'Processing':
-        currentStep = 0;
-        break;
-      case 'Shipped':
-        currentStep = 1;
-        break;
-      case 'Delivered':
-        currentStep = 2;
-        break;
-      default:
-        currentStep = -1;
-    }
+    int currentStep = _getCurrentStep(status);
     
     return Row(
       children: [
@@ -530,3 +666,6 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     );
   }
 }
+
+// Helper function for min value to avoid importing dart:math
+int min(int a, int b) => a < b ? a : b;
