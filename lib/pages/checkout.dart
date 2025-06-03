@@ -90,12 +90,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
       _isLoading = true;
     });
 
-    // These values are now passed via the widget constructor
-    // const int amountInPaise = 100 * 100; // e.g., 100 INR
-    // final List<String> productIds = ['prod_123']; // Example product ID
-    // final String addressId = 'addr_123'; // Example address ID
-
     try {
+      debugPrint('Creating order with:');
+      debugPrint('Address ID: ${widget.addressId}');
+      debugPrint('Products: ${widget.productIds}');
+      debugPrint('Amount: ${widget.amountInPaise}');
+      
       // 1. Create order on your backend using widget properties
       final orderData = await _orderService.createRazorpayOrder(
         amount: widget.amountInPaise,
@@ -103,21 +103,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
         addressId: widget.addressId,
       );
 
-      // Assuming your backend returns a structure like:
-      // {
-      //   "razorpay_order_id": "order_xxxx", // Razorpay's order_id
-      //   "app_order_id": "your_backend_order_id_xxxx", // Your app's internal order_id
-      //   "amount": 10000, // Amount in paise, should match
-      //   "api_key": "rzp_test_xxxx" // Your Razorpay API key
-      // }
-      // Adjust keys based on your actual backend response.
-      // For this example, let's assume 'order_id' is Razorpay's and 'app_order_id' is your backend's.
-      // And that your backend provides the amount and key to use.
-
-      final String razorpayOrderId = orderData['order_id'] ?? orderData['id']; // Razorpay Order ID from your backend
-      _appOrderId = orderData['app_order_id']; // Your backend's order ID
-      final int orderAmount = orderData['amount'] ?? widget.amountInPaise; // Use amount from backend or fallback to widget's
-      final String razorpayKey = orderData['api_key'] ?? 'rzp_test_8qQx2uqUByXwUX'; // Use key from backend or fallback
+      final String razorpayOrderId = orderData['razorpay_order_id']; 
+      _appOrderId = orderData['app_order_id'];
+      final int orderAmount = orderData['amount'] ?? widget.amountInPaise;
+      final String razorpayKey = orderData['key_id'] ?? 'rzp_test_8qQx2uqUByXwUX';
 
       if (_appOrderId == null) {
         throw Exception("app_order_id not found in backend response for verification.");
@@ -127,7 +116,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         'key': razorpayKey, 
         'amount': orderAmount, 
         'name': 'Acme Corp',
-        'order_id': razorpayOrderId, // Crucial: Pass the order_id obtained from your backend
+        'order_id': razorpayOrderId,
         'description': 'Test Payment',
         'prefill': {'contact': '8888888888', 'email': 'test@example.com'},
         'external': {
@@ -139,8 +128,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     } catch (e) {
       debugPrint('Error creating order or opening checkout: $e');
+      
+      // Show a more user-friendly error message
+      String errorMessage = e.toString();
+      if (errorMessage.contains('Authentication failed')) {
+        errorMessage = 'Your session has expired. Please log in again.';
+      } else if (errorMessage.contains('address not found')) {
+        errorMessage = 'The selected delivery address is not valid.';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')), // This will display the "Selected address not found" error
+        SnackBar(
+          content: Text(errorMessage),
+          duration: Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Dismiss',
+            onPressed: () {
+              // Do something
+            },
+          ),
+        ),
       );
     } finally {
       setState(() {

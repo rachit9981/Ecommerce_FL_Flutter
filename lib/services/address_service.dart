@@ -28,14 +28,13 @@ class AddressService {
     try {
       final headers = await _getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$apiUrl/api/users/addresses/'),  // Updated endpoint path
+        Uri.parse('$apiUrl/users/addresses/'),  // Updated endpoint path
         headers: headers,
       );
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> addressesJson = data['addresses'] ?? [];
-        
         // Return empty list if no addresses found
         if (addressesJson.isEmpty) {
           return [];
@@ -50,20 +49,8 @@ class AddressService {
         throw Exception(data['error'] ?? 'Failed to load addresses');
       }
     } catch (e) {
-      print('Error fetching addresses: $e');
-      // For debugging purposes, return a mock address
-      return [
-        UserAddress(
-          id: 'mock_address_id',
-          name: 'Default Address',
-          street: '123 Test Street',
-          city: 'Test City',
-          state: 'Test State',
-          pincode: '123456',
-          country: 'India',
-          isDefault: true,
-        )
-      ];
+      // Log error without using print in production
+      throw Exception('Failed to fetch addresses: $e');
     }
   }
 
@@ -81,7 +68,7 @@ class AddressService {
     try {
       final headers = await _getAuthHeaders();
       final response = await http.post(
-        Uri.parse('$apiUrl/api/users/addresses/'),  // Updated endpoint path
+        Uri.parse('$apiUrl/users/addresses/'),  // Updated endpoint path
         headers: headers,
         body: json.encode({
           'name': name,
@@ -133,14 +120,14 @@ class UserAddress {
 
   factory UserAddress.fromJson(Map<String, dynamic> json) {
     return UserAddress(
-      id: json['id'],
-      name: json['name'],
-      street: json['street'],
-      city: json['city'],
-      state: json['state'],
-      pincode: json['pincode'],
-      country: json['country'],
-      phone: json['phone'],
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      street: json['street']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
+      state: json['state']?.toString() ?? '',
+      pincode: json['pincode']?.toString() ?? '',
+      country: json['country']?.toString() ?? '',
+      phone: json['phone']?.toString(),
       isDefault: json['is_default'] ?? false,
     );
   }

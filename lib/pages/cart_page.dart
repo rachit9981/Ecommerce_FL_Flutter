@@ -32,16 +32,13 @@ class _CartPageState extends State<CartPage> {
 
   // Method to handle address selection and checkout
   Future<void> _proceedToCheckout(BuildContext context, CartProvider cartProvider) async {
-    // 1. Get product IDs
     final productIds = cartProvider.cartItems.map((item) => item.productId).toList();
-
-    // 2. Calculate total amount in paise
     final double subtotal = cartProvider.cartItems.fold(
       0,
       (sum, item) => sum + ((item.price ?? 0) * item.quantity),
     );
     final double grandTotal = subtotal - cartProvider.discountAmount + cartProvider.shippingCost;
-    final amountInPaise = (grandTotal * 100).toInt(); // Convert to paise
+    final amountInPaise = (grandTotal * 100).toInt();
 
     if (productIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -57,23 +54,17 @@ class _CartPageState extends State<CartPage> {
       return;
     }
 
-    // Show loading indicator
     setState(() {
       _isAddressLoading = true;
     });
 
     try {
-      // 3. Fetch user addresses
       final addresses = await _addressService.getAddresses();
-      
+      print(addresses);
       setState(() {
         _isAddressLoading = false;
       });
 
-      // Debug print
-      print("Found ${addresses.length} addresses");
-      addresses.forEach((addr) => print("Address ID: ${addr.id}, Name: ${addr.name}"));
-      
       if (addresses.isEmpty) {
         // No addresses available - prompt to add an address
         _showAddAddressDialog(context);

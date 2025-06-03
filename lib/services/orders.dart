@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 class OrderService {
   // Helper method to get auth headers with token
@@ -10,15 +11,29 @@ class OrderService {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('token');
       
+      // Debug the token
+      if (token != null && token.isNotEmpty) {
+        debugPrint('Auth Token: ${token.substring(0, min(10, token.length))}...');
+      } else {
+        debugPrint('No token found in SharedPreferences');
+      }
+      
       if (token == null || token.isEmpty) {
         throw Exception('No authentication token found');
       }
       
-      return {
+      // The backend explicitly requires the "Bearer " prefix
+      final formattedToken = token.startsWith('Bearer ') ? token : 'Bearer $token';
+      
+      final headers = {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': formattedToken,
       };
+      
+      debugPrint('Request Headers: $headers');
+      return headers;
     } catch (e) {
+      debugPrint('Failed to get authentication token: $e');
       throw Exception('Failed to get authentication token: $e');
     }
   }
@@ -33,41 +48,58 @@ class OrderService {
     try {
       final headers = await _getAuthHeaders();
       
-      // Print request details for debugging
-      print('Creating Razorpay order with:');
-      print('Amount: $amount');
-      print('Products: $productIds');
-      print('Address ID: $addressId');
+      // Create request body
+      final requestBody = {
+        'amount': amount,
+        'product_ids': productIds,
+        'address_id': addressId,
+        'currency': currency,
+      };
+      
+      // Log request details
+      final apiEndpoint = '$apiUrl/users/order/razorpay/create/';
+      debugPrint('Creating Razorpay order with:');
+      debugPrint('URL: $apiEndpoint');
+      debugPrint('Request body: $requestBody');
       
       final response = await http.post(
-        Uri.parse('$apiUrl/api/users/order/razorpay/create/'), // Updated endpoint path
+        Uri.parse(apiEndpoint),
         headers: headers,
-        body: json.encode({
-          'amount': amount,
-          'product_ids': productIds,
-          'address_id': addressId,
-          'currency': currency,
-        }),
+        body: json.encode(requestBody),
       );
       
-      // Print response for debugging
-      print('Razorpay order creation response: ${response.statusCode}');
-      print('Response body: ${response.body}');
-      
-      final data = json.decode(response.body);
+      // Log response details
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
       
       if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = json.decode(response.body);
         return data;
       } else {
-        throw Exception(data['error'] ?? 'Failed to create order: ${response.statusCode}');
+        // Try to parse response even for error statuses
+        Map<String, dynamic> errorData = {};
+        try {
+          errorData = json.decode(response.body);
+        } catch (e) {
+          debugPrint('Failed to parse error response: $e');
+        }
+        
+        final errorMsg = errorData['error'] ?? errorData['message'] ?? 'Server error ${response.statusCode}';
+        debugPrint('Error creating order: $errorMsg');
+        throw Exception('Error creating order: $errorMsg');
       }
     } catch (e) {
-      print('Order creation error: $e');
-      throw Exception('Failed to create order: $e');
+      debugPrint('Failed to create order: $e');
+      rethrow;
     }
   }
 
-  // Verify Razorpay payment
+  // Helper method to get the minimum of two integers
+  int min(int a, int b) {
+    return a < b ? a : b;
+  }
+
+  // Verify Razorpay payment - update API path to include /api/ prefix
   Future<Map<String, dynamic>> verifyRazorpayPayment({
     required String razorpayOrderId,
     required String razorpayPaymentId,
@@ -99,7 +131,7 @@ class OrderService {
     }
   }
 
-  // Get all orders for the current user
+  // Get all orders for the current user - update API path
   Future<List<Order>> getUserOrders() async {
     try {
       final headers = await _getAuthHeaders();
@@ -122,7 +154,7 @@ class OrderService {
     }
   }
 
-  // Get details for a specific order
+  // Get details for a specific order - update API path
   Future<OrderDetail> getOrderDetails(String orderId) async {
     try {
       final headers = await _getAuthHeaders();
