@@ -1123,8 +1123,9 @@ class ProductReviews extends StatelessWidget {
 class AddToCartSection extends StatelessWidget {
   final bool inStock;
   final int stockCount;
-  final VoidCallback onAddToCart;
-  final VoidCallback onBuyNow;
+  final VoidCallback? onAddToCart;
+  final VoidCallback? onBuyNow;
+  final bool isLoading;
 
   const AddToCartSection({
     Key? key,
@@ -1132,6 +1133,7 @@ class AddToCartSection extends StatelessWidget {
     required this.stockCount,
     required this.onAddToCart,
     required this.onBuyNow,
+    this.isLoading = false,
   }) : super(key: key);
 
   @override
@@ -1169,7 +1171,8 @@ class AddToCartSection extends StatelessWidget {
                         size: 16,
                       ),
                       const SizedBox(width: 4),
-                      Text(                        inStock
+                      Text(
+                        inStock
                             ? stockCount > 0
                                 ? 'In Stock ($stockCount available)'
                                 : 'In Stock'
@@ -1202,7 +1205,8 @@ class AddToCartSection extends StatelessWidget {
                         color: Colors.blue.shade700,
                         size: 16,
                       ),
-                      const SizedBox(width: 4),                      Text(
+                      const SizedBox(width: 4),
+                      Text(
                         'Free Delivery',
                         style: TextStyle(
                           color: Colors.blue.shade700,
@@ -1227,10 +1231,21 @@ class AddToCartSection extends StatelessWidget {
                   // Add to cart button
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: inStock ? onAddToCart : null,
-                      icon: const Icon(Icons.shopping_cart_outlined),
-                      label: const Text(
-                        'Add to Cart',
+                      onPressed: isLoading ? null : onAddToCart,
+                      icon: isLoading 
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.shopping_cart_outlined),
+                      label: Text(
+                        isLoading ? 'Adding...' : 'Add to Cart',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1242,6 +1257,8 @@ class AddToCartSection extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 0,
+                        disabledBackgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+                        disabledForegroundColor: Colors.white.withOpacity(0.8),
                       ),
                     ),
                   ),
@@ -1250,10 +1267,21 @@ class AddToCartSection extends StatelessWidget {
                   // Buy now button
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: inStock ? onBuyNow : null,
-                      icon: const Icon(Icons.flash_on),
-                      label: const Text(
-                        'Buy Now',
+                      onPressed: isLoading ? null : onBuyNow,
+                      icon: isLoading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.black54,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.flash_on),
+                      label: Text(
+                        isLoading ? 'Processing...' : 'Buy Now',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1265,6 +1293,8 @@ class AddToCartSection extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 0,
+                        disabledBackgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                        disabledForegroundColor: Colors.black54,
                       ),
                     ),
                   ),

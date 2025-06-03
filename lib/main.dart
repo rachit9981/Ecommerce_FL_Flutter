@@ -2,6 +2,7 @@ import 'package:ecom/pages/auth_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
+import 'providers/cart_provider.dart'; // Import CartProvider
 
 void main() {
   runApp(MyApp());
@@ -16,6 +17,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()), // Add CartProvider
       ],
       child: MaterialApp(
         title: 'Anand Mobile',

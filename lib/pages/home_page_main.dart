@@ -9,6 +9,7 @@ import 'package:ecom/pages/notification_page.dart';
 import 'package:ecom/pages/product_page.dart';
 import 'package:ecom/pages/category_page.dart';
 import 'package:ecom/services/products.dart';
+import 'package:ecom/services/cart_wishlist.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -23,9 +24,14 @@ class _HomePageState extends State<HomePage> {
   
   // API integration variables
   final ProductService _productService = ProductService();
+  final CartWishlistService _cartService = CartWishlistService();
   List<Product> _allProducts = [];
   bool _isLoading = true;
   String? _error;
+  
+  // Cart count for badge
+  int _cartItemCount = 0;
+  bool _isLoadingCart = false;
 
   @override
   void initState() {
@@ -36,7 +42,36 @@ class _HomePageState extends State<HomePage> {
     });
     // Load products from API
     _loadProducts();
+    // Load cart count
+    _loadCartCount();
   }
+
+  // Method to load cart count
+  Future<void> _loadCartCount() async {
+    try {
+      setState(() {
+        _isLoadingCart = true;
+      });
+      
+      final cartItems = await _cartService.getCart();
+      
+      if (mounted) {
+        setState(() {
+          _cartItemCount = cartItems.length;
+          _isLoadingCart = false;
+        });
+      }
+    } catch (e) {
+      // Handle error silently, just set count to 0
+      if (mounted) {
+        setState(() {
+          _cartItemCount = 0;
+          _isLoadingCart = false;
+        });
+      }
+    }
+  }
+
   void _startAutoScroll() {
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
@@ -426,12 +461,15 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: HomeAppBar(
-        cartItemCount: 2,
+        cartItemCount: _isLoadingCart ? 0 : _cartItemCount,
         onCartPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CartPage()),
-          );
+          ).then((_) {
+            // Refresh cart count when returning from cart page
+            _loadCartCount();
+          });
         },
         onNotificationsPressed: () {
           Navigator.push(

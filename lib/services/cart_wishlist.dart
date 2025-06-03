@@ -1,14 +1,35 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
 
 class CartWishlistService {
+  // Helper method to get auth headers with token
+  Future<Map<String, String>> _getAuthHeaders() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+      
+      if (token == null || token.isEmpty) {
+        throw Exception('No authentication token found');
+      }
+      
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+    } catch (e) {
+      throw Exception('Failed to get authentication token: $e');
+    }
+  }
+
   // Cart API calls
   Future<Map<String, dynamic>> addToCart(String productId, {int quantity = 1}) async {
     try {
+      final headers = await _getAuthHeaders();
       final response = await http.post(
-        Uri.parse('$apiUrl/cart/add/$productId/'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$apiUrl/users/cart/add/$productId/'),
+        headers: headers,
         body: json.encode({'quantity': quantity}),
       );
       
@@ -26,7 +47,11 @@ class CartWishlistService {
 
   Future<List<CartItem>> getCart() async {
     try {
-      final response = await http.get(Uri.parse('$apiUrl/cart/'));
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$apiUrl/users/cart/'),
+        headers: headers
+      );
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -44,7 +69,11 @@ class CartWishlistService {
 
   Future<Map<String, dynamic>> removeFromCart(String itemId) async {
     try {
-      final response = await http.delete(Uri.parse('$apiUrl/cart/remove/$itemId/'));
+      final headers = await _getAuthHeaders();
+      final response = await http.delete(
+        Uri.parse('$apiUrl/users/cart/remove/$itemId/'),
+        headers: headers
+      );
       
       final data = json.decode(response.body);
       
@@ -61,7 +90,11 @@ class CartWishlistService {
   // Wishlist API calls
   Future<Map<String, dynamic>> addToWishlist(String productId) async {
     try {
-      final response = await http.post(Uri.parse('$apiUrl/wishlist/add/$productId/'));
+      final headers = await _getAuthHeaders();
+      final response = await http.post(
+        Uri.parse('$apiUrl/wishlist/add/$productId/'),
+        headers: headers
+      );
       
       final data = json.decode(response.body);
       
@@ -77,7 +110,11 @@ class CartWishlistService {
 
   Future<List<WishlistItem>> getWishlist() async {
     try {
-      final response = await http.get(Uri.parse('$apiUrl/wishlist/'));
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$apiUrl/wishlist/'),
+        headers: headers
+      );
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -95,7 +132,11 @@ class CartWishlistService {
 
   Future<Map<String, dynamic>> removeFromWishlist(String itemId) async {
     try {
-      final response = await http.delete(Uri.parse('$apiUrl/wishlist/remove/$itemId/'));
+      final headers = await _getAuthHeaders();
+      final response = await http.delete(
+        Uri.parse('$apiUrl/wishlist/remove/$itemId/'),
+        headers: headers
+      );
       
       final data = json.decode(response.body);
       

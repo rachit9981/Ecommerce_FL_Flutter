@@ -1,62 +1,5 @@
 import 'package:flutter/material.dart';
-
-/// Model class for cart items
-class CartItem {
-  final String id;
-  final String title;
-  final String? imageUrl;
-  final double price;
-  final double? originalPrice;
-  final String? description;
-  final int quantity;
-  final bool isAvailable;
-  final Map<String, String>? attributes; // Size, color, etc.
-
-  CartItem({
-    required this.id,
-    required this.title,
-    this.imageUrl,
-    required this.price,
-    this.originalPrice,
-    this.description,
-    required this.quantity,
-    this.isAvailable = true,
-    this.attributes,
-  });
-
-  double get totalPrice => price * quantity;
-  
-  int? get discountPercentage {
-    if (originalPrice != null && originalPrice! > price) {
-      return ((1 - price / originalPrice!) * 100).round();
-    }
-    return null;
-  }
-
-  CartItem copyWith({
-    String? id,
-    String? title,
-    String? imageUrl,
-    double? price,
-    double? originalPrice,
-    String? description,
-    int? quantity,
-    bool? isAvailable,
-    Map<String, String>? attributes,
-  }) {
-    return CartItem(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      imageUrl: imageUrl ?? this.imageUrl,
-      price: price ?? this.price,
-      originalPrice: originalPrice ?? this.originalPrice,
-      description: description ?? this.description,
-      quantity: quantity ?? this.quantity,
-      isAvailable: isAvailable ?? this.isAvailable,
-      attributes: attributes ?? this.attributes,
-    );
-  }
-}
+import '../../services/cart_wishlist.dart';
 
 /// Widget to display a single cart item with quantity controls
 class CartItemCard extends StatelessWidget {
@@ -73,286 +16,127 @@ class CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 360;
-
-    return Container(
+    return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Main content
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Product image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: item.imageUrl != null
-                      ? Image.network(
-                          item.imageUrl!,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 80,
-                              height: 80,
-                              color: Colors.grey.shade200,
-                              child: Icon(
-                                Icons.image_not_supported,
-                                color: Colors.grey.shade400,
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          width: 80,
-                          height: 80,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: item.imageUrl != null
+                  ? Image.network(
+                      item.imageUrl!,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 100,
+                          height: 100,
                           color: Colors.grey.shade200,
-                          child: Icon(
-                            Icons.image,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                ),
-                
-                const SizedBox(width: 12),
-                
-                // Product details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: isSmallScreen ? 14 : 16,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                          child: Icon(Icons.image_not_supported, color: Colors.grey),
+                        );
+                      },
+                    )
+                  : Container(
+                      width: 100,
+                      height: 100,
+                      color: Colors.grey.shade200,
+                      child: Icon(Icons.image, color: Colors.grey),
+                    ),
+            ),
+            const SizedBox(width: 16),
+            
+            // Product details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (item.price != null)
+                    Text(
+                      '\$${item.price!.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w600,
                       ),
-                      
-                      if (item.description != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          item.description!,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: isSmallScreen ? 12 : 13,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(height: 12),
+                  
+                  // Quantity controls and remove button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Quantity controls
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ],
-                      
-                      if (item.attributes != null && item.attributes!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          children: item.attributes!.entries.map((attr) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
+                        child: Row(
+                          children: [
+                            // Decrease button
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 16),
+                              onPressed: item.quantity > 1
+                                  ? () => onQuantityChanged(item.quantity - 1)
+                                  : null,
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
                               ),
-                              child: Text(
-                                "${attr.key}: ${attr.value}",
-                                style: TextStyle(
-                                  fontSize: isSmallScreen ? 10 : 11,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Price row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                "₹${item.price.toStringAsFixed(0)}",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
-                                  fontSize: isSmallScreen ? 14 : 16,
-                                ),
-                              ),
-                              if (item.originalPrice != null &&
-                                  item.originalPrice! > item.price) ...[
-                                const SizedBox(width: 8),
-                                Text(
-                                  "₹${item.originalPrice!.toStringAsFixed(0)}",
-                                  style: TextStyle(
-                                    decoration: TextDecoration.lineThrough,
-                                    color: Colors.grey.shade500,
-                                    fontSize: isSmallScreen ? 12 : 13,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          
-                          if (item.discountPercentage != null) ...[
+                              padding: EdgeInsets.zero,
+                            ),
+                            
+                            // Quantity display
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade100,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
+                              width: 32,
+                              alignment: Alignment.center,
                               child: Text(
-                                "${item.discountPercentage}% OFF",
-                                style: TextStyle(
-                                  color: Colors.red.shade700,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isSmallScreen ? 10 : 11,
-                                ),
+                                '${item.quantity}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
+                            
+                            // Increase button
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 16),
+                              onPressed: () => onQuantityChanged(item.quantity + 1),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
                           ],
-                        ],
+                        ),
+                      ),
+                      
+                      // Remove button
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: onRemove,
+                        color: Colors.red.shade400,
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          
-          // Divider
-          Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
-          
-          // Bottom actions row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Remove button
-                TextButton.icon(
-                  onPressed: onRemove,
-                  icon: Icon(
-                    Icons.delete_outline,
-                    size: isSmallScreen ? 18 : 20,
-                    color: Colors.red.shade400,
-                  ),
-                  label: Text(
-                    "Remove",
-                    style: TextStyle(
-                      color: Colors.red.shade400,
-                      fontSize: isSmallScreen ? 12 : 14,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 6 : 8,
-                      vertical: 0,
-                    ),
-                  ),
-                ),
-                
-                // Quantity control
-                Row(
-                  children: [
-                    _QuantityButton(
-                      icon: Icons.remove,
-                      onPressed: item.quantity > 1
-                          ? () => onQuantityChanged(item.quantity - 1)
-                          : null,
-                      isSmallScreen: isSmallScreen,
-                    ),
-                    SizedBox(
-                      width: isSmallScreen ? 36 : 40,
-                      child: Center(
-                        child: Text(
-                          "${item.quantity}",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isSmallScreen ? 14 : 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                    _QuantityButton(
-                      icon: Icons.add,
-                      onPressed: () => onQuantityChanged(item.quantity + 1),
-                      isSmallScreen: isSmallScreen,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Helper widget for quantity adjustment buttons
-class _QuantityButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final bool isSmallScreen;
-
-  const _QuantityButton({
-    required this.icon,
-    required this.onPressed,
-    required this.isSmallScreen,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: isSmallScreen ? 28 : 32,
-      width: isSmallScreen ? 28 : 32,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,        color: onPressed == null
-            ? Colors.grey.shade200
-            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        border: Border.all(
-          color: onPressed == null
-              ? Colors.grey.shade300
-              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-          width: 1,
+          ],
         ),
-      ),
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(
-          icon,
-          size: isSmallScreen ? 14 : 16,
-          color: onPressed == null
-              ? Colors.grey.shade400
-              : Theme.of(context).colorScheme.primary,
-        ),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
       ),
     );
   }
@@ -361,126 +145,81 @@ class _QuantityButton extends StatelessWidget {
 /// Cart summary widget showing price breakdown and checkout button
 class CartSummary extends StatelessWidget {
   final List<CartItem> items;
-  final double? discountAmount;
-  final double? shippingCost;
+  final double discountAmount;
+  final double shippingCost;
   final VoidCallback onCheckout;
 
   const CartSummary({
     Key? key,
     required this.items,
-    this.discountAmount,
-    this.shippingCost,
+    required this.discountAmount,
+    required this.shippingCost,
     required this.onCheckout,
   }) : super(key: key);
 
   double get subtotal {
-    return items.fold(0, (sum, item) => sum + item.totalPrice);
+    return items.fold(
+      0,
+      (sum, item) => sum + ((item.price ?? 0) * item.quantity),
+    );
   }
 
   double get total {
-    double result = subtotal;
-    if (discountAmount != null) result -= discountAmount!;
-    if (shippingCost != null) result += shippingCost!;
-    return result > 0 ? result : 0;
+    return subtotal - discountAmount + shippingCost;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 360;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),        boxShadow: [
+        color: Colors.white,
+        boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, -4),
+            blurRadius: 8,
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Order summary section
-          Text(
-            "Order Summary",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: isSmallScreen ? 16 : 18,
-              color: theme.colorScheme.onSurface,
+          // Order summary
+          _buildSummaryRow('Subtotal', '\$${subtotal.toStringAsFixed(2)}'),
+          if (discountAmount > 0)
+            _buildSummaryRow(
+              'Discount', 
+              '-\$${discountAmount.toStringAsFixed(2)}',
+              valueColor: Colors.green,
             ),
+          _buildSummaryRow(
+            'Shipping',
+            shippingCost > 0 ? '\$${shippingCost.toStringAsFixed(2)}' : 'Free',
           ),
-          
-          const SizedBox(height: 16),
-          
-          // Price breakdown
-          _SummaryRow(
-            label: "Subtotal",
-            value: "₹${subtotal.toStringAsFixed(0)}",
-            isSmallScreen: isSmallScreen,
+          const Divider(height: 24),
+          _buildSummaryRow(
+            'Total',
+            '\$${total.toStringAsFixed(2)}',
+            isBold: true,
           ),
-          
-          if (shippingCost != null) ...[
-            const SizedBox(height: 8),
-            _SummaryRow(
-              label: "Shipping",
-              value: shippingCost! == 0
-                  ? "Free"
-                  : "₹${shippingCost!.toStringAsFixed(0)}",
-              isSmallScreen: isSmallScreen,
-            ),
-          ],
-          
-          if (discountAmount != null && discountAmount! > 0) ...[
-            const SizedBox(height: 8),
-            _SummaryRow(
-              label: "Discount",
-              value: "-₹${discountAmount!.toStringAsFixed(0)}",
-              valueColor: Colors.green.shade700,
-              isSmallScreen: isSmallScreen,
-            ),
-          ],
-          
           const SizedBox(height: 16),
-          Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
-          const SizedBox(height: 16),
-          
-          // Total row
-          _SummaryRow(
-            label: "Total",
-            value: "₹${total.toStringAsFixed(0)}",
-            isTotal: true,
-            isSmallScreen: isSmallScreen,
-          ),
-          
-          const SizedBox(height: 24),
           
           // Checkout button
           SizedBox(
             width: double.infinity,
+            height: 50,
             child: ElevatedButton(
-              onPressed: items.isEmpty ? null : onCheckout,
+              onPressed: onCheckout,
               style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: Colors.grey.shade300,
-                padding: EdgeInsets.symmetric(
-                  vertical: isSmallScreen ? 14 : 16,
-                ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                elevation: 2,
               ),
-              child: Text(
-                "Proceed to Checkout",
+              child: const Text(
+                'Proceed to Checkout',
                 style: TextStyle(
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  fontSize: isSmallScreen ? 14 : 16,
                 ),
               ),
             ),
@@ -489,52 +228,31 @@ class CartSummary extends StatelessWidget {
       ),
     );
   }
-}
 
-/// Helper widget for summary rows
-class _SummaryRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? valueColor;
-  final bool isTotal;
-  final bool isSmallScreen;
-
-  const _SummaryRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-    this.isTotal = false,
-    required this.isSmallScreen,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            fontSize: isSmallScreen
-                ? (isTotal ? 15 : 14)
-                : (isTotal ? 16 : 15),
-            color: isTotal ? null : Colors.grey.shade700,
+  Widget _buildSummaryRow(String label, String value, {bool isBold = false, Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              fontSize: isBold ? 16 : 14,
+            ),
           ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            fontSize: isSmallScreen
-                ? (isTotal ? 15 : 14)
-                : (isTotal ? 16 : 15),
-            color: isTotal
-                ? null
-                : (valueColor ?? Colors.grey.shade800),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor ?? (isBold ? Colors.black : Colors.grey.shade700),
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              fontSize: isBold ? 18 : 14,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -550,79 +268,40 @@ class EmptyCartView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Empty cart icon
-            Container(
-              width: 120,
-              height: 120,              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.shopping_cart_outlined,
-                size: 60,
-                color: theme.colorScheme.primary,
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.shopping_cart_outlined,
+            size: 80,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Your cart is empty',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade700,
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Title text
-            Text(
-              "Your Cart is Empty",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add items to your cart to get started',
+            style: TextStyle(
+              color: Colors.grey.shade600,
             ),
-            
-            const SizedBox(height: 12),
-            
-            // Description text
-            Text(
-              "Looks like you haven't added any items to your cart yet.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: onStartShopping,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
             ),
-            
-            const SizedBox(height: 32),
-            
-            // Start shopping button
-            ElevatedButton(
-              onPressed: onStartShopping,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 2,
-              ),
-              child: const Text(
-                "Start Shopping",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ],
-        ),
+            child: const Text('Start Shopping'),
+          ),
+        ],
       ),
     );
   }
