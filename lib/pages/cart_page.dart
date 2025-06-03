@@ -30,39 +30,54 @@ class _CartPageState extends State<CartPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
         title: const Text(
           'Shopping Cart',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.black87,
+          ),
         ),
         actions: [
           Consumer<CartProvider>(
             builder: (context, cartProvider, child) {
               if (cartProvider.cartItems.isNotEmpty) {
-                return IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Clear cart',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Clear Cart'),
-                        content: const Text('Are you sure you want to remove all items from your cart?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel'),
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: IconButton(
+                    icon: Icon(Icons.delete_sweep_outlined, color: Colors.red.shade400),
+                    tooltip: 'Clear cart',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Clear Cart'),
+                          content: const Text('Are you sure you want to remove all items from your cart?'),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          TextButton(
-                            onPressed: () {
-                              cartProvider.clearCart();
-                              Navigator.pop(context);
-                            },
-                            child: const Text('Clear'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                cartProvider.clearCart();
+                                Navigator.pop(context);
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              child: const Text('Clear'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 );
               }
               return const SizedBox.shrink();
@@ -79,8 +94,14 @@ class _CartPageState extends State<CartPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading cart...')
+                    SizedBox(height: 20),
+                    Text(
+                      'Loading your cart...',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 16,
+                      ),
+                    )
                   ],
                 ),
               );
@@ -91,16 +112,30 @@ class _CartPageState extends State<CartPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    SizedBox(height: 16),
-                    Text('Error: ${cartProvider.error}'),
-                    SizedBox(height: 16),
-                    ElevatedButton(
+                    Icon(Icons.error_outline, size: 56, color: Colors.red.shade300),
+                    SizedBox(height: 20),
+                    Text(
+                      'Error: ${cartProvider.error}',
+                      style: TextStyle(
+                        color: Colors.red.shade800,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 24),
+                    ElevatedButton.icon(
                       onPressed: () {
                         cartProvider.clearError();
                         cartProvider.fetchCartItems();
                       },
-                      child: Text('Retry'),
+                      icon: Icon(Icons.refresh),
+                      label: Text('Retry'),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                     )
                   ],
                 ),
@@ -116,7 +151,8 @@ class _CartPageState extends State<CartPage> {
                 // Cart items list
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    physics: const BouncingScrollPhysics(),
                     itemCount: cartProvider.cartItems.length,
                     itemBuilder: (context, index) {
                       final item = cartProvider.cartItems[index];
@@ -141,7 +177,13 @@ class _CartPageState extends State<CartPage> {
                   onCheckout: () {
                     // Navigate to checkout page
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Proceeding to checkout...')),
+                      SnackBar(
+                        content: Text('Proceeding to checkout...'),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                     );
                   },
                 ),
