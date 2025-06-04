@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/orders.dart';
 import '../providers/user_provider.dart';
+import 'detailed_order.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({Key? key}) : super(key: key);
@@ -39,10 +40,14 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     });
     
     try {
-      final orders = await _orderService.getUserOrders();
+      final allOrders = await _orderService.getUserOrders();
+      // Filter to only include orders with confirmed payment
+      final confirmedOrders = allOrders.where((order) => 
+        order.status.toLowerCase() == 'payment_successful').toList();
+      
       if (mounted) {
         setState(() {
-          _orders = orders;
+          _orders = confirmedOrders;
           _isLoading = false;
         });
         _animationController.forward(from: 0.0);
@@ -404,10 +409,11 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
           child: InkWell(
             onTap: () {
               // Navigate to detailed order page
-              Navigator.pushNamed(
-                context, 
-                '/detailed-order',
-                arguments: order.orderId,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailedOrderPage(orderId: order.orderId),
+                ),
               );
             },
             splashColor: statusColor.withOpacity(0.1),
@@ -430,26 +436,13 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Order #${order.orderId.substring(0, min(8, order.orderId.length))}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Placed on ${order.createdAt ?? 'N/A'}',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        'Order #${order.orderId.substring(0, min(8, order.orderId.length))}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
                       ),
                       _buildStatusBadge(formattedStatus, order.status),
                     ],
@@ -524,10 +517,11 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                           ElevatedButton.icon(
                             onPressed: () {
                               // Navigate to detailed order page
-                              Navigator.pushNamed(
-                                context, 
-                                '/detailed-order',
-                                arguments: order.orderId,
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetailedOrderPage(orderId: order.orderId),
+                                ),
                               );
                             },
                             icon: const Icon(Icons.visibility_outlined, size: 18),
@@ -552,8 +546,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             ),
           ),
         ),
-      ),
-    );
+      ),);
   }
 
   Widget _buildStatusBadge(String displayStatus, String originalStatus) {
@@ -561,7 +554,8 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     final icon = _getStatusIcon(originalStatus);
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      constraints: BoxConstraints(maxWidth: 130),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.25),
         borderRadius: BorderRadius.circular(20),
@@ -571,16 +565,20 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         children: [
           Icon(
             icon,
-            size: 16,
+            size: 14,
             color: Colors.white,
           ),
-          const SizedBox(width: 6),
-          Text(
-            displayStatus,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              displayStatus,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],
