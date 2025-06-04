@@ -4,14 +4,14 @@ import 'package:ecom/pages/notification_page.dart'; // Add import for notificati
 class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   final double height;
   final VoidCallback? onCartPressed;
-  final VoidCallback? onNotificationsPressed;
+  // final VoidCallback? onNotificationsPressed;
   final int cartItemCount;
 
   const HomeAppBar({
     super.key,
     this.height = kToolbarHeight + 8,
     this.onCartPressed,
-    this.onNotificationsPressed,
+    // this.onNotificationsPressed,
     this.cartItemCount = 0,
   });
 
@@ -42,20 +42,20 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
       vsync: this,
     );
     
-    _notificationScaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.8),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.8, end: 1.05),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.05, end: 1.0),
-        weight: 1,
-      ),
-    ]).animate(_notificationAnimController!);
+    // _notificationScaleAnimation = TweenSequence<double>([
+    //   TweenSequenceItem(
+    //     tween: Tween<double>(begin: 1.0, end: 0.8),
+    //     weight: 1,
+    //   ),
+    //   TweenSequenceItem(
+    //     tween: Tween<double>(begin: 0.8, end: 1.05),
+    //     weight: 1,
+    //   ),
+    //   TweenSequenceItem(
+    //     tween: Tween<double>(begin: 1.05, end: 1.0),
+    //     weight: 1,
+    //   ),
+    // ]).animate(_notificationAnimController!);
     
     _cartAnimController = AnimationController(
       duration: const Duration(milliseconds: 200),
@@ -139,46 +139,46 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
         ),
       ),
       actions: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2.0),
-          child: AnimatedBuilder(
-            animation: _notificationScaleAnimation ?? const AlwaysStoppedAnimation(1.0),
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _notificationScaleAnimation?.value ?? 1.0,
-                child: child,
-              );
-            },            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: surfaceColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: Colors.black87,
-                  size: 22,
-                ),
-                tooltip: 'Notifications',
-                onPressed: () {
-                  _notificationAnimController?.forward(from: 0.0).then((_) {
-                    if (widget.onNotificationsPressed != null) {
-                      widget.onNotificationsPressed!();
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NotificationPage(),
-                        ),
-                      );
-                    }
-                  });
-                },
-              ),
-            ),
-          ),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 2.0),
+        //   child: AnimatedBuilder(
+        //     animation: _notificationScaleAnimation ?? const AlwaysStoppedAnimation(1.0),
+        //     builder: (context, child) {
+        //       return Transform.scale(
+        //         scale: _notificationScaleAnimation?.value ?? 1.0,
+        //         child: child,
+        //       );
+        //     },            child: Container(
+        //       margin: const EdgeInsets.symmetric(vertical: 8),
+        //       decoration: BoxDecoration(
+        //         color: surfaceColor.withValues(alpha: 0.1),
+        //         borderRadius: BorderRadius.circular(12),
+        //       ),
+        //       child: IconButton(
+        //         icon: const Icon(
+        //           Icons.notifications_none_rounded,
+        //           color: Colors.black87,
+        //           size: 22,
+        //         ),
+        //         tooltip: 'Notifications',
+        //         onPressed: () {
+        //           _notificationAnimController?.forward(from: 0.0).then((_) {
+        //             if (widget.onNotificationsPressed != null) {
+        //               widget.onNotificationsPressed!();
+        //             } else {
+        //               Navigator.push(
+        //                 context,
+        //                 MaterialPageRoute(
+        //                   builder: (context) => const NotificationPage(),
+        //                 ),
+        //               );
+        //             }
+        //           });
+        //         },
+        //       ),
+        //     ),
+        //   ),
+        // ),
         
         // Cart button with badge
         Padding(

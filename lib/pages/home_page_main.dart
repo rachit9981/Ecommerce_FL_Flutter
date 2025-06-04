@@ -5,7 +5,7 @@ import 'package:ecom/components/common/categories.dart';
 import 'package:ecom/components/common/infity_scroll_suggestions.dart';
 import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/search_page.dart';
-import 'package:ecom/pages/notification_page.dart';
+// import 'package:ecom/pages/notification_page.dart';
 import 'package:ecom/pages/product_page.dart';
 import 'package:ecom/pages/category_page.dart';
 import 'package:ecom/services/products.dart';
@@ -471,12 +471,12 @@ class _HomePageState extends State<HomePage> {
             _loadCartCount();
           });
         },
-        onNotificationsPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const NotificationPage()),
-          );
-        },
+        // onNotificationsPressed: () {
+        //   Navigator.push(
+        //     context,
+        //     MaterialPageRoute(builder: (context) => const NotificationPage()),
+        //   );
+        // },
       ),
       body: SafeArea(
         child: _isLoading
