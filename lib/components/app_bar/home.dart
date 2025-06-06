@@ -4,14 +4,14 @@ import 'package:ecom/pages/notification_page.dart'; // Add import for notificati
 class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   final double height;
   final VoidCallback? onCartPressed;
-  // final VoidCallback? onNotificationsPressed;
+  final VoidCallback? onSearchPressed;
   final int cartItemCount;
 
   const HomeAppBar({
     super.key,
     this.height = kToolbarHeight + 8,
     this.onCartPressed,
-    // this.onNotificationsPressed,
+    this.onSearchPressed,
     this.cartItemCount = 0,
   });
 

@@ -161,8 +161,9 @@ class SearchResultItem extends StatelessWidget {
   final int reviewCount;
   final VoidCallback onTap;
   final VoidCallback onAddToCart;
-  // Add an ID parameter for unique Hero tags
   final String id;
+  final String brand;
+  final String category;
 
   const SearchResultItem({
     Key? key,
@@ -175,6 +176,8 @@ class SearchResultItem extends StatelessWidget {
     required this.onTap,
     required this.onAddToCart,
     required this.id,
+    required this.brand,
+    required this.category,
   }) : super(key: key);
 
   @override
@@ -207,6 +210,13 @@ class SearchResultItem extends StatelessWidget {
                       width: double.infinity,
                       height: 180,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 180,
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -215,10 +225,7 @@ class SearchResultItem extends StatelessWidget {
                     top: 10,
                     left: 10,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(4),
@@ -243,28 +250,23 @@ class SearchResultItem extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$brand • $category',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(
-                        Icons.star,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
+                      Icon(Icons.star, size: 16, color: Theme.of(context).colorScheme.secondary),
                       const SizedBox(width: 4),
                       Text(
                         '$rating ($reviewCount)',
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
                       ),
                     ],
                   ),
@@ -272,16 +274,13 @@ class SearchResultItem extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '₹${price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
+                        '₹${price.toStringAsFixed(0)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                       if (originalPrice != null) ...[
                         const SizedBox(width: 8),
                         Text(
-                          '₹${originalPrice!.toStringAsFixed(2)}',
+                          '₹${originalPrice!.toStringAsFixed(0)}',
                           style: TextStyle(
                             decoration: TextDecoration.lineThrough,
                             color: Colors.grey.shade600,
@@ -298,11 +297,7 @@ class SearchResultItem extends StatelessWidget {
                             color: Theme.of(context).colorScheme.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
-                            Icons.add_shopping_cart,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.add_shopping_cart, color: Colors.white, size: 20),
                         ),
                       ),
                     ],
@@ -319,7 +314,12 @@ class SearchResultItem extends StatelessWidget {
 
 // Filter section
 class SearchFilters extends StatelessWidget {
-  // Removed categories, selectedCategory, and onCategoryChanged parameters
+  final List<String> categories;
+  final String? selectedCategory;
+  final Function(String?) onCategoryChanged;
+  final List<String> brands;
+  final String? selectedBrand;
+  final Function(String?) onBrandChanged;
   final RangeValues priceRange;
   final RangeValues selectedPriceRange;
   final Function(RangeValues) onPriceRangeChanged;
@@ -328,7 +328,12 @@ class SearchFilters extends StatelessWidget {
 
   const SearchFilters({
     Key? key,
-    // Removed category-related parameters
+    required this.categories,
+    required this.selectedCategory,
+    required this.onCategoryChanged,
+    required this.brands,
+    required this.selectedBrand,
+    required this.onBrandChanged,
     required this.priceRange,
     required this.selectedPriceRange,
     required this.onPriceRangeChanged,
@@ -347,121 +352,124 @@ class SearchFilters extends StatelessWidget {
           topRight: Radius.circular(20),
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
+          BoxShadow(color: Colors.grey.shade300, blurRadius: 10, spreadRadius: 2),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Filters',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                TextButton(
+                  onPressed: () {
+                    onCategoryChanged(null);
+                    onBrandChanged(null);
+                    onPriceRangeChanged(priceRange);
+                    onRatingChanged(null);
+                  },
+                  child: const Text('Reset All'),
                 ),
-              ),
-              TextButton(
-                onPressed: () {
-                  // Removed onCategoryChanged(null);
-                  onPriceRangeChanged(priceRange);
-                  onRatingChanged(null);
-                },
-                child: const Text('Reset All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Removed Categories section
-          // Price range section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Price Range',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '₹${selectedPriceRange.start.round()} - ₹${selectedPriceRange.end.round()}',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          RangeSlider(
-            values: selectedPriceRange,
-            min: priceRange.start,
-            max: priceRange.end,
-            divisions: ((priceRange.end - priceRange.start) / 10).round(),
-            activeColor: Theme.of(context).colorScheme.primary,
-            inactiveColor: Colors.grey.shade300,
-            labels: RangeLabels(
-              '₹${selectedPriceRange.start.round()}',
-              '₹${selectedPriceRange.end.round()}',
+              ],
             ),
-            onChanged: onPriceRangeChanged,
-          ),
-          const SizedBox(height: 16),
-          // Rating section
-          const Text(
-            'Minimum Rating',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 16),
+            
+            // Categories section
+            const Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: categories.map((category) => CustomFilterChip(
+                label: category,
+                isSelected: selectedCategory == category,
+                onTap: () => onCategoryChanged(selectedCategory == category ? null : category),
+              )).toList(),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: List.generate(5, (index) {
-              return GestureDetector(
-                onTap: () => onRatingChanged(minRating == (index + 1).toDouble()
-                    ? null
-                    : (index + 1).toDouble()),
-                child: Icon(
-                  Icons.star,
-                  size: 32,
-                  color: (minRating ?? 0) >= (index + 1)
-                      ? Theme.of(context).colorScheme.secondary
-                      : Colors.grey.shade400,
+            const SizedBox(height: 16),
+            
+            // Brands section
+            const Text('Brands', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: brands.take(10).map((brand) => CustomFilterChip(
+                label: brand,
+                isSelected: selectedBrand == brand,
+                onTap: () => onBrandChanged(selectedBrand == brand ? null : brand),
+              )).toList(),
+            ),
+            const SizedBox(height: 16),
+            
+            // Price range section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Price Range', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  '₹${selectedPriceRange.start.round()} - ₹${selectedPriceRange.end.round()}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              );
-            }),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+              ],
+            ),
+            RangeSlider(
+              values: selectedPriceRange,
+              min: priceRange.start,
+              max: priceRange.end,
+              divisions: 20,
+              activeColor: Theme.of(context).colorScheme.primary,
+              inactiveColor: Colors.grey.shade300,
+              labels: RangeLabels(
+                '₹${selectedPriceRange.start.round()}',
+                '₹${selectedPriceRange.end.round()}',
               ),
-              child: const Text(
-                'Apply Filters',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              onChanged: onPriceRangeChanged,
+            ),
+            const SizedBox(height: 16),
+            
+            // Rating section
+            const Text('Minimum Rating', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: List.generate(5, (index) {
+                return GestureDetector(
+                  onTap: () => onRatingChanged(minRating == (index + 1).toDouble()
+                      ? null
+                      : (index + 1).toDouble()),
+                  child: Icon(
+                    Icons.star,
+                    size: 32,
+                    color: (minRating ?? 0) >= (index + 1)
+                        ? Theme.of(context).colorScheme.secondary
+                        : Colors.grey.shade400,
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 24),
+            
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
+                child: const Text('Apply Filters', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

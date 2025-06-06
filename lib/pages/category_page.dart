@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ecom/components/common/categories.dart';
 import 'package:ecom/components/common/suggestions.dart';
-// import 'package:ecom/components/common/infity_scroll_suggestions.dart';
 import 'package:ecom/pages/product_page.dart';
-import 'package:ecom/services/products.dart'; // Import the ProductService
+import 'package:ecom/services/products.dart';
+import 'package:ecom/providers/product_provider.dart';
 
 class CategoryPage extends StatefulWidget {
   final CategoryItem category;
@@ -21,14 +22,12 @@ class _CategoryPageState extends State<CategoryPage> {
   // Active filter options
   String? _selectedSubcategory;
   RangeValues _priceRange = const RangeValues(0, 100000);
+  RangeValues _selectedPriceRange = const RangeValues(0, 100000);
   String? _sortOption;
   
-  // API integration variables
-  final ProductService _productService = ProductService();
-  List<Product> _allProducts = [];
+  // Display variables
   List<SuggestionItem> _displayedProducts = [];
-  bool _isLoading = true;
-  String? _error;
+  List<String> _availableSubcategories = [];
   
   // List of possible sorting options
   final List<String> _sortOptions = [
@@ -43,66 +42,132 @@ class _CategoryPageState extends State<CategoryPage> {
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+    });
   }
 
-  Future<void> _loadProducts() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
+  void _initializeData() {
+    final productProvider = context.read<ProductProvider>();
+    final products = productProvider.products;
 
-      final products = await _productService.getProducts();
+    if (products.isNotEmpty) {
+      // Set price range based on actual product prices for this category
+      final categoryProducts = _getCategoryProducts(products);
+      if (categoryProducts.isNotEmpty) {
+        final prices = categoryProducts.map((p) => p.discountPrice).toList();
+        final minPrice = prices.reduce((a, b) => a < b ? a : b);
+        final maxPrice = prices.reduce((a, b) => a > b ? a : b);
+        
+        _priceRange = RangeValues(minPrice, maxPrice);
+        _selectedPriceRange = RangeValues(minPrice, maxPrice);
+      }
+
+      // Generate subcategories
+      _availableSubcategories = _getSubcategories(products);
       
-      setState(() {
-        _allProducts = products;
-        _isLoading = false;
-        _applyFilters(); // Apply any filters and update displayed products
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      // Apply initial filters
+      _applyFilters();
     }
+  }
+
+  // Get products for this category from the provider
+  List<Product> _getCategoryProducts(List<Product> allProducts) {
+    // Check if the category is a brand
+    final bool isBrand = _isBrandCategory();
+
+    if (isBrand) {
+      // Filter by brand
+      return allProducts
+          .where((product) => product.brand.toLowerCase() == widget.category.id.toLowerCase())
+          .toList();
+    } else {
+      // Filter by category
+      return allProducts
+          .where((product) => product.category.toLowerCase() == widget.category.id.toLowerCase())
+          .toList();
+    }
+  }
+
+  // Check if this is a brand category or product category
+  bool _isBrandCategory() {
+    // Define known product categories
+    final knownCategories = [
+      'electronics', 'fashion', 'home', 'beauty', 'sports', 'books', 
+      'automotive', 'health', 'toys', 'grocery', 'mobiles', 'mobile',
+      'phones', 'phone', 'laptops', 'laptop', 'computers', 'computer'
+    ];
+    
+    return !knownCategories.contains(widget.category.id.toLowerCase());
   }
 
   // Get subcategories based on available products for this category
-  List<String> _getSubcategories() {
-    if (_allProducts.isEmpty) {
-      return ['All']; // Default if no products are loaded yet
+  List<String> _getSubcategories(List<Product> allProducts) {
+    final categoryProducts = _getCategoryProducts(allProducts);
+    
+    if (categoryProducts.isEmpty) {
+      return ['All'];
     }
 
-    // Check if the category is a brand
-    final bool isBrand = !['electronics', 'fashion', 'home', 'beauty', 'sports'].contains(widget.category.id);
+    final bool isBrand = _isBrandCategory();
 
     if (isBrand) {
       // For a brand, subcategories are product categories
-      return _allProducts
-          .where((product) => product.brand.toLowerCase() == widget.category.id.toLowerCase())
+      final subcategories = categoryProducts
           .map((product) => product.category)
           .toSet()
           .toList();
+      subcategories.insert(0, 'All');
+      return subcategories;
     } else {
-      // For a product category, find appropriate subcategories
-      // This could be derived from product data or predefined
-      switch (widget.category.id) {
+      // For a product category, create subcategories based on the category type
+      Set<String> subcategories = {'All'};
+      
+      // Add subcategories based on product variations or common subcategories
+      switch (widget.category.id.toLowerCase()) {
         case 'electronics':
-          return ['All', 'Smartphones', 'Laptops', 'Audio', 'Wearables', 'Cameras'];
+        case 'mobiles':
+        case 'mobile':
+        case 'phones':
+        case 'phone':
+          subcategories.addAll(['Smartphones', 'Feature Phones', 'Accessories']);
+          break;
+        case 'laptops':
+        case 'laptop':
+        case 'computers':
+        case 'computer':
+          subcategories.addAll(['Gaming', 'Business', 'Student', 'Workstation']);
+          break;
         case 'fashion':
-          return ['All', 'Men', 'Women', 'Kids', 'Footwear', 'Accessories'];
+          subcategories.addAll(['Men', 'Women', 'Kids', 'Footwear', 'Accessories']);
+          break;
         case 'home':
-          return ['All', 'Kitchen', 'Furniture', 'Decor', 'Bedding', 'Appliances'];
+          subcategories.addAll(['Kitchen', 'Furniture', 'Decor', 'Bedding', 'Appliances']);
+          break;
         case 'beauty':
-          return ['All', 'Skincare', 'Makeup', 'Haircare', 'Fragrance', 'Tools'];
+          subcategories.addAll(['Skincare', 'Makeup', 'Haircare', 'Fragrance', 'Tools']);
+          break;
         case 'sports':
-          return ['All', 'Fitness', 'Outdoor', 'Team Sports', 'Swimwear', 'Equipment'];
+          subcategories.addAll(['Fitness', 'Outdoor', 'Team Sports', 'Swimwear', 'Equipment']);
+          break;
         default:
-          return ['All'];
+          // Try to extract subcategories from product names or descriptions
+          for (var product in categoryProducts) {
+            // Add any meaningful keywords from product names as potential subcategories
+            final words = product.name.toLowerCase().split(' ');
+            for (var word in words) {
+              if (word.length > 3 && !word.contains('the') && !word.contains('and')) {
+                subcategories.add(word.substring(0, 1).toUpperCase() + word.substring(1));
+              }
+            }
+          }
+          break;
       }
+      
+      return subcategories.take(8).toList(); // Limit to 8 subcategories
     }
   }
+
   // Convert Product to SuggestionItem
   SuggestionItem _convertProductToSuggestionItem(Product product) {
     return SuggestionItem(
@@ -131,44 +196,36 @@ class _CategoryPageState extends State<CategoryPage> {
   }
 
   // Apply filters and update displayed products
-  void _applyFilters() {    if (_allProducts.isEmpty) {
+  void _applyFilters() {
+    final productProvider = context.read<ProductProvider>();
+    final allProducts = productProvider.products;
+
+    if (allProducts.isEmpty) {
       // Use fallback products when API data is not available
-      _displayedProducts = _getCategoryProducts();
+      _displayedProducts = _getFallbackProducts();
+      setState(() {});
       return;
     }
 
-    // Start with all products
-    List<Product> filteredProducts = List<Product>.from(_allProducts);
-
-    // Filter by category ID (if not a brand)
-    if (!['electronics', 'fashion', 'home', 'beauty', 'sports'].contains(widget.category.id)) {
-      // This is a brand - filter by brand name
-      filteredProducts = filteredProducts
-          .where((product) => product.brand.toLowerCase() == widget.category.id.toLowerCase())
-          .toList();
-    } else {
-      // This is a category - filter by category name
-      filteredProducts = filteredProducts
-          .where((product) => product.category.toLowerCase() == widget.category.id.toLowerCase())
-          .toList();
-    }
+    // Start with category products
+    List<Product> filteredProducts = _getCategoryProducts(allProducts);
 
     // Apply subcategory filter if selected
     if (_selectedSubcategory != null && _selectedSubcategory != 'All') {
-      filteredProducts = filteredProducts
-          .where((product) {
-            // Try to match against category or description
-            return product.category.toLowerCase().contains(_selectedSubcategory!.toLowerCase()) ||
-                   product.description.toLowerCase().contains(_selectedSubcategory!.toLowerCase());
-          })
-          .toList();
+      filteredProducts = filteredProducts.where((product) {
+        final subcategory = _selectedSubcategory!.toLowerCase();
+        return product.category.toLowerCase().contains(subcategory) ||
+               product.name.toLowerCase().contains(subcategory) ||
+               product.description.toLowerCase().contains(subcategory) ||
+               product.brand.toLowerCase().contains(subcategory);
+      }).toList();
     }
 
     // Apply price range filter
     filteredProducts = filteredProducts
         .where((product) => 
-            product.discountPrice >= _priceRange.start && 
-            product.discountPrice <= _priceRange.end)
+            product.discountPrice >= _selectedPriceRange.start && 
+            product.discountPrice <= _selectedPriceRange.end)
         .toList();
 
     // Convert to SuggestionItems
@@ -195,17 +252,20 @@ class _CategoryPageState extends State<CategoryPage> {
             return discountB.compareTo(discountA);
           });
           break;
-        // For other options like 'Popularity' or 'Newest First', we'd need additional data
-        // For now, these fall back to default sorting
+        case 'Newest First':
+          items.sort((a, b) => (b.isNew ? 1 : 0).compareTo(a.isNew ? 1 : 0));
+          break;
+        // 'Popularity' falls back to default sorting
       }
     }
 
     setState(() {
       _displayedProducts = items;
-    });  }
+    });
+  }
 
   // Fallback method to get category products (for when API fails)
-  List<SuggestionItem> _getCategoryProducts() {
+  List<SuggestionItem> _getFallbackProducts() {
     List<SuggestionItem> products = [];
     
     if (widget.category.id == 'electronics') {
@@ -420,9 +480,15 @@ class _CategoryPageState extends State<CategoryPage> {
                         onPressed: () {
                           setModalState(() {
                             _selectedSubcategory = null;
-                            _priceRange = const RangeValues(0, 100000);
+                            _selectedPriceRange = _priceRange;
                             _sortOption = null;
                           });
+                          setState(() {
+                            _selectedSubcategory = null;
+                            _selectedPriceRange = _priceRange;
+                            _sortOption = null;
+                          });
+                          _applyFilters();
                         },
                         child: const Text('Reset All'),
                       ),
@@ -442,12 +508,13 @@ class _CategoryPageState extends State<CategoryPage> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: _getSubcategories().map((subcategory) {
+                    children: _availableSubcategories.map((subcategory) {
                       return FilterChip(
                         label: Text(subcategory),
                         selected: _selectedSubcategory == subcategory,
                         onSelected: (selected) {
-                          setModalState(() {                          _selectedSubcategory = selected ? subcategory : null;
+                          setModalState(() {
+                            _selectedSubcategory = selected ? subcategory : null;
                           });
                         },
                         selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
@@ -469,7 +536,7 @@ class _CategoryPageState extends State<CategoryPage> {
                         ),
                       ),
                       Text(
-                        '₹${_priceRange.start.round()} - ₹${_priceRange.end.round()}',
+                        '₹${_selectedPriceRange.start.round()} - ₹${_selectedPriceRange.end.round()}',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
@@ -478,19 +545,20 @@ class _CategoryPageState extends State<CategoryPage> {
                     ],
                   ),
                   RangeSlider(
-                    values: _priceRange,
-                    min: 0,
-                    max: 100000,
+                    values: _selectedPriceRange,
+                    min: _priceRange.start,
+                    max: _priceRange.end,
                     divisions: 20,
                     labels: RangeLabels(
-                      '₹${_priceRange.start.round()}',
-                      '₹${_priceRange.end.round()}',
+                      '₹${_selectedPriceRange.start.round()}',
+                      '₹${_selectedPriceRange.end.round()}',
                     ),
                     onChanged: (values) {
                       setModalState(() {
-                        _priceRange = values;
+                        _selectedPriceRange = values;
                       });
-                    },                    activeColor: Theme.of(context).colorScheme.primary,
+                    },
+                    activeColor: Theme.of(context).colorScheme.primary,
                     inactiveColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                   ),
                   const SizedBox(height: 20),
@@ -512,7 +580,8 @@ class _CategoryPageState extends State<CategoryPage> {
                         label: Text(option),
                         selected: _sortOption == option,
                         onSelected: (selected) {
-                          setModalState(() {                          _sortOption = selected ? option : null;
+                          setModalState(() {
+                            _sortOption = selected ? option : null;
                           });
                         },
                         selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
@@ -551,167 +620,204 @@ class _CategoryPageState extends State<CategoryPage> {
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.category.title),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: Stack(
+              children: [
+                const Icon(Icons.filter_list),
+                if (_selectedSubcategory != null || _sortOption != null)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 8,
+                        minHeight: 8,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             onPressed: _showFilterBottomSheet,
           ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
               // Navigate to search page with pre-filled category
+              Navigator.pushNamed(context, '/search');
             },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (_selectedSubcategory != null || _sortOption != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.grey.shade100,
-              child: Row(
+      body: Consumer<ProductProvider>(
+        builder: (context, productProvider, child) {
+          if (productProvider.isLoading && productProvider.products.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (productProvider.error != null && productProvider.products.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Active Filters: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Icon(Icons.error, size: 80, color: Colors.red.shade400),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading products',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red.shade700,
+                    ),
                   ),
-                  if (_selectedSubcategory != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Chip(
-                        label: Text(_selectedSubcategory!),
-                        deleteIcon: const Icon(Icons.close, size: 16),
-                        onDeleted: () {
-                          setState(() {
-                            _selectedSubcategory = null;
-                          });
-                        },
-                      ),
-                    ),
-                  if (_sortOption != null)
-                    Chip(
-                      label: Text(_sortOption!),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _sortOption = null;
-                        });
-                      },
-                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    productProvider.error!,
+                    style: const TextStyle(color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => productProvider.reloadProducts(),
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
-            ),
-          
-          // Product grid
-          Expanded(
-            child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+            );
+          }
+
+          return Column(
+            children: [
+              // Active filters display
+              if (_selectedSubcategory != null || _sortOption != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: Colors.grey.shade100,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        const Text(
+                          'Active Filters: ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        if (_selectedSubcategory != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Chip(
+                              label: Text(_selectedSubcategory!),
+                              deleteIcon: const Icon(Icons.close, size: 16),
+                              onDeleted: () {
+                                setState(() {
+                                  _selectedSubcategory = null;
+                                });
+                                _applyFilters();
+                              },
+                            ),
+                          ),
+                        if (_sortOption != null)
+                          Chip(
+                            label: Text(_sortOption!),
+                            deleteIcon: const Icon(Icons.close, size: 16),
+                            onDeleted: () {
+                              setState(() {
+                                _sortOption = null;
+                              });
+                              _applyFilters();
+                            },
+                          ),
+                      ],
                     ),
-                  )
-                : _error != null
+                  ),
+                ),
+              
+              // Product count
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('${_displayedProducts.length} products found'),
+                    // Sort quick access
+                    if (_sortOption == null)
+                      TextButton.icon(
+                        onPressed: _showFilterBottomSheet,
+                        icon: const Icon(Icons.sort),
+                        label: const Text('Sort'),
+                      ),
+                  ],
+                ),
+              ),
+              
+              // Product grid
+              Expanded(
+                child: _displayedProducts.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.error,
+                              Icons.search_off,
                               size: 80,
-                              color: Colors.red.shade400,
+                              color: Colors.grey.shade400,
                             ),
                             const SizedBox(height: 16),
-                            Text(
-                              'Error loading products',
+                            const Text(
+                              'No products found',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.red.shade700,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              _error!,
+                            const Text(
+                              'Try adjusting your filters',
                               style: TextStyle(color: Colors.grey),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Retry loading products
-                                _loadProducts();
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text(
-                                'Retry',
-                                style: TextStyle(fontSize: 16),
-                              ),
                             ),
                           ],
                         ),
                       )
-                    : _displayedProducts.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.search_off,
-                                  size: 80,
-                                  color: Colors.grey.shade400,
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'No products found',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Try adjusting your filters',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          )
-                        : GridView.builder(
-                            padding: const EdgeInsets.all(16),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.7,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                            ),
-                            itemCount: _displayedProducts.length,
-                            itemBuilder: (context, index) {
-                              final product = _displayedProducts[index];
-                              return Hero(
-                                tag: 'category_${widget.category.id}_product_${product.id}',
-                                child: SuggestionItemCard(
-                                  item: product,
-                                  width: double.infinity,
-                                ),
-                              );
-                            },
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          await productProvider.reloadProducts();
+                          _initializeData();
+                        },
+                        child: GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.7,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
                           ),
-          ),
-        ],
+                          itemCount: _displayedProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = _displayedProducts[index];
+                            return Hero(
+                              tag: 'category_${widget.category.id}_product_${product.id}',
+                              child: SuggestionItemCard(
+                                item: product,
+                                width: double.infinity,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

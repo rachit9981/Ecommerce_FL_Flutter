@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ecom/components/search/search_comps.dart';
-import 'package:ecom/pages/product_page.dart'; // Add import for ProductPage
+import 'package:ecom/pages/product_page.dart';
+import 'package:ecom/providers/product_provider.dart';
+import 'package:ecom/services/products.dart';
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
@@ -15,114 +18,55 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _hasSearched = false;
   String _currentQuery = '';
-  final List<String> _popularSearches = [
-    'headphones',
-    'gaming laptop',
-    'bluetooth speaker',
-    'smart tv',
-    'charger',
-    'laptop',
-    'smartphone',
-    'tablet',
-    ];
-
+  
   // Filter state
-  RangeValues _priceRange = const RangeValues(0, 50000);
-  RangeValues _selectedPriceRange = const RangeValues(0, 50000);
+  RangeValues _priceRange = const RangeValues(0, 100000);
+  RangeValues _selectedPriceRange = const RangeValues(0, 100000);
   double? _minRating;
+  String? _selectedCategory;
+  String? _selectedBrand;
 
-  // Sample search results with Indian currency values
-  final List<Map<String, dynamic>> _allProducts = [
-    {
-      'title': 'Wireless Bluetooth Earbuds',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      'price': 5999.00,
-      'originalPrice': 7999.00,
-      'rating': 4.5,
-      'reviewCount': 256,
-      'category': 'Electronics',
-    },
-    {
-      'title': 'Smart Watch with Heart Rate Monitor',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      'price': 9999.00,
-      'originalPrice': 12499.00,
-      'rating': 4.3,
-      'reviewCount': 189,
-      'category': 'Electronics',
-    },
-    {
-      'title': 'Bluetooth Portable Speaker',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      'price': 3499.00,
-      'originalPrice': null,
-      'rating': 4.0,
-      'reviewCount': 98,
-      'category': 'Electronics',
-    },
-    {
-      'title': 'Men\'s Cotton T-Shirt',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      'price': 1299.00,
-      'originalPrice': 1999.00,
-      'rating': 4.2,
-      'reviewCount': 152,
-      'category': 'Clothing',
-    },
-    {
-      'title': 'Stainless Steel Water Bottle',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1602143407151-7111542de6e8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      'price': 999.00,
-      'originalPrice': null,
-      'rating': 4.7,
-      'reviewCount': 203,
-      'category': 'Home & Kitchen',
-    },
-    {
-      'title': 'Yoga Mat Non-Slip Surface',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1590432923467-c5469804a8a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      'price': 1599.00,
-      'originalPrice': 2499.00,
-      'rating': 4.4,
-      'reviewCount': 87,
-      'category': 'Sports',
-    },
-    {
-      'title': 'LED Desk Lamp with USB Charging Port',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1534159559673-de7bc89fa998?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      'price': 2499.00,
-      'originalPrice': 3499.00,
-      'rating': 4.1,
-      'reviewCount': 112,
-      'category': 'Home & Kitchen',
-    },
-    {
-      'title': 'Facial Cleanser Set',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-      'price': 1799.00,
-      'originalPrice': 2499.00,
-      'rating': 4.6,
-      'reviewCount': 76,
-      'category': 'Beauty',
-    },
-  ];
-
-  List<Map<String, dynamic>> _filteredProducts = [];
+  List<Product> _filteredProducts = [];
+  List<String> _popularSearches = [];
+  List<String> _availableCategories = [];
+  List<String> _availableBrands = [];
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
-      _searchController.text = widget.initialQuery!;
-      _performSearch(widget.initialQuery!);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+      if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+        _searchController.text = widget.initialQuery!;
+        _performSearch(widget.initialQuery!);
+      }
+    });
+  }
+
+  void _initializeData() {
+    final productProvider = context.read<ProductProvider>();
+    final products = productProvider.products;
+
+    if (products.isNotEmpty) {
+      // Extract categories and brands
+      _availableCategories = products.map((p) => p.category).toSet().toList();
+      _availableBrands = products.map((p) => p.brand).toSet().toList();
+
+      // Set price range based on actual product prices
+      final prices = products.map((p) => p.discountPrice).toList();
+      final minPrice = prices.reduce((a, b) => a < b ? a : b);
+      final maxPrice = prices.reduce((a, b) => a > b ? a : b);
+      
+      _priceRange = RangeValues(minPrice, maxPrice);
+      _selectedPriceRange = RangeValues(minPrice, maxPrice);
+
+      // Generate popular searches from product names and categories
+      _popularSearches = [
+        ..._availableCategories.take(4),
+        ...products.take(4).map((p) => p.name.split(' ').first),
+      ].toSet().toList();
+
+      setState(() {});
     }
   }
 
@@ -133,28 +77,37 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _performSearch(String query) {
+    final productProvider = context.read<ProductProvider>();
+    final allProducts = productProvider.products;
+
     setState(() {
       _currentQuery = query;
       _hasSearched = true;
 
-      // Filter products based on search query and filters
-      _filteredProducts = _allProducts.where((product) {
+      _filteredProducts = allProducts.where((product) {
         // Text search
-        final matchesQuery = product['title']
-            .toString()
-            .toLowerCase()
-            .contains(query.toLowerCase());
+        final matchesQuery = query.isEmpty || 
+            product.name.toLowerCase().contains(query.toLowerCase()) ||
+            product.brand.toLowerCase().contains(query.toLowerCase()) ||
+            product.category.toLowerCase().contains(query.toLowerCase()) ||
+            product.description.toLowerCase().contains(query.toLowerCase());
+
+        // Category filter
+        final matchesCategory = _selectedCategory == null || 
+            product.category.toLowerCase() == _selectedCategory!.toLowerCase();
+
+        // Brand filter
+        final matchesBrand = _selectedBrand == null ||
+            product.brand.toLowerCase() == _selectedBrand!.toLowerCase();
 
         // Price filter
-        final price = product['price'] as double;
-        final matchesPrice = price >= _selectedPriceRange.start &&
-            price <= _selectedPriceRange.end;
+        final matchesPrice = product.discountPrice >= _selectedPriceRange.start &&
+            product.discountPrice <= _selectedPriceRange.end;
 
         // Rating filter
-        final rating = product['rating'] as double;
-        final matchesRating = _minRating == null || rating >= _minRating!;
+        final matchesRating = _minRating == null || product.rating >= _minRating!;
 
-        return matchesQuery && matchesPrice && matchesRating;
+        return matchesQuery && matchesCategory && matchesBrand && matchesPrice && matchesRating;
       }).toList();
     });
   }
@@ -163,6 +116,10 @@ class _SearchPageState extends State<SearchPage> {
     setState(() {
       _hasSearched = false;
       _currentQuery = '';
+      _selectedCategory = null;
+      _selectedBrand = null;
+      _minRating = null;
+      _selectedPriceRange = _priceRange;
     });
   }
 
@@ -179,9 +136,32 @@ class _SearchPageState extends State<SearchPage> {
           return StatefulBuilder(
             builder: (context, setModalState) {
               return SearchFilters(
-                // Removed categories parameter
-                // Removed selectedCategory parameter
-                // Removed onCategoryChanged parameter
+                categories: _availableCategories,
+                selectedCategory: _selectedCategory,
+                onCategoryChanged: (category) {
+                  setModalState(() {
+                    _selectedCategory = category;
+                  });
+                  setState(() {
+                    _selectedCategory = category;
+                  });
+                  if (_hasSearched) {
+                    _performSearch(_currentQuery);
+                  }
+                },
+                brands: _availableBrands,
+                selectedBrand: _selectedBrand,
+                onBrandChanged: (brand) {
+                  setModalState(() {
+                    _selectedBrand = brand;
+                  });
+                  setState(() {
+                    _selectedBrand = brand;
+                  });
+                  if (_hasSearched) {
+                    _performSearch(_currentQuery);
+                  }
+                },
                 priceRange: _priceRange,
                 selectedPriceRange: _selectedPriceRange,
                 onPriceRangeChanged: (range) {
@@ -233,14 +213,58 @@ class _SearchPageState extends State<SearchPage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: Stack(
+              children: [
+                const Icon(Icons.filter_list),
+                if (_selectedCategory != null || _selectedBrand != null || _minRating != null)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 8,
+                        minHeight: 8,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             onPressed: _showFilterBottomSheet,
           ),
         ],
       ),
-      body: _hasSearched
-          ? _buildSearchResults()
-          : _buildSearchSuggestions(),
+      body: Consumer<ProductProvider>(
+        builder: (context, productProvider, child) {
+          if (productProvider.isLoading && productProvider.products.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (productProvider.error != null && productProvider.products.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text('Error loading products: ${productProvider.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => productProvider.reloadProducts(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return _hasSearched ? _buildSearchResults() : _buildSearchSuggestions();
+        },
+      ),
     );
   }
 
@@ -252,23 +276,38 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           const Text(
             'Popular Searches',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Column(
             children: _popularSearches
-                .map(
-                  (search) => SearchSuggestionItem(
-                    suggestion: search,
-                    onTap: () {
-                      _searchController.text = search;
-                      _performSearch(search);
-                    },
-                  ),
-                )
+                .map((search) => SearchSuggestionItem(
+                      suggestion: search,
+                      onTap: () {
+                        _searchController.text = search;
+                        _performSearch(search);
+                      },
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Browse by Category',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _availableCategories
+                .map((category) => CustomFilterChip(
+                      label: category,
+                      isSelected: false,
+                      onTap: () {
+                        _selectedCategory = category;
+                        _performSearch('');
+                      },
+                    ))
                 .toList(),
           ),
         ],
@@ -282,31 +321,17 @@ class _SearchPageState extends State<SearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 80,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.search_off, size: 80, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
-              'No results found for "$_currentQuery"',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              'No results found${_currentQuery.isNotEmpty ? ' for "$_currentQuery"' : ''}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Try a different search term',
-              style: TextStyle(color: Colors.grey),
-            ),
+            const Text('Try a different search term or filter', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _clearSearch,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-              ),
               child: const Text('Clear Search'),
             ),
           ],
@@ -316,72 +341,99 @@ class _SearchPageState extends State<SearchPage> {
 
     return Column(
       children: [
-        // Active filters - removed category filter
-        if (_minRating != null)
+        // Active filters
+        if (_selectedCategory != null || _selectedBrand != null || _minRating != null)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: Colors.grey.shade100,
-            child: Row(
-              children: [
-                const Text(
-                  'Filters: ',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Chip(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.star,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.secondary,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  const Text('Filters: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                  if (_selectedCategory != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Chip(
+                        label: Text(_selectedCategory!),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
+                          setState(() => _selectedCategory = null);
+                          _performSearch(_currentQuery);
+                        },
                       ),
-                      Text('${_minRating!.toInt()}+'),
-                    ],
-                  ),
-                  deleteIcon: const Icon(Icons.close, size: 16),
-                  onDeleted: () {
-                    setState(() {
-                      _minRating = null;
-                    });
-                    _performSearch(_currentQuery);
-                  },
-                ),
-              ],
+                    ),
+                  if (_selectedBrand != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Chip(
+                        label: Text(_selectedBrand!),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
+                          setState(() => _selectedBrand = null);
+                          _performSearch(_currentQuery);
+                        },
+                      ),
+                    ),
+                  if (_minRating != null)
+                    Chip(
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star, size: 16, color: Colors.amber),
+                          Text('${_minRating!.toInt()}+'),
+                        ],
+                      ),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () {
+                        setState(() => _minRating = null);
+                        _performSearch(_currentQuery);
+                      },
+                    ),
+                ],
+              ),
             ),
           ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${_filteredProducts.length} products found'),
+              // Add sort option here if needed
+            ],
+          ),
+        ),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: _filteredProducts.length,
             itemBuilder: (context, index) {
               final product = _filteredProducts[index];
               return SearchResultItem(
-                id: product['id'] ?? index.toString(),
-                title: product['title'],
-                imageUrl: product['imageUrl'],
-                price: product['price'],
-                originalPrice: product['originalPrice'],
-                rating: product['rating'],
-                reviewCount: product['reviewCount'],
+                id: product.id,
+                title: product.name,
+                imageUrl: product.images.isNotEmpty ? product.images.first : '',
+                price: product.discountPrice,
+                originalPrice: product.price != product.discountPrice ? product.price : null,
+                rating: product.rating,
+                reviewCount: product.reviews,
+                brand: product.brand,
+                category: product.category,
                 onTap: () {
-                  // Navigate to product detail page
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ProductPage(
-                        productId: product['id'] ?? index.toString(),
-                        heroTag: 'search_product_${product['id'] ?? index.toString()}',
+                        productId: product.id,
+                        heroTag: 'search_product_${product.id}',
                       ),
                     ),
                   );
                 },
                 onAddToCart: () {
-                  // Add to cart functionality
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Added to cart: ${product['title']}'),
-                    ),
+                    SnackBar(content: Text('Added to cart: ${product.name}')),
                   );
                 },
               );

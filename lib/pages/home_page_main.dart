@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ecom/components/app_bar/home.dart';
 import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/categories.dart';
@@ -8,6 +9,7 @@ import 'package:ecom/pages/search_page.dart';
 // import 'package:ecom/pages/notification_page.dart';
 import 'package:ecom/pages/product_page.dart';
 import 'package:ecom/pages/category_page.dart';
+import 'package:ecom/providers/product_provider.dart';
 import 'package:ecom/services/products.dart';
 import 'package:ecom/services/cart_wishlist.dart';
 
@@ -22,14 +24,8 @@ class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController(viewportFraction: 1.0);
   int _currentBannerIndex = 0;
   
-  // API integration variables
-  final ProductService _productService = ProductService();
+  // Cart service for cart count
   final CartWishlistService _cartService = CartWishlistService();
-  List<Product> _allProducts = [];
-  bool _isLoading = true;
-  String? _error;
-  
-  // Cart count for badge
   int _cartItemCount = 0;
   bool _isLoadingCart = false;
 
@@ -40,8 +36,10 @@ class _HomePageState extends State<HomePage> {
     Future.delayed(Duration.zero, () {
       _startAutoScroll();
     });
-    // Load products from API
-    _loadProducts();
+    // Load products using provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductProvider>().loadProducts();
+    });
     // Load cart count
     _loadCartCount();
   }
@@ -93,31 +91,10 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _loadProducts() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      final products = await _productService.getProducts();
-      
-      setState(() {
-        _allProducts = products;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
   // Method to get dynamic categories from product data
-  List<CategoryItem> _getDynamicCategories(BuildContext context) {
+  List<CategoryItem> _getDynamicCategories(BuildContext context, List<Product> products) {
     // Extract unique categories from products
-    final Set<String> uniqueCategories = _allProducts
+    final Set<String> uniqueCategories = products
         .map((product) => product.category.toLowerCase())
         .toSet();
     
@@ -225,9 +202,9 @@ class _HomePageState extends State<HomePage> {
   }
   
   // Method to get dynamic mobile brands from product data
-  List<CategoryItem> _getDynamicBrands(BuildContext context) {
+  List<CategoryItem> _getDynamicBrands(BuildContext context, List<Product> products) {
     // Extract unique brands from mobile products
-    final Set<String> uniqueBrands = _allProducts
+    final Set<String> uniqueBrands = products
         .where((product) => 
             product.category.toLowerCase() == 'mobiles' || 
             product.category.toLowerCase() == 'mobile' || 
@@ -408,8 +385,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  List<SuggestionItem> _getProductsByCategory(String category, {int limit = 4, String heroTagPrefix = 'product'}) {
-    final categoryProducts = _allProducts
+  List<SuggestionItem> _getProductsByCategory(List<Product> products, String category, {int limit = 4, String heroTagPrefix = 'product'}) {
+    final categoryProducts = products
         .where((product) => product.category.toLowerCase() == category.toLowerCase())
         .take(limit)
         .toList();
@@ -417,8 +394,8 @@ class _HomePageState extends State<HomePage> {
     return categoryProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
   }
 
-  List<SuggestionItem> _getFeaturedProducts({int limit = 4, String heroTagPrefix = 'featured'}) {
-    final featuredProducts = _allProducts
+  List<SuggestionItem> _getFeaturedProducts(List<Product> products, {int limit = 4, String heroTagPrefix = 'featured'}) {
+    final featuredProducts = products
         // .where((product) => product.featured == true)
         .take(limit)
         .toList();
@@ -426,12 +403,13 @@ class _HomePageState extends State<HomePage> {
     return featuredProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
   }
 
-  List<SuggestionItem> _getRandomProducts({int limit = 4, String heroTagPrefix = 'random'}) {
-    final shuffledProducts = List<Product>.from(_allProducts)..shuffle();
+  List<SuggestionItem> _getRandomProducts(List<Product> products, {int limit = 4, String heroTagPrefix = 'random'}) {
+    final shuffledProducts = List<Product>.from(products)..shuffle();
     final randomProducts = shuffledProducts.take(limit).toList();
     
     return randomProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
   }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -440,25 +418,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Generate dynamic categories and brands from product data
-    final categories = _allProducts.isNotEmpty 
-        ? _getDynamicCategories(context) 
-        : CategoryData.getSampleCategories(context);
-
-    // Generate dynamic mobile brands from product data
-    final mobileBrands = _allProducts.isNotEmpty 
-        ? _getDynamicBrands(context) 
-        : _getFallbackBrandItems(context);
-    
-    // Get dynamic product data from API for different sections
-    final trendingProducts = _getRandomProducts(limit: 4, heroTagPrefix: 'trending_now_product');
-    final recommendedProducts = _getFeaturedProducts(limit: 4, heroTagPrefix: 'recommended_for_you_product');
-    
-    // For infinite scroll products - combine all available products
-    final moreProducts = List<SuggestionItem>.from(_allProducts.map(
-      (product) => _convertProductToSuggestionItem(product, 'infinite_product'),
-    ));
-
     return Scaffold(
       appBar: HomeAppBar(
         cartItemCount: _isLoadingCart ? 0 : _cartItemCount,
@@ -479,319 +438,349 @@ class _HomePageState extends State<HomePage> {
         // },
       ),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(
+        child: Consumer<ProductProvider>(
+          builder: (context, productProvider, child) {
+            final products = productProvider.products;
+            final isLoading = productProvider.isLoading;
+            final error = productProvider.error;
+
+            if (isLoading && products.isEmpty) {
+              return const Center(
                 child: CircularProgressIndicator(),
-              )
-            : _error != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Failed to load products',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _error!,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadProducts,
-                          child: const Text('Retry'),
-                        ),
-                      ],
+              );
+            }
+
+            if (error != null && products.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.grey[400],
                     ),
-                  )                : RefreshIndicator(
-                    onRefresh: _loadProducts,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SearchPage()),
-                  );
-                },
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade300, width: 1),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 16),
-                      Icon(Icons.search, color: Colors.grey.shade600),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Search products',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        margin: const EdgeInsets.all(6),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Search',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Shop by Category section
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: 8,
-              ),
-              child: Text(
-                'Shop by Category',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-
-            // Horizontal category list from categories.dart
-            HorizontalCategoryList(
-              categories: categories,
-              itemWidth: 100,
-              itemHeight: 120,
-              spacing: 12,
-              showShadow: true,
-            ),
-
-            // Image carousel with auto-scroll
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                height: 160,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load products',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => productProvider.reloadProducts(),
+                      child: const Text('Retry'),
                     ),
                   ],
                 ),
-                child: PageView.builder(
-                  itemCount: 3,
-                  controller: _pageController,
-                  allowImplicitScrolling: true,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentBannerIndex = index;
-                    });
-                  },
-                  itemBuilder: (context, index) {
-                    // List of promotional banners
-                    final List<Map<String, dynamic>> banners = [
-                      {
-                        'image': 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
-                        'title': 'Summer Sale',
-                        'subtitle': 'Up to 50% off',
-                        'buttonText': 'Shop Now',
-                        'color': Theme.of(context).colorScheme.primary,
+              );
+            }
+
+            // Generate dynamic categories and brands from product data
+            final categories = products.isNotEmpty 
+                ? _getDynamicCategories(context, products) 
+                : CategoryData.getSampleCategories(context);
+
+            // Generate dynamic mobile brands from product data
+            final mobileBrands = products.isNotEmpty 
+                ? _getDynamicBrands(context, products) 
+                : _getFallbackBrandItems(context);
+            
+            // Get dynamic product data from provider for different sections
+            final trendingProducts = _getRandomProducts(products, limit: 4, heroTagPrefix: 'trending_now_product');
+            final recommendedProducts = _getFeaturedProducts(products, limit: 4, heroTagPrefix: 'recommended_for_you_product');
+            
+            // For infinite scroll products - combine all available products
+            final moreProducts = List<SuggestionItem>.from(products.map(
+              (product) => _convertProductToSuggestionItem(product, 'infinite_product'),
+            ));
+
+            return RefreshIndicator(
+              onRefresh: () => productProvider.reloadProducts(),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SearchPage()),
+                        );
                       },
-                      {
-                        'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
-                        'title': 'New Arrivals',
-                        'subtitle': 'Discover the latest',
-                        'buttonText': 'Explore Now',
-                        'color': Theme.of(context).colorScheme.secondary,
-                      },
-                      {
-                        'image': 'https://images.unsplash.com/photo-1546027658-7aa750153465?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
-                        'title': 'Tech Deals',
-                        'subtitle': 'Save up to 30%',
-                        'buttonText': 'Buy Now',
-                        'color': Colors.blue,
-                      },
-                    ];
-                    
-                    final banner = banners[index];
-                    
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Stack(
-                        children: [
-                          Image.network(
-                            banner['image'],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: 160,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: banner['color'],
-                              child: const Center(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade300, width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 16),
+                            Icon(Icons.search, color: Colors.grey.shade600),
+                            const SizedBox(width: 12),
+                            Text(
+                              products.isNotEmpty 
+                                  ? 'Search ${products.length} products...'
+                                  : 'Search products...',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              margin: const EdgeInsets.all(6),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
                                 child: Text(
-                                  'Image not available',
-                                  style: TextStyle(color: Colors.white),
+                                  'Search',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
                             ),
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: Colors.grey[300],
-                                child: const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            },
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [
-                                  Colors.black.withOpacity(0.6),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            left: 20,
-                            top: 25,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  banner['title'],
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  banner['subtitle'],
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                ElevatedButton(
-                                  onPressed: () {},
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: banner['color'],
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: Text(banner['buttonText']),
-                                ),
-                              ],
-                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Shop by Category section
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom: 8,
+                    ),
+                    child: Text(
+                      'Shop by Category',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+
+                  // Horizontal category list from categories.dart
+                  HorizontalCategoryList(
+                    categories: categories,
+                    itemWidth: 100,
+                    itemHeight: 120,
+                    spacing: 12,
+                    showShadow: true,
+                  ),
+
+                  // Image carousel with auto-scroll
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Container(
+                      height: 160,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),            ScrollableSuggestionRow(
-              title: 'Trending Now',
-              items: trendingProducts.isNotEmpty 
-                  ? trendingProducts 
-                  : [
-                      SuggestionItem(
-                        id: 'placeholder',
-                        title: 'No products available',
-                        imageUrl: '',
-                        price: 0.0,
-                        description: 'Check back later',
-                        isProduct: false,
-                        onTap: () {},
+                      child: PageView.builder(
+                        itemCount: 3,
+                        controller: _pageController,
+                        allowImplicitScrolling: true,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentBannerIndex = index;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          // List of promotional banners
+                          final List<Map<String, dynamic>> banners = [
+                            {
+                              'image': 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
+                              'title': 'Summer Sale',
+                              'subtitle': 'Up to 50% off',
+                              'buttonText': 'Shop Now',
+                              'color': Theme.of(context).colorScheme.primary,
+                            },
+                            {
+                              'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
+                              'title': 'New Arrivals',
+                              'subtitle': 'Discover the latest',
+                              'buttonText': 'Explore Now',
+                              'color': Theme.of(context).colorScheme.secondary,
+                            },
+                            {
+                              'image': 'https://images.unsplash.com/photo-1546027658-7aa750153465?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80',
+                              'title': 'Tech Deals',
+                              'subtitle': 'Save up to 30%',
+                              'buttonText': 'Buy Now',
+                              'color': Colors.blue,
+                            },
+                          ];
+                          
+                          final banner = banners[index];
+                          
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Stack(
+                              children: [
+                                Image.network(
+                                  banner['image'],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: 160,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: banner['color'],
+                                    child: const Center(
+                                      child: Text(
+                                        'Image not available',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      color: Colors.grey[300],
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                      colors: [
+                                        Colors.black.withOpacity(0.6),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  left: 20,
+                                  top: 25,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        banner['title'],
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        banner['subtitle'],
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ElevatedButton(
+                                        onPressed: () {},
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: banner['color'],
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        child: Text(banner['buttonText']),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                    ],
-              itemHeight: 220,
-              itemWidth: 145,
-              showMore: trendingProducts.isNotEmpty,
-              onMoreTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('View all trending products')),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            ScrollableSuggestionRow(
-              title: 'Recommended For You',
-              items: recommendedProducts.isNotEmpty 
-                  ? recommendedProducts 
-                  : [
-                      SuggestionItem(
-                        id: 'placeholder',
-                        title: 'No products available',
-                        imageUrl: '',
-                        price: 0.0,
-                        description: 'Check back later',
-                        isProduct: false,
-                        onTap: () {},
-                      ),
-                    ],
-              itemHeight: 220,
-              itemWidth: 145,
-              showMore: recommendedProducts.isNotEmpty,
-              onMoreTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('View all recommended products'),
+                    ),
+                  ),            ScrollableSuggestionRow(
+                    title: 'Trending Now',
+                    items: trendingProducts.isNotEmpty 
+                        ? trendingProducts 
+                        : [
+                            SuggestionItem(
+                              id: 'placeholder',
+                              title: 'No products available',
+                              imageUrl: '',
+                              price: 0.0,
+                              description: 'Check back later',
+                              isProduct: false,
+                              onTap: () {},
+                            ),
+                          ],
+                    itemHeight: 220,
+                    itemWidth: 145,
+                    showMore: trendingProducts.isNotEmpty,
+                    onMoreTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('View all trending products')),
+                      );
+                    },
                   ),
-                );
-              },
-            ),            const SizedBox(height: 12),
+                  const SizedBox(height: 12),
+                  ScrollableSuggestionRow(
+                    title: 'Recommended For You',
+                    items: recommendedProducts.isNotEmpty 
+                        ? recommendedProducts 
+                        : [
+                            SuggestionItem(
+                              id: 'placeholder',
+                              title: 'No products available',
+                              imageUrl: '',
+                              price: 0.0,
+                              description: 'Check back later',
+                              isProduct: false,
+                              onTap: () {},
+                            ),
+                          ],
+                    itemHeight: 220,
+                    itemWidth: 145,
+                    showMore: recommendedProducts.isNotEmpty,
+                    onMoreTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('View all recommended products'),
+                        ),
+                      );
+                    },
+                  ),            const SizedBox(height: 12),
             
             // Display products by category if available
-            if (_allProducts.any((p) => p.category.toLowerCase() == 'mobiles' || 
-                                        p.category.toLowerCase() == 'mobile')) ...[
+            if (products.any((p) => p.category.toLowerCase() == 'mobiles' || 
+                                    p.category.toLowerCase() == 'mobile')) ...[
               ScrollableSuggestionRow(
                 title: 'Top Mobile Phones',
-                items: _getProductsByCategory('mobiles', limit: 4, heroTagPrefix: 'top_mobiles').isNotEmpty
-                    ? _getProductsByCategory('mobiles', limit: 4, heroTagPrefix: 'top_mobiles')
-                    : _getProductsByCategory('mobile', limit: 4, heroTagPrefix: 'top_mobiles'),
+                items: _getProductsByCategory(products, 'mobiles', limit: 4, heroTagPrefix: 'top_mobiles').isNotEmpty
+                    ? _getProductsByCategory(products, 'mobiles', limit: 4, heroTagPrefix: 'top_mobiles')
+                    : _getProductsByCategory(products, 'mobile', limit: 4, heroTagPrefix: 'top_mobiles'),
                 itemHeight: 220,
                 itemWidth: 145,
                 showMore: true,
@@ -813,10 +802,10 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 12),
             ],
             
-            if (_allProducts.any((p) => p.category.toLowerCase() == 'electronics')) ...[
+            if (products.any((p) => p.category.toLowerCase() == 'electronics')) ...[
               ScrollableSuggestionRow(
                 title: 'Electronics',
-                items: _getProductsByCategory('electronics', limit: 4, heroTagPrefix: 'top_electronics'),
+                items: _getProductsByCategory(products, 'electronics', limit: 4, heroTagPrefix: 'top_electronics'),
                 itemHeight: 220,
                 itemWidth: 145,
                 showMore: true,
@@ -943,10 +932,13 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                     ),
-            ),            const SizedBox(height: 32), // Added more bottom padding
-                      ],
-                    ),
-                  ),
+            ),
+            const SizedBox(height: 32), // Added more bottom padding
+          ],
+        ),
+      );
+    },
+  ),
       ),
     );
   }
