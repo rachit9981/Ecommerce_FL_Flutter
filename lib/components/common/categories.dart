@@ -32,66 +32,108 @@ class CategoryItem {
     ];
     return !knownCategories.contains(normalizedId);
   }
+  
+  // Create a copy of this category with a new onTap handler
+  CategoryItem copyWith({VoidCallback? onTap}) {
+    return CategoryItem(
+      id: id,
+      title: title,
+      imageUrl: imageUrl,
+      icon: icon,
+      backgroundColor: backgroundColor,
+      iconColor: iconColor,
+      onTap: onTap ?? this.onTap,
+    );
+  }
+  
+  // Find the best icon for this category based on its ID
+  static IconData getBestIconForCategory(String categoryId) {
+    final normalizedId = categoryId.toLowerCase().trim();
+    
+    // Map category keywords to icons
+    final Map<String, IconData> iconMap = {
+      'mobile': Icons.smartphone,
+      'phone': Icons.smartphone,
+      'laptop': Icons.laptop,
+      'computer': Icons.computer,
+      'electronic': Icons.devices,
+      'watch': Icons.watch,
+      'wearable': Icons.watch,
+      'headphone': Icons.headphones,
+      'audio': Icons.headphones,
+      'speaker': Icons.speaker,
+      'tv': Icons.tv,
+      'fashion': Icons.checkroom,
+      'clothing': Icons.checkroom,
+      'apparel': Icons.checkroom,
+      'shoe': Icons.hiking,
+      'footwear': Icons.hiking,
+      'home': Icons.home,
+      'furniture': Icons.chair,
+      'kitchen': Icons.kitchen,
+      'appliance': Icons.kitchen,
+      'book': Icons.book,
+      'sport': Icons.sports_basketball,
+      'fitness': Icons.fitness_center,
+      'toy': Icons.toys,
+      'beauty': Icons.face,
+      'health': Icons.health_and_safety,
+      'grocery': Icons.local_grocery_store,
+      'food': Icons.fastfood,
+      'car': Icons.directions_car,
+      'automotive': Icons.directions_car,
+      'tool': Icons.build,
+      'garden': Icons.yard,
+      'camera': Icons.camera_alt,
+      'tablet': Icons.tablet_android,
+      'gaming': Icons.sports_esports,
+    };
+    
+    // Find the first matching keyword
+    for (final entry in iconMap.entries) {
+      if (normalizedId.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+    
+    // Default icon if no match found
+    return Icons.category;
+  }
 }
 
 /// Utility class with sample categories for testing
 class CategoryData {
-  static List<CategoryItem> getSampleCategories(BuildContext context) {
+  static List<CategoryItem> getSampleCategories() {
     return [
       CategoryItem(
         id: 'smartphone',
         title: 'Smartphone',
         icon: Icons.smartphone,
         backgroundColor: Colors.blue.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Smartphone category tapped')),
-          );
-        },
       ),
       CategoryItem(
         id: 'laptop',
         title: 'Laptop',
         icon: Icons.laptop,
         backgroundColor: Colors.purple.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Laptop category tapped')),
-          );
-        },
       ),
       CategoryItem(
         id: 'television',
         title: 'Television',
         icon: Icons.tv,
         backgroundColor: Colors.red.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Television category tapped')),
-          );
-        },
       ),
       CategoryItem(
         id: 'speaker',
         title: 'Speaker',
         icon: Icons.speaker,
         backgroundColor: Colors.green.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Speaker category tapped')),
-          );
-        },
       ),
       CategoryItem(
         id: 'tablet',
         title: 'Tablet',
         icon: Icons.tablet_android,
         backgroundColor: Colors.orange.shade50,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tablet category tapped')),
-          );
-        },
       ),
     ];
   }
@@ -266,6 +308,7 @@ class HorizontalCategoryList extends StatelessWidget {
   final double spacing;
   final bool showShadow;
   final bool brandMode; // Flag for brand styling
+  final ValueChanged<CategoryItem>? onCategoryTap;
 
   const HorizontalCategoryList({
     Key? key,
@@ -275,6 +318,7 @@ class HorizontalCategoryList extends StatelessWidget {
     this.spacing = 16,
     this.showShadow = false,
     this.brandMode = false,
+    this.onCategoryTap,
   }) : super(key: key);
 
   @override
@@ -323,13 +367,19 @@ class HorizontalCategoryList extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: item.onTap,
+            onTap: () {
+              if (item.onTap != null) {
+                item.onTap!();
+              } else if (onCategoryTap != null) {
+                onCategoryTap!(item);
+              }
+            },
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (item.imageUrl != null) ...[
+                  if (item.imageUrl != null && item.imageUrl!.isNotEmpty) ...[
                     Expanded(
                       child: brandMode 
                           ? _buildBrandLogo(item.imageUrl!)
@@ -338,9 +388,10 @@ class HorizontalCategoryList extends StatelessWidget {
                   ] else if (item.icon != null) ...[
                     Container(
                       width: 48,
-                      height: 48,                      decoration: BoxDecoration(
+                      height: 48,
+                      decoration: BoxDecoration(
                         color: item.backgroundColor ??
-                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

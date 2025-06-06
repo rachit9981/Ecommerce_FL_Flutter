@@ -283,8 +283,7 @@ class _HomePageState extends State<HomePage> {
               ),
             );
           },
-        ),
-      );
+        ),);
     }
     
     return brandItems;
@@ -399,14 +398,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<SuggestionItem> _getProductsByCategory(List<Product> products, String category, {int limit = 4, String heroTagPrefix = 'product'}) {
-    // Case insensitive category matching
-    final categoryProducts = products
-        .where((product) => 
-            product.category.toLowerCase().trim() == category.toLowerCase().trim() ||
-            product.category.toLowerCase().trim().contains(category.toLowerCase().trim()) ||
-            category.toLowerCase().trim().contains(product.category.toLowerCase().trim()))
-        .take(limit)
-        .toList();
+    // Case insensitive category matching with better logic
+    final normalizedCategory = category.toLowerCase().trim();
+    
+    final categoryProducts = products.where((product) {
+      final productCategory = product.category.toLowerCase().trim();
+      
+      // Direct match
+      if (productCategory == normalizedCategory) return true;
+      
+      // Partial matches for common category variations
+      if (normalizedCategory.contains('mobile') || normalizedCategory.contains('phone')) {
+        return productCategory.contains('mobile') || 
+               productCategory.contains('phone') || 
+               productCategory.contains('smartphone');
+      }
+      
+      if (normalizedCategory.contains('laptop') || normalizedCategory.contains('computer')) {
+        return productCategory.contains('laptop') || 
+               productCategory.contains('computer') || 
+               productCategory.contains('pc');
+      }
+      
+      if (normalizedCategory.contains('electronic')) {
+        return productCategory.contains('electronic') || 
+               productCategory.contains('gadget') ||
+               productCategory.contains('device');
+      }
+      
+      if (normalizedCategory.contains('fashion') || normalizedCategory.contains('clothing')) {
+        return productCategory.contains('fashion') || 
+               productCategory.contains('clothing') || 
+               productCategory.contains('apparel') ||
+               productCategory.contains('wear');
+      }
+      
+      // Generic partial match as fallback
+      return productCategory.contains(normalizedCategory) || 
+             normalizedCategory.contains(productCategory);
+    }).take(limit).toList();
     
     return categoryProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
   }
@@ -501,7 +531,7 @@ class _HomePageState extends State<HomePage> {
             // Generate dynamic categories and brands from product data
             final categories = products.isNotEmpty 
                 ? _getDynamicCategories(context, products) 
-                : CategoryData.getSampleCategories(context);
+                : CategoryData.getSampleCategories();
 
             // Generate dynamic mobile brands from product data
             final mobileBrands = products.isNotEmpty 
@@ -790,15 +820,14 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),            const SizedBox(height: 12),
             
-            // Display products by category if available (case insensitive)
+            // Display products by category if available - improved logic
             if (products.any((p) => 
                 p.category.toLowerCase().contains('mobile') || 
-                p.category.toLowerCase().contains('phone'))) ...[
+                p.category.toLowerCase().contains('phone') ||
+                p.category.toLowerCase().contains('smartphone'))) ...[
               ScrollableSuggestionRow(
                 title: 'Top Mobile Phones',
-                items: _getProductsByCategory(products, 'mobiles', limit: 4, heroTagPrefix: 'top_mobiles').isNotEmpty
-                    ? _getProductsByCategory(products, 'mobiles', limit: 4, heroTagPrefix: 'top_mobiles')
-                    : _getProductsByCategory(products, 'mobile', limit: 4, heroTagPrefix: 'top_mobiles'),
+                items: _getProductsByCategory(products, 'mobile', limit: 4, heroTagPrefix: 'top_mobiles'),
                 itemHeight: 220,
                 itemWidth: 145,
                 showMore: true,
@@ -806,7 +835,8 @@ class _HomePageState extends State<HomePage> {
                   // Find the actual mobile category from products
                   final mobileCategory = products.firstWhere(
                     (p) => p.category.toLowerCase().contains('mobile') || 
-                           p.category.toLowerCase().contains('phone'),
+                           p.category.toLowerCase().contains('phone') ||
+                           p.category.toLowerCase().contains('smartphone'),
                     orElse: () => products.first,
                   );
                   
@@ -827,7 +857,44 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 12),
             ],
             
-            if (products.any((p) => p.category.toLowerCase().contains('electronic'))) ...[
+            if (products.any((p) => 
+                p.category.toLowerCase().contains('laptop') ||
+                p.category.toLowerCase().contains('computer'))) ...[
+              ScrollableSuggestionRow(
+                title: 'Laptops & Computers',
+                items: _getProductsByCategory(products, 'laptop', limit: 4, heroTagPrefix: 'top_laptops'),
+                itemHeight: 220,
+                itemWidth: 145,
+                showMore: true,
+                onMoreTap: () {
+                  // Find the actual laptop category from products
+                  final laptopCategory = products.firstWhere(
+                    (p) => p.category.toLowerCase().contains('laptop') ||
+                           p.category.toLowerCase().contains('computer'),
+                    orElse: () => products.first,
+                  );
+                  
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryPage(
+                        category: CategoryItem(
+                          id: laptopCategory.category,
+                          title: 'Laptops & Computers',
+                          icon: Icons.laptop,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+            
+            if (products.any((p) => 
+                p.category.toLowerCase().contains('electronic') &&
+                !p.category.toLowerCase().contains('mobile') &&
+                !p.category.toLowerCase().contains('laptop'))) ...[
               ScrollableSuggestionRow(
                 title: 'Electronics',
                 items: _getProductsByCategory(products, 'electronics', limit: 4, heroTagPrefix: 'top_electronics'),
@@ -837,7 +904,9 @@ class _HomePageState extends State<HomePage> {
                 onMoreTap: () {
                   // Find the actual electronics category from products
                   final electronicsCategory = products.firstWhere(
-                    (p) => p.category.toLowerCase().contains('electronic'),
+                    (p) => p.category.toLowerCase().contains('electronic') &&
+                           !p.category.toLowerCase().contains('mobile') &&
+                           !p.category.toLowerCase().contains('laptop'),
                     orElse: () => products.first,
                   );
                   
@@ -858,6 +927,78 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 12),
             ],
             
+            if (products.any((p) => 
+                p.category.toLowerCase().contains('fashion') ||
+                p.category.toLowerCase().contains('clothing') ||
+                p.category.toLowerCase().contains('apparel'))) ...[
+              ScrollableSuggestionRow(
+                title: 'Fashion & Clothing',
+                items: _getProductsByCategory(products, 'fashion', limit: 4, heroTagPrefix: 'top_fashion'),
+                itemHeight: 220,
+                itemWidth: 145,
+                showMore: true,
+                onMoreTap: () {
+                  // Find the actual fashion category from products
+                  final fashionCategory = products.firstWhere(
+                    (p) => p.category.toLowerCase().contains('fashion') ||
+                           p.category.toLowerCase().contains('clothing') ||
+                           p.category.toLowerCase().contains('apparel'),
+                    orElse: () => products.first,
+                  );
+                  
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryPage(
+                        category: CategoryItem(
+                          id: fashionCategory.category,
+                          title: 'Fashion & Clothing',
+                          icon: Icons.checkroom,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+            
+            if (products.any((p) => 
+                p.category.toLowerCase().contains('home') ||
+                p.category.toLowerCase().contains('furniture') ||
+                p.category.toLowerCase().contains('kitchen'))) ...[
+              ScrollableSuggestionRow(
+                title: 'Home & Kitchen',
+                items: _getProductsByCategory(products, 'home', limit: 4, heroTagPrefix: 'top_home'),
+                itemHeight: 220,
+                itemWidth: 145,
+                showMore: true,
+                onMoreTap: () {
+                  // Find the actual home category from products
+                  final homeCategory = products.firstWhere(
+                    (p) => p.category.toLowerCase().contains('home') ||
+                           p.category.toLowerCase().contains('furniture') ||
+                           p.category.toLowerCase().contains('kitchen'),
+                    orElse: () => products.first,
+                  );
+                  
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryPage(
+                        category: CategoryItem(
+                          id: homeCategory.category,
+                          title: 'Home & Kitchen',
+                          icon: Icons.home,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+
             Padding(
               padding: const EdgeInsets.only(
                 left: 16,

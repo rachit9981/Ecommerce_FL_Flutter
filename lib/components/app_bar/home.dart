@@ -88,7 +88,7 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     // Check if animations are initialized, if not, initialize them
-    if (_notificationScaleAnimation == null) {
+    if (_cartScaleAnimation == null) {
       _initializeAnimations();
     }
 
@@ -99,6 +99,7 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
     final bool isSmallScreen = MediaQuery.of(context).size.width < 360;
 
     return AppBar(
+      automaticallyImplyLeading: false, // Remove back button
       leadingWidth: isSmallScreen ? 120 : 150,
       flexibleSpace: Container(
         decoration: BoxDecoration(
@@ -123,6 +124,22 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                 'assets/logo.png',
                 fit: BoxFit.contain,
                 height: 36,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback if logo not found
+                  return Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.shopping_bag,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 8),
@@ -130,7 +147,8 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
         ),
       ),
       title: const Text(''), // Empty title
-      centerTitle: true,      elevation: 0, // Modern design: no elevation
+      centerTitle: true,
+      elevation: 0, // Modern design: no elevation
       shadowColor: darkVariant.withValues(alpha: 0.3),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -139,47 +157,6 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
         ),
       ),
       actions: <Widget>[
-        // Padding(
-        //   padding: const EdgeInsets.symmetric(horizontal: 2.0),
-        //   child: AnimatedBuilder(
-        //     animation: _notificationScaleAnimation ?? const AlwaysStoppedAnimation(1.0),
-        //     builder: (context, child) {
-        //       return Transform.scale(
-        //         scale: _notificationScaleAnimation?.value ?? 1.0,
-        //         child: child,
-        //       );
-        //     },            child: Container(
-        //       margin: const EdgeInsets.symmetric(vertical: 8),
-        //       decoration: BoxDecoration(
-        //         color: surfaceColor.withValues(alpha: 0.1),
-        //         borderRadius: BorderRadius.circular(12),
-        //       ),
-        //       child: IconButton(
-        //         icon: const Icon(
-        //           Icons.notifications_none_rounded,
-        //           color: Colors.black87,
-        //           size: 22,
-        //         ),
-        //         tooltip: 'Notifications',
-        //         onPressed: () {
-        //           _notificationAnimController?.forward(from: 0.0).then((_) {
-        //             if (widget.onNotificationsPressed != null) {
-        //               widget.onNotificationsPressed!();
-        //             } else {
-        //               Navigator.push(
-        //                 context,
-        //                 MaterialPageRoute(
-        //                   builder: (context) => const NotificationPage(),
-        //                 ),
-        //               );
-        //             }
-        //           });
-        //         },
-        //       ),
-        //     ),
-        //   ),
-        // ),
-        
         // Cart button with badge
         Padding(
           padding: EdgeInsets.only(left: 2.0, right: isSmallScreen ? 8.0 : 16.0),
@@ -190,7 +167,8 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                 scale: _cartScaleAnimation?.value ?? 1.0,
                 child: child,
               );
-            },            child: Container(
+            },
+            child: Container(
               margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 color: surfaceColor.withValues(alpha: 0.1),
@@ -223,7 +201,7 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                       top: 8,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
                         ),
@@ -232,7 +210,7 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                           minHeight: 16,
                         ),
                         child: Text(
-                          widget.cartItemCount.toString(),
+                          widget.cartItemCount > 99 ? '99+' : widget.cartItemCount.toString(),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
