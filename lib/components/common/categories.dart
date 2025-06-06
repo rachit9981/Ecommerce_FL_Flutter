@@ -19,6 +19,19 @@ class CategoryItem {
     this.iconColor,
     this.onTap,
   });
+
+  // Helper method to get normalized category ID for case-insensitive comparison
+  String get normalizedId => id.toLowerCase().trim();
+  
+  // Helper method to check if this is a brand category
+  bool get isBrand {
+    final knownCategories = [
+      'electronics', 'fashion', 'home', 'beauty', 'sports', 'books',
+      'automotive', 'health', 'toys', 'grocery', 'mobiles', 'mobile',
+      'phones', 'phone', 'laptops', 'laptop', 'computers', 'computer'
+    ];
+    return !knownCategories.contains(normalizedId);
+  }
 }
 
 /// Utility class with sample categories for testing

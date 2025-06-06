@@ -4,6 +4,7 @@ import 'package:ecom/components/search/search_comps.dart';
 import 'package:ecom/pages/product_page.dart';
 import 'package:ecom/providers/product_provider.dart';
 import 'package:ecom/services/products.dart';
+import 'dart:async';
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
@@ -18,6 +19,12 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _hasSearched = false;
   String _currentQuery = '';
+  
+  // Real-time search state
+  bool _isLiveSearching = false;
+  List<Product> _liveSearchResults = [];
+  List<String> _searchSuggestions = [];
+  Timer? _searchTimer;
   
   // Filter state
   RangeValues _priceRange = const RangeValues(0, 100000);
@@ -73,7 +80,78 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchTimer?.cancel();
     super.dispose();
+  }
+
+  // Real-time search with debouncing
+  void _onSearchChanged(String query) {
+    // Cancel previous timer
+    _searchTimer?.cancel();
+    
+    if (query.isEmpty) {
+      setState(() {
+        _hasSearched = false;
+        _isLiveSearching = false;
+        _liveSearchResults = [];
+        _searchSuggestions = [];
+      });
+      return;
+    }
+
+    // Show that we're searching
+    setState(() {
+      _isLiveSearching = true;
+    });
+
+    // Set up new timer for debounced search
+    _searchTimer = Timer(const Duration(milliseconds: 300), () {
+      _performLiveSearch(query);
+    });
+  }
+
+  void _performLiveSearch(String query) {
+    final productProvider = context.read<ProductProvider>();
+    final allProducts = productProvider.products;
+
+    if (query.isEmpty) {
+      setState(() {
+        _isLiveSearching = false;
+        _liveSearchResults = [];
+        _searchSuggestions = [];
+      });
+      return;
+    }
+
+    // Generate search suggestions
+    Set<String> suggestions = {};
+    
+    // Add matching product names
+    for (var product in allProducts) {
+      if (product.name.toLowerCase().contains(query.toLowerCase())) {
+        suggestions.add(product.name);
+      }
+      if (product.brand.toLowerCase().contains(query.toLowerCase())) {
+        suggestions.add(product.brand);
+      }
+      if (product.category.toLowerCase().contains(query.toLowerCase())) {
+        suggestions.add(product.category);
+      }
+    }
+
+    // Get live search results (top 5 matching products)
+    final liveResults = allProducts.where((product) {
+      return product.name.toLowerCase().contains(query.toLowerCase()) ||
+             product.brand.toLowerCase().contains(query.toLowerCase()) ||
+             product.category.toLowerCase().contains(query.toLowerCase()) ||
+             product.description.toLowerCase().contains(query.toLowerCase());
+    }).take(5).toList();
+
+    setState(() {
+      _isLiveSearching = false;
+      _liveSearchResults = liveResults;
+      _searchSuggestions = suggestions.take(5).toList();
+    });
   }
 
   void _performSearch(String query) {
@@ -83,6 +161,8 @@ class _SearchPageState extends State<SearchPage> {
     setState(() {
       _currentQuery = query;
       _hasSearched = true;
+      _liveSearchResults = []; // Clear live results when performing full search
+      _searchSuggestions = [];
 
       _filteredProducts = allProducts.where((product) {
         // Text search
@@ -120,7 +200,10 @@ class _SearchPageState extends State<SearchPage> {
       _selectedBrand = null;
       _minRating = null;
       _selectedPriceRange = _priceRange;
+      _liveSearchResults = [];
+      _searchSuggestions = [];
     });
+    _searchController.clear();
   }
 
   void _showFilterBottomSheet() {
@@ -207,6 +290,7 @@ class _SearchPageState extends State<SearchPage> {
             child: CustomSearchBar(
               controller: _searchController,
               onSubmitted: _performSearch,
+              onChanged: _onSearchChanged, // Add real-time search callback
               onClear: _clearSearch,
             ),
           ),
@@ -262,9 +346,102 @@ class _SearchPageState extends State<SearchPage> {
             );
           }
 
+          // Show live search results while typing
+          if (!_hasSearched && _searchController.text.isNotEmpty) {
+            return _buildLiveSearchResults();
+          }
+
           return _hasSearched ? _buildSearchResults() : _buildSearchSuggestions();
         },
       ),
+    );
+  }
+
+  Widget _buildLiveSearchResults() {
+    return Column(
+      children: [
+        // Search suggestions
+        if (_searchSuggestions.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          LiveSearchSuggestions(
+            suggestions: _searchSuggestions,
+            isLoading: _isLiveSearching,
+            onSuggestionTap: (suggestion) {
+              _searchController.text = suggestion;
+              _performSearch(suggestion);
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+        
+        // Live search results
+        if (_liveSearchResults.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                const Text(
+                  'Quick Results',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => _performSearch(_searchController.text),
+                  child: const Text('View All'),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _liveSearchResults.length,
+              itemBuilder: (context, index) {
+                final product = _liveSearchResults[index];
+                return CompactSearchResultItem(
+                  title: product.name,
+                  imageUrl: product.images.isNotEmpty ? product.images.first : '',
+                  price: product.discountPrice,
+                  originalPrice: product.price != product.discountPrice ? product.price : null,
+                  brand: product.brand,
+                  category: product.category,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductPage(
+                          productId: product.id,
+                          heroTag: 'live_search_${product.id}',
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ] else if (_isLiveSearching) ...[
+          const Expanded(
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ] else ...[
+          const Expanded(
+            child: Center(
+              child: Text(
+                'Type to search products...',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 

@@ -93,10 +93,15 @@ class _HomePageState extends State<HomePage> {
 
   // Method to get dynamic categories from product data
   List<CategoryItem> _getDynamicCategories(BuildContext context, List<Product> products) {
-    // Extract unique categories from products
-    final Set<String> uniqueCategories = products
-        .map((product) => product.category.toLowerCase())
-        .toSet();
+    // Extract unique categories from products (case insensitive)
+    final Map<String, String> uniqueCategories = {};
+    
+    for (var product in products) {
+      final categoryKey = product.category.toLowerCase().trim();
+      if (!uniqueCategories.containsKey(categoryKey)) {
+        uniqueCategories[categoryKey] = product.category;
+      }
+    }
     
     // Map of category names to their respective icons and colors
     final Map<String, IconData> categoryIcons = {
@@ -155,14 +160,15 @@ class _HomePageState extends State<HomePage> {
     List<CategoryItem> categoryItems = [];
     int colorIndex = 0;
     
-    for (var category in uniqueCategories) {
-      // Find the normalized category for icon mapping
-      String normalizedCategory = category.toLowerCase();
+    for (var entry in uniqueCategories.entries) {
+      final categoryKey = entry.key;
+      final originalCategory = entry.value;
+      
+      // Find the matching icon
       IconData icon = Icons.category; // Default icon
       
-      // Try to find a matching icon
       for (var key in categoryIcons.keys) {
-        if (normalizedCategory.contains(key)) {
+        if (categoryKey.contains(key)) {
           icon = categoryIcons[key]!;
           break;
         }
@@ -171,8 +177,8 @@ class _HomePageState extends State<HomePage> {
       // Create category item with rotating colors
       categoryItems.add(
         CategoryItem(
-          id: category,
-          title: category.substring(0, 1).toUpperCase() + category.substring(1),
+          id: originalCategory, // Use original case for ID
+          title: originalCategory.substring(0, 1).toUpperCase() + originalCategory.substring(1),
           icon: icon,
           backgroundColor: colorOptions[colorIndex % colorOptions.length].withOpacity(0.2),
           iconColor: colorOptions[colorIndex % colorOptions.length],
@@ -182,8 +188,8 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute(
                 builder: (context) => CategoryPage(
                   category: CategoryItem(
-                    id: category,
-                    title: category.substring(0, 1).toUpperCase() + category.substring(1),
+                    id: originalCategory, // Use original case for consistency
+                    title: originalCategory.substring(0, 1).toUpperCase() + originalCategory.substring(1),
                     icon: icon,
                     backgroundColor: colorOptions[colorIndex % colorOptions.length].withOpacity(0.2),
                     iconColor: colorOptions[colorIndex % colorOptions.length],
@@ -203,16 +209,20 @@ class _HomePageState extends State<HomePage> {
   
   // Method to get dynamic mobile brands from product data
   List<CategoryItem> _getDynamicBrands(BuildContext context, List<Product> products) {
-    // Extract unique brands from mobile products
-    final Set<String> uniqueBrands = products
-        .where((product) => 
-            product.category.toLowerCase() == 'mobiles' || 
-            product.category.toLowerCase() == 'mobile' || 
-            product.category.toLowerCase() == 'smartphone' ||
-            product.category.toLowerCase() == 'phone' ||
-            product.category.toLowerCase() == 'phones')
-        .map((product) => product.brand.toLowerCase())
-        .toSet();
+    // Extract unique brands from mobile products (case insensitive)
+    final Map<String, String> uniqueBrands = {};
+    
+    for (var product in products) {
+      final categoryLower = product.category.toLowerCase().trim();
+      final brandKey = product.brand.toLowerCase().trim();
+      
+      if ((categoryLower.contains('mobile') || 
+           categoryLower.contains('smartphone') ||
+           categoryLower.contains('phone')) &&
+          !uniqueBrands.containsKey(brandKey)) {
+        uniqueBrands[brandKey] = product.brand;
+      }
+    }
     
     // Map of brand names to their logo URLs
     final Map<String, String> brandLogos = {
@@ -235,12 +245,15 @@ class _HomePageState extends State<HomePage> {
     // Convert unique brands to CategoryItem objects
     List<CategoryItem> brandItems = [];
     
-    for (var brand in uniqueBrands) {
+    for (var entry in uniqueBrands.entries) {
+      final brandKey = entry.key;
+      final originalBrand = entry.value;
+      
       String logoUrl = '';
       
       // Try to find a matching logo
       for (var key in brandLogos.keys) {
-        if (brand.toLowerCase().contains(key)) {
+        if (brandKey.contains(key)) {
           logoUrl = brandLogos[key]!;
           break;
         }
@@ -248,13 +261,13 @@ class _HomePageState extends State<HomePage> {
       
       // Use default logo if no match found
       if (logoUrl.isEmpty) {
-        logoUrl = 'https://via.placeholder.com/200x100?text=${brand.toUpperCase()}';
+        logoUrl = 'https://via.placeholder.com/200x100?text=${originalBrand.toUpperCase()}';
       }
       
       brandItems.add(
         CategoryItem(
-          id: brand,
-          title: brand.substring(0, 1).toUpperCase() + brand.substring(1),
+          id: originalBrand, // Use original case for ID
+          title: originalBrand.substring(0, 1).toUpperCase() + originalBrand.substring(1),
           imageUrl: logoUrl,
           onTap: () {
             Navigator.push(
@@ -262,8 +275,8 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute(
                 builder: (context) => CategoryPage(
                   category: CategoryItem(
-                    id: brand,
-                    title: brand.substring(0, 1).toUpperCase() + brand.substring(1),
+                    id: originalBrand, // Use original case for consistency
+                    title: originalBrand.substring(0, 1).toUpperCase() + originalBrand.substring(1),
                     imageUrl: logoUrl,
                   ),
                 ),
@@ -386,8 +399,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<SuggestionItem> _getProductsByCategory(List<Product> products, String category, {int limit = 4, String heroTagPrefix = 'product'}) {
+    // Case insensitive category matching
     final categoryProducts = products
-        .where((product) => product.category.toLowerCase() == category.toLowerCase())
+        .where((product) => 
+            product.category.toLowerCase().trim() == category.toLowerCase().trim() ||
+            product.category.toLowerCase().trim().contains(category.toLowerCase().trim()) ||
+            category.toLowerCase().trim().contains(product.category.toLowerCase().trim()))
         .take(limit)
         .toList();
     
@@ -773,9 +790,10 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),            const SizedBox(height: 12),
             
-            // Display products by category if available
-            if (products.any((p) => p.category.toLowerCase() == 'mobiles' || 
-                                    p.category.toLowerCase() == 'mobile')) ...[
+            // Display products by category if available (case insensitive)
+            if (products.any((p) => 
+                p.category.toLowerCase().contains('mobile') || 
+                p.category.toLowerCase().contains('phone'))) ...[
               ScrollableSuggestionRow(
                 title: 'Top Mobile Phones',
                 items: _getProductsByCategory(products, 'mobiles', limit: 4, heroTagPrefix: 'top_mobiles').isNotEmpty
@@ -785,12 +803,19 @@ class _HomePageState extends State<HomePage> {
                 itemWidth: 145,
                 showMore: true,
                 onMoreTap: () {
+                  // Find the actual mobile category from products
+                  final mobileCategory = products.firstWhere(
+                    (p) => p.category.toLowerCase().contains('mobile') || 
+                           p.category.toLowerCase().contains('phone'),
+                    orElse: () => products.first,
+                  );
+                  
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => CategoryPage(
                         category: CategoryItem(
-                          id: 'mobiles',
+                          id: mobileCategory.category,
                           title: 'Mobile Phones',
                           icon: Icons.smartphone,
                         ),
@@ -802,7 +827,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 12),
             ],
             
-            if (products.any((p) => p.category.toLowerCase() == 'electronics')) ...[
+            if (products.any((p) => p.category.toLowerCase().contains('electronic'))) ...[
               ScrollableSuggestionRow(
                 title: 'Electronics',
                 items: _getProductsByCategory(products, 'electronics', limit: 4, heroTagPrefix: 'top_electronics'),
@@ -810,12 +835,18 @@ class _HomePageState extends State<HomePage> {
                 itemWidth: 145,
                 showMore: true,
                 onMoreTap: () {
+                  // Find the actual electronics category from products
+                  final electronicsCategory = products.firstWhere(
+                    (p) => p.category.toLowerCase().contains('electronic'),
+                    orElse: () => products.first,
+                  );
+                  
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => CategoryPage(
                         category: CategoryItem(
-                          id: 'electronics',
+                          id: electronicsCategory.category,
                           title: 'Electronics',
                           icon: Icons.devices,
                         ),

@@ -75,30 +75,35 @@ class _CategoryPageState extends State<CategoryPage> {
   List<Product> _getCategoryProducts(List<Product> allProducts) {
     // Check if the category is a brand
     final bool isBrand = _isBrandCategory();
+    final normalizedCategoryId = widget.category.id.toLowerCase().trim();
 
     if (isBrand) {
-      // Filter by brand
+      // Filter by brand (case insensitive)
       return allProducts
-          .where((product) => product.brand.toLowerCase() == widget.category.id.toLowerCase())
+          .where((product) => 
+              product.brand.toLowerCase().trim() == normalizedCategoryId)
           .toList();
     } else {
-      // Filter by category
+      // Filter by category (case insensitive)
       return allProducts
-          .where((product) => product.category.toLowerCase() == widget.category.id.toLowerCase())
+          .where((product) => 
+              product.category.toLowerCase().trim() == normalizedCategoryId ||
+              product.category.toLowerCase().trim().contains(normalizedCategoryId) ||
+              normalizedCategoryId.contains(product.category.toLowerCase().trim()))
           .toList();
     }
   }
 
   // Check if this is a brand category or product category
   bool _isBrandCategory() {
-    // Define known product categories
+    // Define known product categories (case insensitive)
     final knownCategories = [
       'electronics', 'fashion', 'home', 'beauty', 'sports', 'books', 
       'automotive', 'health', 'toys', 'grocery', 'mobiles', 'mobile',
       'phones', 'phone', 'laptops', 'laptop', 'computers', 'computer'
     ];
     
-    return !knownCategories.contains(widget.category.id.toLowerCase());
+    return !knownCategories.contains(widget.category.id.toLowerCase().trim());
   }
 
   // Get subcategories based on available products for this category
@@ -122,46 +127,36 @@ class _CategoryPageState extends State<CategoryPage> {
     } else {
       // For a product category, create subcategories based on the category type
       Set<String> subcategories = {'All'};
+      final normalizedCategoryId = widget.category.id.toLowerCase().trim();
       
       // Add subcategories based on product variations or common subcategories
-      switch (widget.category.id.toLowerCase()) {
-        case 'electronics':
-        case 'mobiles':
-        case 'mobile':
-        case 'phones':
-        case 'phone':
-          subcategories.addAll(['Smartphones', 'Feature Phones', 'Accessories']);
-          break;
-        case 'laptops':
-        case 'laptop':
-        case 'computers':
-        case 'computer':
-          subcategories.addAll(['Gaming', 'Business', 'Student', 'Workstation']);
-          break;
-        case 'fashion':
-          subcategories.addAll(['Men', 'Women', 'Kids', 'Footwear', 'Accessories']);
-          break;
-        case 'home':
-          subcategories.addAll(['Kitchen', 'Furniture', 'Decor', 'Bedding', 'Appliances']);
-          break;
-        case 'beauty':
-          subcategories.addAll(['Skincare', 'Makeup', 'Haircare', 'Fragrance', 'Tools']);
-          break;
-        case 'sports':
-          subcategories.addAll(['Fitness', 'Outdoor', 'Team Sports', 'Swimwear', 'Equipment']);
-          break;
-        default:
-          // Try to extract subcategories from product names or descriptions
-          for (var product in categoryProducts) {
-            // Add any meaningful keywords from product names as potential subcategories
-            final words = product.name.toLowerCase().split(' ');
-            for (var word in words) {
-              if (word.length > 3 && !word.contains('the') && !word.contains('and')) {
-                subcategories.add(word.substring(0, 1).toUpperCase() + word.substring(1));
-              }
+      if (normalizedCategoryId.contains('electronic') || 
+          normalizedCategoryId.contains('mobile') || 
+          normalizedCategoryId.contains('phone')) {
+        subcategories.addAll(['Smartphones', 'Feature Phones', 'Accessories']);
+      } else if (normalizedCategoryId.contains('laptop') || 
+                 normalizedCategoryId.contains('computer')) {
+        subcategories.addAll(['Gaming', 'Business', 'Student', 'Workstation']);
+      } else if (normalizedCategoryId.contains('fashion') || 
+                 normalizedCategoryId.contains('clothing')) {
+        subcategories.addAll(['Men', 'Women', 'Kids', 'Footwear', 'Accessories']);
+      } else if (normalizedCategoryId.contains('home')) {
+        subcategories.addAll(['Kitchen', 'Furniture', 'Decor', 'Bedding', 'Appliances']);
+      } else if (normalizedCategoryId.contains('beauty')) {
+        subcategories.addAll(['Skincare', 'Makeup', 'Haircare', 'Fragrance', 'Tools']);
+      } else if (normalizedCategoryId.contains('sport')) {
+        subcategories.addAll(['Fitness', 'Outdoor', 'Team Sports', 'Swimwear', 'Equipment']);
+      } else {
+        // Try to extract subcategories from product names or descriptions
+        for (var product in categoryProducts) {
+          // Add any meaningful keywords from product names as potential subcategories
+          final words = product.name.toLowerCase().split(' ');
+          for (var word in words) {
+            if (word.length > 3 && !word.contains('the') && !word.contains('and')) {
+              subcategories.add(word.substring(0, 1).toUpperCase() + word.substring(1));
             }
           }
-          break;
+        }
       }
       
       return subcategories.take(8).toList(); // Limit to 8 subcategories
@@ -210,14 +205,14 @@ class _CategoryPageState extends State<CategoryPage> {
     // Start with category products
     List<Product> filteredProducts = _getCategoryProducts(allProducts);
 
-    // Apply subcategory filter if selected
+    // Apply subcategory filter if selected (case insensitive)
     if (_selectedSubcategory != null && _selectedSubcategory != 'All') {
       filteredProducts = filteredProducts.where((product) {
-        final subcategory = _selectedSubcategory!.toLowerCase();
-        return product.category.toLowerCase().contains(subcategory) ||
-               product.name.toLowerCase().contains(subcategory) ||
-               product.description.toLowerCase().contains(subcategory) ||
-               product.brand.toLowerCase().contains(subcategory);
+        final subcategory = _selectedSubcategory!.toLowerCase().trim();
+        return product.category.toLowerCase().trim().contains(subcategory) ||
+               product.name.toLowerCase().trim().contains(subcategory) ||
+               product.description.toLowerCase().trim().contains(subcategory) ||
+               product.brand.toLowerCase().trim().contains(subcategory);
       }).toList();
     }
 
