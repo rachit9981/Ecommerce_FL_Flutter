@@ -461,114 +461,53 @@ class PhoneBrandsData {
     }
   }  // Method to convert SellPhone list to PhoneModel list
   static List<PhoneModel> convertSellPhonesToPhoneModels(List<SellPhone> sellPhones) {
-    print('Converting ${sellPhones.length} sell phones to phone models');
+    final List<PhoneModel> phoneModels = [];
     
-    // Brand name normalization map
-    Map<String, String> brandMapping = {
-      'Apple': 'apple',
-      'Samsung': 'samsung',
-      'OnePlus': 'oneplus',
-      'Xiaomi': 'xiaomi', 
-      'Vivo': 'vivo',
-      'OPPO': 'oppo',
-      'oppo': 'oppo',
-      'Realme': 'realme',
-      'Google': 'google',
-      'Nokia': 'nokia',
-      'Motorola': 'motorola',
-      'Asus': 'asus',
-      'HTC': 'htc',
-      'Nothing': 'nothing',
-      'iphone': 'apple',
-      'iPhone': 'apple',
-      'APPLE': 'apple',
-      'SAMSUNG': 'samsung',
-      'galaxy': 'samsung',
-    };
-    
-    final result = <PhoneModel>[];
-    
-    try {
-      for (var sellPhone in sellPhones) {
-        try {
-          // Skip phones without necessary data
-          if (sellPhone.id.isEmpty && sellPhone.name.isEmpty) {
-            print('Skipping phone with no ID and no name');
-            continue;
+    for (final sellPhone in sellPhones) {
+      try {
+        // Ensure ID is not empty
+        final modelId = sellPhone.id.isEmpty ? 
+            'model_${DateTime.now().millisecondsSinceEpoch}_${phoneModels.length}' : 
+            sellPhone.id;
+            
+        debugPrint('Converting model ID: $modelId, name: ${sellPhone.name}');
+        
+        // Extract storage options and conditions from variant_prices
+        final List<String> storageOptions = [];
+        final List<String> conditions = [];
+        final Map<String, Map<String, int>> variantPrices = {};
+        
+        sellPhone.variantPrices.forEach((storage, conditionMap) {
+          if (!storageOptions.contains(storage)) {
+            storageOptions.add(storage);
           }
           
-          // Determine the brandId from the brand name
-          String brandName = sellPhone.brand.trim();
-          String brandId = '';
+          variantPrices[storage] = {};
           
-          // Try direct mapping first
-          if (brandMapping.containsKey(brandName)) {
-            brandId = brandMapping[brandName]!;
-          } else {
-            // Try to match by checking if any known brand is contained in the name
-            bool brandFound = false;
-            for (var entry in brandMapping.entries) {
-              if (sellPhone.name.toLowerCase().contains(entry.key.toLowerCase()) || 
-                  brandName.toLowerCase().contains(entry.key.toLowerCase())) {
-                brandId = entry.value;
-                brandFound = true;
-                break;
-              }
+          conditionMap.forEach((condition, price) {
+            if (!conditions.contains(condition)) {
+              conditions.add(condition);
             }
             
-            // If still no match, fallback to lowercase of the brand name
-            if (!brandFound) {
-              brandId = brandName.toLowerCase().replaceAll(' ', '_');
-            }
-          }
-          
-          // Extract storage options from variantPrices
-          List<String> storageOptions = [];
-          List<String> conditions = [];
-          
-          if (sellPhone.variantPrices.isNotEmpty) {
-            storageOptions = sellPhone.variantPrices.keys.toList();
-            
-            // Get conditions from the first storage option
-            if (storageOptions.isNotEmpty) {
-              conditions = sellPhone.variantPrices[storageOptions.first]?.keys.toList() ?? [];
-            }
-          }
-          
-          // Ensure we have at least some default values if data is missing
-          if (storageOptions.isEmpty) {
-            storageOptions = ['128GB'];
-          }
-          
-          if (conditions.isEmpty) {
-            conditions = ['Good'];
-          }
-          
-          // Make sure we have a valid image URL
-          String imageUrl = sellPhone.image.isNotEmpty
-              ? sellPhone.image
-              : 'https://img.freepik.com/free-psd/smartphone-mockup_1310-812.jpg';
-          
-          result.add(PhoneModel(
-            id: sellPhone.id,
-            brandId: brandId,
-            name: sellPhone.name,
-            imageUrl: imageUrl,
-            storageOptions: storageOptions,
-            conditions: conditions,
-            variantPrices: sellPhone.variantPrices,
-          ));
-        } catch (e) {
-          print('Error converting individual sellPhone to PhoneModel: $e');
-          // Continue to next phone
-        }
+            variantPrices[storage]![condition] = price;
+          });
+        });
+        
+        phoneModels.add(PhoneModel(
+          id: modelId,
+          brandId: sellPhone.brand.toLowerCase(),
+          name: sellPhone.name,
+          imageUrl: sellPhone.image,
+          storageOptions: storageOptions,
+          conditions: conditions,
+          variantPrices: variantPrices,
+        ));
+      } catch (e) {
+        print('Error converting sellPhone to PhoneModel: $e');
       }
-    } catch (e) {
-      print('Error in convertSellPhonesToPhoneModels: $e');
     }
     
-    print('Converted ${result.length} phone models');
-    return result;
+    return phoneModels;
   }
 
   // Get a list of random phone models from the available models

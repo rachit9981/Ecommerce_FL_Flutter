@@ -1,52 +1,32 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 // Main API URL from config
 const String sellPhoneApiUrl = '$apiUrl/sell-mobile/catalog/';
 
-// Fallback API URL (mockable endpoint with sample data)
-const String fallbackSellPhoneApiUrl = 'https://run.mocky.io/v3/3a964087-f5b2-4f2e-af14-7550afc8f1d8';
-
-class SellPhoneService {  Future<List<SellPhone>> getSellPhones() async {
+class SellPhoneService {
+  Future<List<SellPhone>> getSellPhones() async {
     // Try primary API endpoint first
     try {
-      print('Fetching phones from primary API: $sellPhoneApiUrl');
       final response = await http.get(Uri.parse(sellPhoneApiUrl));
-      print('Primary API Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         return _parsePhoneResponse(response);
       } else {
-        print('Primary API Error: ${response.statusCode}, Body: ${response.body}');
-        // Will try fallback API next
+        print('API Error: ${response.statusCode}, Body: ${response.body}');
+        throw Exception('Failed to load data from API: ${response.statusCode}');
       }
     } catch (e) {
-      print('Exception with primary API: $e');
-      // Will try fallback API next
-    }
-    
-    // If primary API fails, try fallback API
-    try {
-      print('Trying fallback API: $fallbackSellPhoneApiUrl');
-      final response = await http.get(Uri.parse(fallbackSellPhoneApiUrl));
-      print('Fallback API Response status: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        return _parsePhoneResponse(response);
-      } else {
-        print('Fallback API Error: ${response.statusCode}, Body: ${response.body}');
-        throw Exception('Failed to load from both primary and fallback APIs');
-      }
-    } catch (e) {
-      print('Exception with fallback API: $e');
-      throw Exception('Failed to load sell phones from all sources: $e');
+      print('Exception with API: $e');
+      throw Exception('Failed to load sell phones: $e');
     }
   }
   
   List<SellPhone> _parsePhoneResponse(http.Response response) {
     try {
-      print('API Response body: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}...');
       
       final Map<String, dynamic> data = json.decode(response.body);
       
@@ -67,14 +47,7 @@ class SellPhoneService {  Future<List<SellPhone>> getSellPhones() async {
           phonesJson = json.decode(response.body);
         }
       }
-      
-      print('Found ${phonesJson.length} phones in response');
-      
-      // If we still have no phones but have something else in the response,
-      // try to create at least one phone from the response data
       if (phonesJson.isEmpty && data.isNotEmpty) {
-        print('No phone list found, trying to use response data directly');
-        // Create a single phone from the response if possible
         try {
           final dummyPhone = SellPhone.fromJson(data);
           return [dummyPhone];
@@ -89,6 +62,119 @@ class SellPhoneService {  Future<List<SellPhone>> getSellPhones() async {
     } catch (e) {
       print('Error parsing phone response: $e');
       throw Exception('Failed to parse sell phones response: $e');
+    }
+  }
+  
+  // Helper method to get auth headers with token (similar to OrderService)
+  Future<Map<String, String>> _getAuthHeaders() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+      
+      // Debug the token
+      if (token != null && token.isNotEmpty) {
+        debugPrint('Auth Token: ${token.substring(0, min(10, token.length))}...');
+      } else {
+        debugPrint('No token found in SharedPreferences');
+      }
+      
+      if (token == null || token.isEmpty) {
+        throw Exception('No authentication token found');
+      }
+      
+      // The backend explicitly requires the "Bearer " prefix
+      final formattedToken = token.startsWith('Bearer ') ? token : 'Bearer $token';
+      
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': formattedToken,
+      };
+      
+      debugPrint('Request Headers: $headers');
+      return headers;
+    } catch (e) {
+      debugPrint('Failed to get authentication token: $e');
+      throw Exception('Failed to get authentication token: $e');
+    }
+  }
+  
+  // Helper method to get the minimum of two integers
+  int min(int a, int b) {
+    return a < b ? a : b;
+  }
+  
+  // Submit an inquiry for a sell mobile listing
+  Future<Map<String, dynamic>> submitInquiry({
+    required String sellMobileId,
+    required String userId,
+    required String buyerPhone,
+    required String selectedVariant,
+    required String selectedCondition,
+    required Map<String, String> address,
+    String? status,
+  }) async {
+    try {
+      // Get auth headers
+      final headers = await _getAuthHeaders();
+      // Debug the mobile ID
+      debugPrint('Submitting inquiry for mobile ID: $sellMobileId');
+      
+      // Create request body - match exact field names from backend
+      final requestBody = {
+        'sell_mobile_id': sellMobileId,
+        'user_id': userId,
+        'buyer_phone': buyerPhone,
+        'selected_variant': selectedVariant,
+        'selected_condition': selectedCondition,
+        'address': address,
+      };
+      
+      // Add status if provided - ensure it's a valid status
+      if (status != null) {
+        // Validate status against backend's valid options
+        final validStatuses = ['pending', 'accepted', 'completed', 'rejected'];
+        if (!validStatuses.contains(status)) {
+          throw Exception('Invalid status. Valid options: $validStatuses');
+        }
+        requestBody['status'] = status;
+      }
+      
+      // Ensure endpoint is correct - check documentation for exact path
+      final apiEndpoint = '$apiUrl/sell-mobile/submit_inquiry/';
+      debugPrint('Submitting sell phone inquiry:');
+      debugPrint('URL: $apiEndpoint');
+      debugPrint('Request body: ${json.encode(requestBody)}');
+      
+      // Send the request
+      final response = await http.post(
+        Uri.parse(apiEndpoint),
+        headers: headers,
+        body: json.encode(requestBody),
+      );
+      
+      // Log response details
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+      
+      // Parse response - look for exact fields returned by backend
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'status': data['status'] ?? 'success',
+          'message': data['message'] ?? 'Inquiry submitted successfully',
+          'id': data['id'] ?? '',
+        };
+      } else if (response.statusCode == 404) {
+        // Special handling for 404 errors
+        throw Exception('Mobile listing not found. Please try a different model.');
+      } else {
+        final errorMsg = data['message'] ?? 'Failed to submit inquiry';
+        throw Exception(errorMsg);
+      }
+    } catch (e) {
+      debugPrint('Error submitting inquiry: $e');
+      rethrow;
     }
   }
 }
@@ -109,14 +195,12 @@ class SellPhone {
     this.image = '',
     required this.variantPrices,
   });  factory SellPhone.fromJson(Map<String, dynamic> json) {
-    print('Parsing SellPhone: ${json.keys.join(', ')}');
       
     // Parse variant_prices map
     Map<String, Map<String, int>> variantPrices = {};
     
     // Handle different variant price formats that the API might return
     if (json['variant_prices'] != null) {
-      print('Found variant_prices in JSON');
       try {
         Map<String, dynamic> variants = json['variant_prices'];
         variants.forEach((storage, conditions) {
@@ -149,7 +233,6 @@ class SellPhone {
       }
     } else if (json['prices'] != null) {
       // Fallback for alternative API format
-      print('Found prices in JSON instead of variant_prices');
       try {
         Map<String, dynamic> pricesMap = json['prices'];
         // Assuming a flat structure, create a single storage option
@@ -163,7 +246,6 @@ class SellPhone {
     }
       // Ensure we have at least one storage/condition option if nothing was parsed
     if (variantPrices.isEmpty) {
-      print('No variant prices found, creating a default entry');
       variantPrices = {
         'Default': {
           'Good': 0
@@ -191,7 +273,6 @@ class SellPhone {
       variantPrices: variantPrices,
     );
     
-    print('Created SellPhone: ${phone.name}, ${phone.brand}, ${phone.variantPrices.keys.length} storage options');
     return phone;
   }
 }

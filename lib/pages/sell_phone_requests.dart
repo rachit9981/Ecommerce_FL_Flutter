@@ -267,15 +267,6 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to sell phone page to create a new request
-          Navigator.pop(context);
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add),
-        tooltip: 'Sell a new phone',
-      ),
     );
   }
 

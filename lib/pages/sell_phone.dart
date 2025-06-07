@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/sell_phone/phones_brands.dart';
 import 'package:ecom/components/sell_phone/search_feature.dart';
+import 'package:ecom/components/sell_phone/selling_comp.dart';
 import 'package:ecom/services/sell_phone.dart';
+import 'package:ecom/models/sell_phone_inquiry.dart';
 import 'package:ecom/pages/search_phone.dart';
 import 'package:ecom/pages/sell_phone_requests.dart';
 import 'package:ecom/pages/sell_phone_by_brand.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../components/common/login_required.dart';
 
 class SellPhonePage extends StatefulWidget {
   const SellPhonePage({Key? key}) : super(key: key);
@@ -162,12 +167,11 @@ class _SellPhonePageState extends State<SellPhonePage> {
 
   void _onModelSelected(PhoneModel model) {
     setState(() {
-      _selectedModel = model; // Keep track of the currently selected model
+      _selectedModel = model;
       _selectedStorage = model.storageOptions.isNotEmpty ? model.storageOptions.first : null;
       _selectedCondition = model.conditions.isNotEmpty ? model.conditions.first : null;
     });
     
-    // Show the model details modal
     _showModelDetailsModal(model);
   }
 
@@ -197,6 +201,7 @@ class _SellPhonePageState extends State<SellPhonePage> {
     }
   }
 
+  // Update this method to use the shared components
   void _showModelDetailsModal(PhoneModel model) {
     showModalBottomSheet(
       context: context,
@@ -273,143 +278,45 @@ class _SellPhonePageState extends State<SellPhonePage> {
                   const Divider(),
                   const SizedBox(height: 16),
                   
-                  // Storage options
+                  // Storage options using shared component
                   if (model.storageOptions.isNotEmpty) ...[
-                    const Text(
-                      'Select Storage',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: model.storageOptions.map((storage) {
-                        final isSelected = _selectedStorage == storage;
-                        return InkWell(
-                          onTap: () {
-                            setModalState(() {
-                              _selectedStorage = storage;
-                            });
-                            setState(() {
-                              _selectedStorage = storage;
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
-                              ),
-                            ),
-                            child: Text(
-                              storage,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.black,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                    StorageOptionSelector(
+                      options: model.storageOptions,
+                      selectedOption: _selectedStorage,
+                      onOptionSelected: (storage) {
+                        setModalState(() {
+                          _selectedStorage = storage;
+                        });
+                        setState(() {
+                          _selectedStorage = storage;
+                        });
+                      },
                     ),
                     const SizedBox(height: 24),
                   ],
                   
-                  // Condition options
+                  // Condition options using shared component
                   if (model.conditions.isNotEmpty) ...[
-                    const Text(
-                      'Select Condition',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: model.conditions.map((condition) {
-                        final isSelected = _selectedCondition == condition;
-                        return InkWell(
-                          onTap: () {
-                            setModalState(() {
-                              _selectedCondition = condition;
-                            });
-                            setState(() {
-                              _selectedCondition = condition;
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
-                              ),
-                            ),
-                            child: Text(
-                              condition,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.black,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                    ConditionOptionSelector(
+                      options: model.conditions,
+                      selectedOption: _selectedCondition,
+                      onOptionSelected: (condition) {
+                        setModalState(() {
+                          _selectedCondition = condition;
+                        });
+                        setState(() {
+                          _selectedCondition = condition;
+                        });
+                      },
                     ),
                     const SizedBox(height: 24),
                   ],
                   
-                  // Price estimate
+                  // Price estimate using shared component
                   if (_selectedStorage != null && _selectedCondition != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.shade100),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Estimated Price',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Your ${model.name}',
-                                style: const TextStyle(
-                                  color: Colors.black87,
-                                ),
-                              ),                              Text(
-                                '₹${model.getEstimatedPrice(_selectedStorage!, _selectedCondition!).toString()}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    PriceEstimateDisplay(
+                      modelName: model.name,
+                      estimatedPrice: model.getEstimatedPrice(_selectedStorage!, _selectedCondition!),
                     ),
                     const SizedBox(height: 24),
                   ],
@@ -418,16 +325,7 @@ class _SellPhonePageState extends State<SellPhonePage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // In a real app, this would navigate to the next step
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Proceeding to sell your phone'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
+                      onPressed: () => _submitModelInquiry(model),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
@@ -460,10 +358,19 @@ class _SellPhonePageState extends State<SellPhonePage> {
       },
     );
   }
-
-  @override
-  void dispose() {
-    super.dispose();
+  
+  // New simplified method using the shared component
+  void _submitModelInquiry(PhoneModel model) {
+    // Close the current modal first
+    Navigator.pop(context);
+    
+    // Use the shared inquiry submission logic with address handling
+    SellingComponents.submitInquiry(
+      context: context,
+      model: model,
+      storage: _selectedStorage ?? model.storageOptions.first,
+      condition: _selectedCondition ?? model.conditions.first,
+    );
   }
   
   @override
@@ -488,200 +395,116 @@ class _SellPhonePageState extends State<SellPhonePage> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: Row(
-                children: [
-                  _buildStepItem(
-                    icon: Icons.search,
-                    title: 'Find',
-                    description: 'Your phone model',
-                  ),
-                  _buildStepArrow(),
-                  _buildStepItem(
-                    icon: Icons.check_circle_outline,
-                    title: 'Select',
-                    description: 'Storage & condition',
-                  ),
-                  _buildStepArrow(),
-                  _buildStepItem(
-                    icon: Icons.attach_money,
-                    title: 'Get',
-                    description: 'Instant quote',
-                  ),
-                ],
-              ),
-            ),
-            
-            // Search bar that navigates to search page
-            GestureDetector(
-              onTap: _navigateToSearch,
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search, color: Colors.grey),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Search your phone model...',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Brands section
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-              child: const Text(
-                'Browse by Brand',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            FeaturedBrandsRow(
-              brands: featuredBrands,
-              onBrandSelected: _onBrandSelected,
-            ),
-            // Popular models section - only top 10
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Popular Models',
+      body: Consumer<UserProvider>(
+        builder: (context, userProvider, child) {
+          // Check if user is not authenticated
+          if (!userProvider.isAuthenticated) {
+            return LoginRequired(
+              title: 'Login to Sell Your Phone',
+              message: 'Please login to sell your old phone and get instant quotes',
+              icon: Icons.smartphone_outlined,
+            );
+          }
+          
+          // If authenticated, show the sell phone content
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Use the shared steps widget
+                const SellingSteps(),
+                
+                // Use the shared search bar widget
+                SearchBarWidget(onTap: _navigateToSearch),
+                
+                // Brands section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                  child: const Text(
+                    'Browse by Brand',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ),
-            ),
-            
-            // Show loading indicator, empty message, or models grid
-            _isLoading
-              ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              : _popularModels.isEmpty
-                ? Center(
-                    child: Column(
-                      children: [
-                        const Icon(Icons.phone_android, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No phone models available',
-                          style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Try refreshing the page',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  )
-                : SearchResultsGrid(
-                    models: _popularModels,
-                    onModelSelected: _onModelSelected,
-                  ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-              child: const Text(
-                'All Brands',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
                 ),
-              ),
+                FeaturedBrandsRow(
+                  brands: featuredBrands,
+                  onBrandSelected: _onBrandSelected,
+                ),
+                
+                // Popular models section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Popular Models',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Show loading indicator, empty message, or models grid
+                _isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : _popularModels.isEmpty
+                    ? Center(
+                        child: Column(
+                          children: [
+                            const Icon(Icons.phone_android, size: 64, color: Colors.grey),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No phone models available',
+                              style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Try refreshing the page',
+                              style: TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      )
+                    : SearchResultsGrid(
+                        models: _popularModels,
+                        onModelSelected: _onModelSelected,
+                      ),
+                
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                  child: const Text(
+                    'All Brands',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                BrandsGrid(
+                  brands: _brands,
+                  onBrandSelected: _onBrandSelected,
+                ),
+                
+                // Bottom padding
+                const SizedBox(height: 32),
+              ],
             ),
-            BrandsGrid(
-              brands: _brands,
-              onBrandSelected: _onBrandSelected,
-            ),
-            
-            // Bottom padding
-            const SizedBox(height: 32),
-          ],
-        ),
+          );
+        }
       ),
-    );
-  }
-
-  Widget _buildStepItem({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-            size: 28,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            description,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 12,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepArrow() {
-    return const Icon(
-      Icons.arrow_forward,
-      color: Colors.grey,
-      size: 20,
     );
   }
 }
