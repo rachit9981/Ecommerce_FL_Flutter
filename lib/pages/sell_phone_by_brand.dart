@@ -1,3 +1,4 @@
+import 'package:ecom/pages/sell_phone_requests.dart';
 import 'package:flutter/material.dart';
 import 'package:ecom/components/sell_phone/phones_brands.dart';
 import 'package:ecom/components/sell_phone/selling_comp.dart';
@@ -135,6 +136,23 @@ class _SellPhoneByBrandPageState extends State<SellPhoneByBrandPage> {
       model: model,
       storage: storage,
       condition: condition,
+      onSuccess: () {
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Your inquiry was submitted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Navigate to sell phone requests page to show the submitted inquiry
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SellPhoneRequestsPage(),
+          ),
+        );
+      },
     );
   }
 

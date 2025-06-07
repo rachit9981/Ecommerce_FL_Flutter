@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ecom/components/sell_phone/phones_brands.dart';
-import 'package:ecom/models/sell_phone_inquiry.dart';
 import 'package:ecom/services/sell_phone.dart';
 import 'package:ecom/services/address_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +10,137 @@ import '../../providers/user_provider.dart';
 
 /// Shared selling components and utilities for sell phone pages
 class SellingComponents {
+  /// Helper method to show a dismissible loading dialog with a safety timeout
+  static Future<void> _showLoadingDialog(BuildContext context) async {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      pageBuilder: (BuildContext buildContext, Animation<double> animation, Animation<double> secondaryAnimation) {
+        // Set a safety timeout to auto-dismiss after 30 seconds
+        Timer(const Duration(seconds: 30), () {
+          // Only pop if the dialog is still showing
+          if (buildContext.mounted) {
+            try {
+              Navigator.of(buildContext, rootNavigator: true).pop();
+            } catch (e) {
+              debugPrint("Error auto-dismissing dialog: $e");
+            }
+          }
+        });
+
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: const Center(
+            child: Material(
+              color: Colors.transparent,
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 200),
+    );
+  }
+
+  /// Helper method to safely dismiss loading dialog
+  static Future<void> _dismissLoadingDialog(BuildContext context) async {
+    try {
+      // Try to dismiss using root navigator
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+    } catch (e) {
+      debugPrint("Error dismissing loading dialog: $e");
+      // Try alternate method if first fails
+      try {
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        debugPrint("Both dialog dismiss methods failed: $e");
+      }
+    }
+  }
+
+  /// Process inquiry after address is selected
+  static Future<void> _processInquiryWithAddress(
+    BuildContext context,
+    PhoneModel model,
+    String storage,
+    String condition,
+    String userId,
+    String phoneNumber,
+    UserAddress address,
+    VoidCallback? onSuccess,
+  ) async {
+    try {
+      // Debug address data in detail
+      debugPrint('Submitting inquiry with address data...');
+      
+      // Convert UserAddress to backend-compatible format
+      final inquiryAddress = {
+        'street_address': address.street.trim(),
+        'city': address.city.trim(),
+        'state': address.state.trim(),
+        'postal_code': address.pincode.trim(),
+        'country': address.country.trim().isNotEmpty ? address.country.trim() : 'India',
+      };
+
+      // Submit inquiry without showing loading dialog
+      final sellPhoneService = SellPhoneService();
+      final result = await sellPhoneService.submitInquiry(
+        sellMobileId: model.id,
+        userId: userId,
+        buyerPhone: phoneNumber,
+        selectedVariant: storage,
+        selectedCondition: condition,
+        address: inquiryAddress,
+      ).timeout(const Duration(seconds: 15), onTimeout: () {
+        throw TimeoutException('The request took too long to complete.');
+      });
+      
+      debugPrint('API response received: $result');
+
+      // Check context validity before proceeding
+      if (!context.mounted) return;
+      
+      // If we got here, request was successful
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result != null && result['message'] != null 
+              ? result['message'] 
+              : 'Inquiry submitted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Call success callback or navigate
+      if (onSuccess != null) {
+        onSuccess();
+      } else if (context.mounted) {
+        // Navigate to requests page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SellPhoneRequestsPage(),
+          ),
+        );
+      }
+    } catch (e) {
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            duration: const Duration(seconds: 5),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   /// Submit inquiry for a sell phone with address selection
   static Future<void> submitInquiry({
     required BuildContext context,
@@ -19,29 +150,20 @@ class SellingComponents {
     VoidCallback? onSuccess,
   }) async {
     try {
-      // Show loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-
       // Get user ID from shared preferences
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('user_id');
 
       if (userId == null || userId.isEmpty) {
-        // Close loading
-        Navigator.pop(context);
-
-        // Show error
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please login to submit an inquiry')),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please login to submit an inquiry')),
+          );
+        }
         return;
       }
 
-      // Get user phone number from UserProvider instead of prompting
+      // Get user phone number from UserProvider
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       String? phoneNumber;
 
@@ -54,33 +176,23 @@ class SellingComponents {
 
       // If phone number is still null, prompt the user as fallback
       if (phoneNumber == null || phoneNumber.isEmpty) {
-        // Close loading to show the prompt
-        Navigator.pop(context);
         phoneNumber = await promptForPhoneNumber(context);
 
         // If user cancels, abort
         if (phoneNumber == null) {
           return;
         }
-
-        // Show loading again
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
-        );
       }
 
       // Initialize address service
       final AddressService addressService = AddressService();
 
-      // Fetch user addresses
+      // Fetch user addresses - no loading indicator
       final addresses = await addressService.getAddresses();
 
-      // Close loading dialog
-      Navigator.pop(context);
-
       // Handle address selection based on available addresses
+      if (!context.mounted) return;
+      
       if (addresses.isEmpty) {
         _showAddAddressDialog(context);
         return;
@@ -110,127 +222,15 @@ class SellingComponents {
         );
       }
     } catch (e) {
-      // Close loading if open
-      Navigator.pop(context);
-
-      // Show error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    }
-  }
-
-  /// Process inquiry after address is selected
-  static Future<void> _processInquiryWithAddress(
-    BuildContext context,
-    PhoneModel model,
-    String storage,
-    String condition,
-    String userId,
-    String phoneNumber,
-    UserAddress address,
-    VoidCallback? onSuccess,
-  ) async {
-    try {
-      // Show loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-      
-      // Debug address data in detail
-      debugPrint('Full Address Data:');
-      debugPrint('ID: ${address.id}');
-      debugPrint('Name: ${address.name}');
-      debugPrint('Street: "${address.street}"');
-      debugPrint('City: "${address.city}"');
-      debugPrint('State: "${address.state}"');
-      debugPrint('Pincode: "${address.pincode}"');
-      debugPrint('Country: "${address.country}"');
-      debugPrint('Phone: ${address.phone}');
-      
-      // Debug model ID
-      debugPrint('Model ID: ${model.id}');
-      debugPrint('Model name: ${model.name}');
-      
-      // Ensure model ID is valid and not empty
-      if (model.id.isEmpty) {
-        throw Exception('Invalid model ID. Cannot submit inquiry.');
-      }
-
-      // Convert UserAddress to backend-compatible format with EXACT field names matching backend requirements
-      final inquiryAddress = {
-        'street_address': address.street.trim(),  // Backend expects 'street_address'
-        'city': address.city.trim(),              // Backend expects 'city'
-        'state': address.state.trim(),            // Backend expects 'state'
-        'postal_code': address.pincode.trim(),    // Backend expects 'postal_code'
-        'country': address.country.trim().isNotEmpty ? address.country.trim() : 'India',
-      };
-      
-      // Double-check all required fields are present and not empty
-      // final requiredFields = ['street_address', 'city', 'state', 'postal_code'];
-      // String? missingField;
-      
-      // for (final field in requiredFields) {
-      //   if (!inquiryAddress.containsKey(field) || inquiryAddress[field]!.isEmpty) {
-      //     missingField = field;
-      //     break;
-      //   }
-      // }
-      
-      // if (missingField != null) {
-      //   throw Exception('Missing required address field: $missingField');
-      // }
-      
-      // Log final address format being sent to API
-      debugPrint('Final formatted address for API: $inquiryAddress');
-      
-      // Submit inquiry with exact fields required by backend
-      final sellPhoneService = SellPhoneService();
-      final result = await sellPhoneService.submitInquiry(
-        sellMobileId: model.id,
-        userId: userId,
-        buyerPhone: phoneNumber,
-        selectedVariant: storage,
-        selectedCondition: condition,
-        address: inquiryAddress,
-      );
-      
-      // Close loading
-      Navigator.pop(context);
-      
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'] ?? 'Inquiry submitted successfully')),
-      );
-      
-      // Call success callback if provided
-      if (onSuccess != null) {
-        onSuccess();
-      } else {
-        // Navigate to requests page to show pending requests
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const SellPhoneRequestsPage(),
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      // Close loading
-      Navigator.pop(context);
-      
-      // Show detailed error with all address info
-      debugPrint('Error submitting inquiry: $e');
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          duration: const Duration(seconds: 5),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 

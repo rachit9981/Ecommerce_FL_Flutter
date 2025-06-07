@@ -370,6 +370,15 @@ class _SellPhonePageState extends State<SellPhonePage> {
       model: model,
       storage: _selectedStorage ?? model.storageOptions.first,
       condition: _selectedCondition ?? model.conditions.first,
+      onSuccess: () {
+        // Explicit success callback to ensure we handle the flow properly
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Your inquiry was submitted successfully!')),
+        );
+        
+        // Refresh the model list to show updated state
+        _loadData();
+      },
     );
   }
   
