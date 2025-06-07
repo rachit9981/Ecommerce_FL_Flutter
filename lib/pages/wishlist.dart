@@ -188,6 +188,29 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
     }
   }
 
+  AppBar _buildAppBar({bool isLoading = false}) {
+    return AppBar(
+      elevation: 0,
+      title: const Text('My Wishlist'),
+      actions: [
+        if (_isProcessing && !isLoading)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -268,37 +291,6 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
       body: _wishlistItems.isEmpty
           ? _buildEmptyWishlist(primaryColor)
           : _buildWishlistItems(context),
-    );
-  }
-
-  AppBar _buildAppBar({bool isLoading = false}) {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: Colors.white,
-      title: const Text(
-        'My Wishlist',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-          color: Colors.black87,
-        ),
-      ),
-      actions: [
-        if (_isProcessing && !isLoading)
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).primaryColor,
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 

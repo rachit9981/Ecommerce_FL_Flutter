@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ecom/components/common/categories.dart';
-import 'package:ecom/components/common/suggestions.dart';
-import 'package:ecom/pages/product_page.dart';
-import 'package:ecom/services/products.dart';
 import 'package:ecom/providers/product_provider.dart';
+import 'package:ecom/services/products.dart';
+import 'package:ecom/pages/product_page.dart';
 
 class CategoryPage extends StatefulWidget {
   final CategoryItem category;
@@ -19,1002 +18,603 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  // Active filter options
-  String? _selectedSubcategory;
-  RangeValues _priceRange = const RangeValues(0, 100000);
-  RangeValues _selectedPriceRange = const RangeValues(0, 100000);
-  String? _sortOption;
-  
-  // Display variables
-  List<SuggestionItem> _displayedProducts = [];
-  List<String> _availableSubcategories = [];
-  
-  // List of possible sorting options
-  final List<String> _sortOptions = [
-    'Popularity',
-    'Price: Low to High',
-    'Price: High to Low',
-    'Newest First',
-    'Discount',
-    'Rating'
-  ];
+  String _sortOption = 'Recommended';
+  // Set initial price range with conservative values
+  // RangeValues _priceRange = const RangeValues(0, 100000);
+  double _maxPrice = 500000;
+  // Set initial price range to maximum range
+  RangeValues _priceRange = const RangeValues(0, 500000);
+  bool _isFiltersVisible = false;
+  bool _isLoading = true;
+  List<Product> _filteredProducts = [];
+  String? _error;
 
   @override
   void initState() {
     super.initState();
+    _loadProducts();
+  }
+
+  void _loadProducts() {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeData();
+      final productProvider = Provider.of<ProductProvider>(context, listen: false);
+      
+      try {
+        // If products are already loaded, filter them
+        if (productProvider.products.isNotEmpty) {
+          _filterProducts(productProvider.products);
+        } else {
+          // Otherwise load them first
+          productProvider.loadProducts().then((_) {
+            if (mounted) {
+              _filterProducts(productProvider.products);
+            }
+          }).catchError((error) {
+            if (mounted) {
+              setState(() {
+                _error = error.toString();
+                _isLoading = false;
+              });
+            }
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _error = e.toString();
+            _isLoading = false;
+          });
+        }
+      }
     });
   }
 
-  void _initializeData() {
-    final productProvider = context.read<ProductProvider>();
-    final products = productProvider.products;
+  void _filterProducts(List<Product> allProducts) {
+    if (!mounted) return;
 
-    if (products.isNotEmpty) {
-      // Set price range based on actual product prices for this category
-      final categoryProducts = _getCategoryProducts(products);
-      if (categoryProducts.isNotEmpty) {
-        final prices = categoryProducts.map((p) => p.discountPrice).toList();
-        final minPrice = prices.reduce((a, b) => a < b ? a : b);
-        final maxPrice = prices.reduce((a, b) => a > b ? a : b);
+    try {
+      // Filter products by category
+      final categoryName = widget.category.id.toLowerCase();
+      final filteredByCategory = allProducts.where((product) {
+        final productCategory = product.category.toLowerCase();
+        final productBrand = product.brand.toLowerCase();
         
-        _priceRange = RangeValues(minPrice, maxPrice);
-        _selectedPriceRange = RangeValues(minPrice, maxPrice);
-      }
+        // Check if product matches the category
+        bool categoryMatch = productCategory.contains(categoryName) || 
+                            categoryName.contains(productCategory);
+                            
+        // For brand categories, also check brand match
+        bool brandMatch = productBrand.contains(categoryName) || 
+                          categoryName.contains(productBrand);
+                          
+        return categoryMatch || brandMatch;
+      }).toList();
 
-      // Generate subcategories
-      _availableSubcategories = _getSubcategories(products);
-      
-      // Apply initial filters
-      _applyFilters();
-    }
-  }
-
-  // Get products for this category from the provider
-  List<Product> _getCategoryProducts(List<Product> allProducts) {
-    // Check if the category is a brand
-    final bool isBrand = _isBrandCategory();
-    final normalizedCategoryId = widget.category.id.toLowerCase().trim();
-
-    if (isBrand) {
-      // Filter by brand (case insensitive)
-      return allProducts
-          .where((product) => 
-              product.brand.toLowerCase().trim() == normalizedCategoryId)
-          .toList();
-    } else {
-      // Filter by category (case insensitive)
-      return allProducts
-          .where((product) => 
-              product.category.toLowerCase().trim() == normalizedCategoryId ||
-              product.category.toLowerCase().trim().contains(normalizedCategoryId) ||
-              normalizedCategoryId.contains(product.category.toLowerCase().trim()))
-          .toList();
-    }
-  }
-
-  // Check if this is a brand category or product category
-  bool _isBrandCategory() {
-    // Define known product categories (case insensitive)
-    final knownCategories = [
-      'electronics', 'fashion', 'home', 'beauty', 'sports', 'books', 
-      'automotive', 'health', 'toys', 'grocery', 'mobiles', 'mobile',
-      'phones', 'phone', 'laptops', 'laptop', 'computers', 'computer'
-    ];
-    
-    return !knownCategories.contains(widget.category.id.toLowerCase().trim());
-  }
-
-  // Get subcategories based on available products for this category
-  List<String> _getSubcategories(List<Product> allProducts) {
-    final categoryProducts = _getCategoryProducts(allProducts);
-    
-    if (categoryProducts.isEmpty) {
-      return ['All'];
-    }
-
-    final bool isBrand = _isBrandCategory();
-
-    if (isBrand) {
-      // For a brand, subcategories are product categories
-      final subcategories = categoryProducts
-          .map((product) => product.category)
-          .toSet()
-          .toList();
-      subcategories.insert(0, 'All');
-      return subcategories;
-    } else {
-      // For a product category, create subcategories based on the category type
-      Set<String> subcategories = {'All'};
-      final normalizedCategoryId = widget.category.id.toLowerCase().trim();
-      
-      // Add subcategories based on product variations or common subcategories
-      if (normalizedCategoryId.contains('electronic') || 
-          normalizedCategoryId.contains('mobile') || 
-          normalizedCategoryId.contains('phone')) {
-        subcategories.addAll(['Smartphones', 'Feature Phones', 'Accessories']);
-      } else if (normalizedCategoryId.contains('laptop') || 
-                 normalizedCategoryId.contains('computer')) {
-        subcategories.addAll(['Gaming', 'Business', 'Student', 'Workstation']);
-      } else if (normalizedCategoryId.contains('fashion') || 
-                 normalizedCategoryId.contains('clothing')) {
-        subcategories.addAll(['Men', 'Women', 'Kids', 'Footwear', 'Accessories']);
-      } else if (normalizedCategoryId.contains('home')) {
-        subcategories.addAll(['Kitchen', 'Furniture', 'Decor', 'Bedding', 'Appliances']);
-      } else if (normalizedCategoryId.contains('beauty')) {
-        subcategories.addAll(['Skincare', 'Makeup', 'Haircare', 'Fragrance', 'Tools']);
-      } else if (normalizedCategoryId.contains('sport')) {
-        subcategories.addAll(['Fitness', 'Outdoor', 'Team Sports', 'Swimwear', 'Equipment']);
-      } else {
-        // Try to extract subcategories from product names or descriptions
-        for (var product in categoryProducts) {
-          // Add any meaningful keywords from product names as potential subcategories
-          final words = product.name.toLowerCase().split(' ');
-          for (var word in words) {
-            if (word.length > 3 && !word.contains('the') && !word.contains('and')) {
-              subcategories.add(word.substring(0, 1).toUpperCase() + word.substring(1));
-            }
-          }
+      // Calculate max price for range slider before applying price filter
+      double newMaxPrice = 10000; // Default fallback value
+      if (filteredByCategory.isNotEmpty) {
+        try {
+          final maxProductPrice = filteredByCategory
+              .map((product) => product.discountPrice)
+              .reduce((value, element) => value > element ? value : element);
+          
+          newMaxPrice = maxProductPrice + 10000; // Add buffer for slider
+        } catch (e) {
+          // If reduce throws an error, fall back to default max price
+          print('Error calculating max price: $e');
         }
       }
       
-      return subcategories.take(8).toList(); // Limit to 8 subcategories
-    }
-  }
-
-  // Convert Product to SuggestionItem
-  SuggestionItem _convertProductToSuggestionItem(Product product) {
-    return SuggestionItem(
-      id: product.id,
-      title: product.name,
-      imageUrl: product.images.isNotEmpty ? product.images.first : '',
-      price: product.discountPrice,
-      originalPrice: product.price != product.discountPrice ? product.price : null,
-      description: product.description,
-      isProduct: true,
-      isNew: product.featured == true,
-      rating: product.rating,
-      reviewCount: product.reviews,
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductPage(
-              productId: product.id,
-              heroTag: 'category_${widget.category.id}_${product.id}',
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // Apply filters and update displayed products
-  void _applyFilters() {
-    final productProvider = context.read<ProductProvider>();
-    final allProducts = productProvider.products;
-
-    if (allProducts.isEmpty) {
-      // Use fallback products when API data is not available
-      _displayedProducts = _getFallbackProducts();
-      setState(() {});
-      return;
-    }
-
-    // Start with category products
-    List<Product> filteredProducts = _getCategoryProducts(allProducts);
-
-    // Apply subcategory filter if selected (case insensitive)
-    if (_selectedSubcategory != null && _selectedSubcategory != 'All') {
-      filteredProducts = filteredProducts.where((product) {
-        final subcategory = _selectedSubcategory!.toLowerCase().trim();
-        return product.category.toLowerCase().trim().contains(subcategory) ||
-               product.name.toLowerCase().trim().contains(subcategory) ||
-               product.description.toLowerCase().trim().contains(subcategory) ||
-               product.brand.toLowerCase().trim().contains(subcategory);
+      // Update price range to be valid with the new max price
+      RangeValues newPriceRange = _priceRange;
+      if (_priceRange.end > newMaxPrice) {
+        // If current end is higher than new max, adjust it
+        newPriceRange = RangeValues(_priceRange.start, newMaxPrice);
+      }
+      
+      // Apply price filter with adjusted price range
+      final filteredByPrice = filteredByCategory.where((product) {
+        return product.discountPrice >= newPriceRange.start && 
+               product.discountPrice <= newPriceRange.end;
       }).toList();
-    }
 
-    // Apply price range filter
-    filteredProducts = filteredProducts
-        .where((product) => 
-            product.discountPrice >= _selectedPriceRange.start && 
-            product.discountPrice <= _selectedPriceRange.end)
-        .toList();
-
-    // Convert to SuggestionItems
-    List<SuggestionItem> items = filteredProducts
-        .map((product) => _convertProductToSuggestionItem(product))
-        .toList();
-
-    // Apply sorting
-    if (_sortOption != null) {
+      // Apply sort
       switch (_sortOption) {
         case 'Price: Low to High':
-          items.sort((a, b) => (a.price ?? 0.0).compareTo(b.price ?? 0.0));
+          filteredByPrice.sort((a, b) => a.discountPrice.compareTo(b.discountPrice));
           break;
         case 'Price: High to Low':
-          items.sort((a, b) => (b.price ?? 0.0).compareTo(a.price ?? 0.0));
-          break;
-        case 'Rating':
-          items.sort((a, b) => (b.rating ?? 0.0).compareTo(a.rating ?? 0.0));
-          break;
-        case 'Discount':
-          items.sort((a, b) {
-            final discountA = a.originalPrice != null ? (a.originalPrice! - (a.price ?? 0.0)) : 0.0;
-            final discountB = b.originalPrice != null ? (b.originalPrice! - (b.price ?? 0.0)) : 0.0;
-            return discountB.compareTo(discountA);
-          });
+          filteredByPrice.sort((a, b) => b.discountPrice.compareTo(a.discountPrice));
           break;
         case 'Newest First':
-          items.sort((a, b) => (b.isNew ? 1 : 0).compareTo(a.isNew ? 1 : 0));
+          // Since we don't have a date field, we'll just use the ID for demo
+          filteredByPrice.sort((a, b) => b.id.compareTo(a.id));
           break;
-        // 'Popularity' falls back to default sorting
+        case 'Popularity':
+          filteredByPrice.sort((a, b) => b.rating.compareTo(a.rating));
+          break;
+        case 'Recommended':
+        default:
+          // For recommended, we might use a combination of rating and reviews
+          filteredByPrice.sort((a, b) => 
+            (b.rating * b.reviews).compareTo(a.rating * a.reviews));
+          break;
       }
-    }
 
+      setState(() {
+        _maxPrice = newMaxPrice;
+        _priceRange = newPriceRange;
+        _filteredProducts = filteredByPrice;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _toggleFilters() {
     setState(() {
-      _displayedProducts = items;
+      _isFiltersVisible = !_isFiltersVisible;
     });
   }
 
-  // Fallback method to get category products (for when API fails)
-  List<SuggestionItem> _getFallbackProducts() {
-    List<SuggestionItem> products = [];
+  void _resetFilters() {
+    setState(() {
+      _sortOption = 'Recommended';
+      // Make sure the range is valid
+      _priceRange = RangeValues(0, _maxPrice);
+    });
     
-    if (widget.category.id == 'electronics') {
-      products = [
-        SuggestionItem(
-          id: 'e2',
-          title: 'Wireless Earbuds Pro',
-          imageUrl: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 5999.00,
-          originalPrice: 7999.00,
-          description: 'Active Noise Cancellation',
-          isProduct: true,
-          rating: 4.5,
-          reviewCount: 256,
-          onTap: () {
-            _navigateToProductDetail('e2');
-          },
-        ),
-        SuggestionItem(
-          id: 'e3',
-          title: 'Smart Watch Series 3',
-          imageUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 12999.00,
-          originalPrice: 15999.00,
-          description: 'Fitness tracking, ECG',
-          isProduct: true,
-          rating: 4.3,
-          reviewCount: 128,
-          onTap: () {
-            _navigateToProductDetail('e3');
-          },
-        ),
-        SuggestionItem(
-          id: 'e4',
-          title: 'Ultra HD Smart TV 55"',
-          imageUrl: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 42999.00,
-          originalPrice: 54999.00,
-          description: '4K HDR, Dolby Vision',
-          isProduct: true,
-          rating: 4.6,
-          reviewCount: 532,
-          onTap: () {
-            _navigateToProductDetail('e4');
-          },
-        ),
-        SuggestionItem(
-          id: 'e5',
-          title: 'Professional Gaming Laptop',
-          imageUrl: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 89999.00,
-          originalPrice: 104999.00,
-          description: 'RTX 3060, 16GB RAM',
-          isProduct: true,
-          rating: 4.5,
-          reviewCount: 328,
-          onTap: () {
-            _navigateToProductDetail('e5');
-          },
-        ),
-        SuggestionItem(
-          id: 'e6',
-          title: 'Bluetooth Portable Speaker',
-          imageUrl: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 3999.00,
-          description: 'Waterproof, 20hr battery',
-          isProduct: true,
-          rating: 4.4,
-          reviewCount: 95,
-          onTap: () {
-            _navigateToProductDetail('e6');
-          },
-        ),
-        SuggestionItem(
-          id: 'e7',
-          title: 'Digital Camera DSLR',
-          imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 35999.00,
-          originalPrice: 41999.00,
-          description: '24MP, 4K Video',
-          isProduct: true,
-          rating: 4.6,
-          reviewCount: 213,
-          onTap: () {
-            _navigateToProductDetail('e7');
-          },
-        ),
-        SuggestionItem(
-          id: 'e8',
-          title: 'Noise-Canceling Headphones',
-          imageUrl: 'https://images.unsplash.com/photo-1578319439584-104c94d37305?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 24999.00,
-          originalPrice: 32999.00,
-          description: 'Wireless, 30h Battery',
-          isProduct: true,
-          rating: 4.7,
-          reviewCount: 894,
-          onTap: () {
-            _navigateToProductDetail('e8');
-          },
-        ),
-      ];
-    } else if (widget.category.id == 'fashion') {
-      products = [
-        SuggestionItem(
-          id: 'f1',
-          title: 'Men\'s Casual T-Shirt',
-          imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 899.00,
-          originalPrice: 1299.00,
-          description: 'Pure Cotton, Comfort Fit',
-          isProduct: true,
-          rating: 4.3,
-          reviewCount: 152,
-          onTap: () {
-            _navigateToProductDetail('f1');
-          },
-        ),
-        SuggestionItem(
-          id: 'f2',
-          title: 'Women\'s Floral Maxi Dress',
-          imageUrl: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 1499.00,
-          originalPrice: 2499.00,
-          description: 'Summer Collection',
-          isProduct: true,
-          rating: 4.5,
-          reviewCount: 86,
-          onTap: () {
-            _navigateToProductDetail('f2');
-          },
-        ),
-      ];
-    } else if (widget.category.id == 'home') {
-      products = [
-        SuggestionItem(
-          id: 'h1',
-          title: 'Stainless Steel Cookware Set',
-          imageUrl: 'https://images.unsplash.com/photo-1551978129-b73f45d132eb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 4999.00,
-          originalPrice: 7999.00,
-          description: '10 Piece Set, Non-stick',
-          isProduct: true,
-          rating: 4.7,
-          reviewCount: 203,
-          onTap: () {
-            _navigateToProductDetail('h1');
-          },
-        ),
-      ];
-    } else {
-      products = [
-        SuggestionItem(
-          id: 'd1',
-          title: 'Product 1',
-          imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          price: 2999.00,
-          description: 'Product description',
-          isProduct: true,
-          rating: 4.2,
-          reviewCount: 45,
-          onTap: () {
-            _navigateToProductDetail('d1');
-          },
-        ),
-      ];
-    }
-    
-    return products;
-  }
-  
-  void _navigateToProductDetail(String productId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProductPage(
-          productId: productId,
-          heroTag: 'category_${widget.category.id}_product_$productId',
-        ),
-      ),
-    );
-  }
-
-  void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Container(
-              padding: const EdgeInsets.all(20),
-              height: MediaQuery.of(context).size.height * 0.8,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Filter Products',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setModalState(() {
-                            _selectedSubcategory = null;
-                            _selectedPriceRange = _priceRange;
-                            _sortOption = null;
-                          });
-                          setState(() {
-                            _selectedSubcategory = null;
-                            _selectedPriceRange = _priceRange;
-                            _sortOption = null;
-                          });
-                          _applyFilters();
-                        },
-                        child: const Text('Reset All'),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  
-                  // Subcategories
-                  const Text(
-                    'Subcategories',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _availableSubcategories.map((subcategory) {
-                      return FilterChip(
-                        label: Text(subcategory),
-                        selected: _selectedSubcategory == subcategory,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            _selectedSubcategory = selected ? subcategory : null;
-                          });
-                        },
-                        selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                        checkmarkColor: Theme.of(context).colorScheme.primary,
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Price Range
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Price Range',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '₹${_selectedPriceRange.start.round()} - ₹${_selectedPriceRange.end.round()}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  RangeSlider(
-                    values: _selectedPriceRange,
-                    min: _priceRange.start,
-                    max: _priceRange.end,
-                    divisions: 20,
-                    labels: RangeLabels(
-                      '₹${_selectedPriceRange.start.round()}',
-                      '₹${_selectedPriceRange.end.round()}',
-                    ),
-                    onChanged: (values) {
-                      setModalState(() {
-                        _selectedPriceRange = values;
-                      });
-                    },
-                    activeColor: Theme.of(context).colorScheme.primary,
-                    inactiveColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Sort By
-                  const Text(
-                    'Sort By',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _sortOptions.map((option) {
-                      return ChoiceChip(
-                        label: Text(option),
-                        selected: _sortOption == option,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            _sortOption = selected ? option : null;
-                          });
-                        },
-                        selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                      );
-                    }).toList(),
-                  ),
-                  
-                  const Spacer(),
-                  // Apply Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _applyFilters();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Apply Filters',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+    // Re-filter products with reset filters
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    _filterProducts(productProvider.products);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.category.title),
+        title: Text(
+          widget.category.title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.filter_list),
-                if (_selectedSubcategory != null || _sortOption != null)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 8,
-                        minHeight: 8,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: _showFilterBottomSheet,
-          ),
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // Navigate to search page with pre-filled category
-              Navigator.pushNamed(context, '/search');
-            },
+            icon: const Icon(Icons.filter_list),
+            onPressed: _toggleFilters,
           ),
         ],
       ),
-      body: Consumer<ProductProvider>(
-        builder: (context, productProvider, child) {
-          if (productProvider.isLoading && productProvider.products.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (productProvider.error != null && productProvider.products.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, size: 80, color: Colors.red.shade400),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading products',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red.shade700,
+      body: Column(
+        children: [
+          // Filters panel (collapsible)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: _isFiltersVisible ? 220 : 0,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: _isFiltersVisible 
+                ? [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    productProvider.error!,
-                    style: const TextStyle(color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => productProvider.reloadProducts(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Column(
-            children: [
-              // Active filters display
-              if (_selectedSubcategory != null || _sortOption != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: Colors.grey.shade100,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
+                  ]
+                : [],
+            ),
+            child: SingleChildScrollView(
+              // physics: const NeverScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Active Filters: ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          'Sort & Filter',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
-                        if (_selectedSubcategory != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Chip(
-                              label: Text(_selectedSubcategory!),
-                              deleteIcon: const Icon(Icons.close, size: 16),
-                              onDeleted: () {
-                                setState(() {
-                                  _selectedSubcategory = null;
-                                });
-                                _applyFilters();
-                              },
-                            ),
-                          ),
-                        if (_sortOption != null)
-                          Chip(
-                            label: Text(_sortOption!),
-                            deleteIcon: const Icon(Icons.close, size: 16),
-                            onDeleted: () {
-                              setState(() {
-                                _sortOption = null;
-                              });
-                              _applyFilters();
-                            },
-                          ),
+                        TextButton(
+                          onPressed: _resetFilters,
+                          child: const Text('Reset'),
+                        ),
                       ],
                     ),
-                  ),
-                ),
-              
-              // Product count
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('${_displayedProducts.length} products found'),
-                    // Sort quick access
-                    if (_sortOption == null)
-                      TextButton.icon(
-                        onPressed: _showFilterBottomSheet,
-                        icon: const Icon(Icons.sort),
-                        label: const Text('Sort'),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        'Recommended',
+                        'Price: Low to High',
+                        'Price: High to Low',
+                        'Newest First',
+                        'Popularity',
+                      ].map((option) => ChoiceChip(
+                        label: Text(option),
+                        selected: _sortOption == option,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              _sortOption = option;
+                            });
+                            
+                            // Re-filter products with new sort option
+                            final productProvider = Provider.of<ProductProvider>(
+                              context, 
+                              listen: false
+                            );
+                            _filterProducts(productProvider.products);
+                          }
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Price Range:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          '₹${_priceRange.start.toInt()} - ₹${_priceRange.end.toInt()}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Safety check to ensure values are within valid range
+                    if (_maxPrice > 0 && _priceRange.end <= _maxPrice && _priceRange.start >= 0)
+                      RangeSlider(
+                        values: _priceRange,
+                        min: 0,
+                        max: _maxPrice,
+                        divisions: 20,
+                        labels: RangeLabels(
+                          '₹${_priceRange.start.toInt()}',
+                          '₹${_priceRange.end.toInt()}',
+                        ),
+                        onChanged: (values) {
+                          // Additional safety check
+                          if (values.end <= _maxPrice && values.start >= 0) {
+                            setState(() {
+                              _priceRange = values;
+                            });
+                          }
+                        },
+                        onChangeEnd: (values) {
+                          // Re-filter products with new price range
+                          final productProvider = Provider.of<ProductProvider>(
+                            context, 
+                            listen: false
+                          );
+                          _filterProducts(productProvider.products);
+                        },
                       ),
                   ],
                 ),
               ),
-              
-              // Product grid
-              Expanded(
-                child: _displayedProducts.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.search_off,
-                              size: 80,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No products found',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Try adjusting your filters',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          await productProvider.reloadProducts();
-                          _initializeData();
-                        },
-                        child: GridView.builder(
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.7,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                          itemCount: _displayedProducts.length,
-                          itemBuilder: (context, index) {
-                            final product = _displayedProducts[index];
-                            return Hero(
-                              tag: 'category_${widget.category.id}_product_${product.id}',
-                              child: SuggestionItemCard(
-                                item: product,
-                                width: double.infinity,
-                              ),
-                            );
-                          },
-                        ),
+            ),
+          ),
+          
+          // Results count and filter info
+          if (!_isLoading && _error == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Text(
+                    '${_filteredProducts.length} products',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_isFiltersVisible)
+                    Text(
+                      'Sort: $_sortOption',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
               ),
-            ],
-          );
+            ),
+          
+          // Main content
+          Expanded(
+            child: _buildMainContent(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+    
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load products',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadProducts,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    if (_filteredProducts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No products found',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your filters or check out other categories',
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _resetFilters,
+              child: const Text('Reset Filters'),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Show product grid with results
+    return RefreshIndicator(
+      onRefresh: () async {
+        _loadProducts();
+      },
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: _filteredProducts.length,
+        itemBuilder: (context, index) {
+          final product = _filteredProducts[index];
+          return _buildProductItem(product);
         },
       ),
     );
   }
-}
 
-// Simple card to display a product from a SuggestionItem
-class SuggestionItemCard extends StatelessWidget {
-  final SuggestionItem item;
-  final double width;
-  
-  const SuggestionItemCard({
-    Key? key,
-    required this.item,
-    required this.width,
-  }) : super(key: key);
-  
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      borderRadius: BorderRadius.circular(16),
-      elevation: 2,      shadowColor: Colors.black.withValues(alpha: 0.1),
-      child: InkWell(
-        onTap: item.onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: width,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
+  Widget _buildProductItem(Product product) {
+    final heroTag = 'category_${widget.category.id}_${product.id}';
+    
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductPage(
+              productId: product.id,
+              heroTag: heroTag,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Product image
-              Expanded(
-                flex: 3,
-                child: Stack(
-                  children: [
-                    ClipRRect(
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product image
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
                       borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      ),
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.grey.shade100,
-                        child: item.imageUrl != null
-                            ? Image.network(
-                                item.imageUrl!,
-                                fit: BoxFit.cover,
-                              )
-                            : const Icon(Icons.image, size: 40, color: Colors.grey),
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
                       ),
                     ),
-                    
-                    // Discount badge
-                    if (item.originalPrice != null && item.price != null && item.originalPrice! > item.price!)
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            "-${((1 - item.price! / item.originalPrice!) * 100).round()}%",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
-                            ),
+                    width: double.infinity,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: Hero(
+                        tag: heroTag,
+                        child: Image.network(
+                          product.images.isNotEmpty ? product.images.first : '',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => 
+                              const Center(child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Discount badge if available
+                  if (product.price > product.discountPrice)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '-${(((product.price - product.discountPrice) / product.price) * 100).round()}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
                           ),
                         ),
                       ),
-                    
-                    // New badge
-                    if (item.isNew)
-                      Positioned(
-                        top: item.originalPrice != null && item.price != null && item.originalPrice! > item.price! ? 40 : 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            "NEW",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
-                            ),
-                          ),
+                    ),
+                  
+                  // Rating badge
+                  if (product.rating > 0)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-              
-              // Product info - Adjusted to handle overflow better
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title - Increased max lines to 2
-                      Text(
-                        item.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                        maxLines: 2, // Increased from 1 to 2
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      
-                      // Description - Reduced top padding
-                      if (item.description != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2), // Reduced from 4
-                          child: Text(
-                            item.description!,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 11, // Reduced from 12
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      
-                      // Star rating - Reduced top padding
-                      if (item.rating != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2), // Reduced from 4
-                          child: Row(
-                            children: [
-                              for (int i = 0; i < 5; i++)
-                                Icon(
-                                  i < item.rating!.floor()
-                                      ? Icons.star
-                                      : (i < item.rating!.ceil() && i >= item.rating!.floor())
-                                          ? Icons.star_half
-                                          : Icons.star_border,
-                                  size: 12, // Reduced from 14
-                                  color: Colors.amber,
-                                ),
-                              if (item.reviewCount != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 2), // Reduced from 4
-                                  child: Text(
-                                    "(${item.reviewCount})",
-                                    style: TextStyle(
-                                      fontSize: 9, // Reduced from 10
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      
-                      const Spacer(),
-                      
-                      // Price section - Condensed
-                      if (item.price != null)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        child: Row(
                           children: [
+                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const SizedBox(width: 2),
                             Text(
-                              "₹${item.price!.toStringAsFixed(0)}",
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
+                              product.rating.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 15, // Reduced from 16
+                                fontSize: 12,
                               ),
                             ),
-                            if (item.originalPrice != null && item.originalPrice! > item.price!)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4),
-                                child: Text(
-                                  "₹${item.originalPrice!.toStringAsFixed(0)}",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 11, // Reduced from 12
-                                    decoration: TextDecoration.lineThrough,
-                                  ),
-                                ),
-                              ),
                           ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            
+            // Product info
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        '₹${product.discountPrice.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      if (product.price > product.discountPrice)
+                        Text(
+                          '₹${product.price.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                            decoration: TextDecoration.lineThrough,
+                          ),
                         ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product.brand,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

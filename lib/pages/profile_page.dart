@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/user.dart';
 import '../services/auth.dart';
+import '../components/common/login_required.dart';
 import 'orders.dart';
 import 'wishlist.dart';
 import 'edit_profile.dart';
@@ -113,6 +114,10 @@ class _ProfilePageState extends State<ProfilePage> {
     final secondaryColor = theme.colorScheme.secondary;
     
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Profile'),
+        elevation: 0,
+      ),
       body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
           // Check if user is not authenticated
@@ -121,7 +126,9 @@ class _ProfilePageState extends State<ProfilePage> {
               !userProvider.isProfileLoading &&
               (userProvider.profileError?.contains('Authentication failed') == true ||
                userProvider.profileError?.contains('No authentication token found') == true)) {
-            return _buildAuthRequiredState(primaryColor, secondaryColor);
+            return LoginRequired(
+              message: 'Please login to view your profile and manage your account',
+            );
           }
 
           // Show loading state
@@ -137,148 +144,79 @@ class _ProfilePageState extends State<ProfilePage> {
           final profile = userProvider.userProfile;
 
           return RefreshIndicator(
-            onRefresh: _refreshUserData, // Use our new method instead of chaining
-            child: CustomScrollView(
-              slivers: [
-                // Stylish app bar with gradient
-                SliverAppBar(
-                  expandedHeight: 180.0,
-                  floating: false,
-                  pinned: true,
-                  flexibleSpace: FlexibleSpaceBar(
-                    centerTitle: true,
-                    title: Text(
-                      'My Profile',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    background: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [primaryColor, secondaryColor],
+            onRefresh: _refreshUserData,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // User profile header
+                    _buildProfileHeader(profile, primaryColor),
+                    const SizedBox(height: 24),
+                    
+                    // Contact Information section
+                    _buildSectionHeader('Contact Information'),
+                    const SizedBox(height: 12),
+                    
+                    // Show loading indicator while fetching addresses
+                    if (_isLoadingAddresses)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                      ),
-                      child: Stack(
-                        children: [
-                          // Decorative background elements
-                          Positioned(
-                            top: -20,
-                            left: -20,
-                            child: Container(
-                              width: 150,
-                              height: 150,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                shape: BoxShape.circle,
+                      )
+                    else if (_addressError != null)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Column(
+                            children: [
+                              Icon(Icons.error_outline, color: Colors.orange, size: 40),
+                              SizedBox(height: 10),
+                              Text(
+                                'Failed to load addresses',
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: -50,
-                            right: -30,
-                            child: Container(
-                              width: 180,
-                              height: 180,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Profile content
-                SliverToBoxAdapter(
-                  child: Container(
-                    // Reduced negative transform to prevent overlapping
-                    transform: Matrix4.translationValues(0, -20, 0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                    ),
-                    child: Padding(
-                      // Added top padding to push content down
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                      child: Column(
-                        children: [
-                          // User profile header
-                          _buildProfileHeader(profile, primaryColor),
-                          const SizedBox(height: 24),
-                          
-                          // Contact Information section
-                          _buildSectionHeader('Contact Information'),
-                          const SizedBox(height: 12),
-                          
-                          // Show loading indicator while fetching addresses
-                          if (_isLoadingAddresses)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            )
-                          else if (_addressError != null)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                child: Column(
-                                  children: [
-                                    Icon(Icons.error_outline, color: Colors.orange, size: 40),
-                                    SizedBox(height: 10),
-                                    Text(
-                                      'Failed to load addresses',
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                                      child: Text(
-                                        _addressError!,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                                      ),
-                                    ),
-                                    SizedBox(height: 12),
-                                    TextButton.icon(
-                                      onPressed: _loadAddresses,
-                                      icon: Icon(Icons.refresh),
-                                      label: Text('Retry'),
-                                    )
-                                  ],
+                              SizedBox(height: 4),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 32),
+                                child: Text(
+                                  _addressError!,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                 ),
                               ),
-                            )
-                          else
-                            _buildContactInfo(profile, _defaultAddress, primaryColor),
-                            
-                          const SizedBox(height: 32),
+                              SizedBox(height: 12),
+                              TextButton.icon(
+                                onPressed: _loadAddresses,
+                                icon: Icon(Icons.refresh),
+                                label: Text('Retry'),
+                              )
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      _buildContactInfo(profile, _defaultAddress, primaryColor),
+                      
+                    const SizedBox(height: 32),
 
-                          // Activity section
-                          _buildSectionHeader('My Activity'),
-                          const SizedBox(height: 12),
-                          _buildActivityButtons(context, primaryColor, secondaryColor),
-                          const SizedBox(height: 20),
-                          
-                          // Logout button
-                          _buildLogoutButton(),
-                          
-                          // Bottom padding to ensure all content is visible
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                  ),
+                    // Activity section
+                    _buildSectionHeader('My Activity'),
+                    const SizedBox(height: 12),
+                    _buildActivityButtons(context, primaryColor, secondaryColor),
+                    const SizedBox(height: 20),
+                    
+                    // Logout button
+                    _buildLogoutButton(),
+                    
+                    // Bottom padding to ensure all content is visible
+                    const SizedBox(height: 20),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         },
@@ -287,92 +225,43 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildAuthRequiredState(Color primaryColor, Color secondaryColor) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          expandedHeight: 180.0,
-          floating: false,
-          pinned: true,
-          flexibleSpace: FlexibleSpaceBar(
-            centerTitle: true,
-            title: Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [primaryColor, secondaryColor],
-                ),
-              ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.login, size: 64, color: primaryColor),
+            const SizedBox(height: 16),
+            Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('Please login to view your profile', style: TextStyle(color: Colors.grey.shade600), textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to login screen
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Please navigate to login screen')),
+                );
+              },
+              child: Text('Login'),
             ),
-          ),
+          ],
         ),
-        SliverFillRemaining(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.login, size: 64, color: primaryColor),
-                  const SizedBox(height: 16),
-                  Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text('Please login to view your profile', style: TextStyle(color: Colors.grey.shade600), textAlign: TextAlign.center),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to login screen
-                      // You can implement navigation to login screen here
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Please navigate to login screen')),
-                      );
-                    },
-                    child: Text('Login'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildLoadingState(Color primaryColor, Color secondaryColor) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          expandedHeight: 180.0,
-          floating: false,
-          pinned: true,
-          flexibleSpace: FlexibleSpaceBar(
-            centerTitle: true,
-            title: Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [primaryColor, secondaryColor],
-                ),
-              ),
-            ),
-          ),
-        ),
-        SliverFillRemaining(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(color: primaryColor),
-                const SizedBox(height: 16),
-                Text('Loading profile...', style: TextStyle(color: Colors.grey.shade600)),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: primaryColor),
+          const SizedBox(height: 16),
+          Text('Loading profile...', style: TextStyle(color: Colors.grey.shade600)),
+        ],
+      ),
     );
   }
 
@@ -380,67 +269,43 @@ class _ProfilePageState extends State<ProfilePage> {
     final isAuthError = userProvider.profileError?.contains('Authentication failed') == true ||
                        userProvider.profileError?.contains('No authentication token found') == true;
     
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          expandedHeight: 180.0,
-          floating: false,
-          pinned: true,
-          flexibleSpace: FlexibleSpaceBar(
-            centerTitle: true,
-            title: Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [primaryColor, secondaryColor],
-                ),
-              ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isAuthError ? Icons.login : Icons.error_outline, 
+              size: 64, 
+              color: isAuthError ? primaryColor : Colors.red.shade400
             ),
-          ),
-        ),
-        SliverFillRemaining(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isAuthError ? Icons.login : Icons.error_outline, 
-                    size: 64, 
-                    color: isAuthError ? primaryColor : Colors.red.shade400
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    isAuthError ? 'Authentication Required' : 'Failed to load profile', 
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isAuthError ? 'Please login to continue' : (userProvider.profileError ?? 'Unknown error'), 
-                    style: TextStyle(color: Colors.grey.shade600), 
-                    textAlign: TextAlign.center
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: isAuthError 
-                      ? () {
-                          // Navigate to login screen
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Please navigate to login screen')),
-                          );
-                        }
-                      : () => userProvider.fetchProfile(),
-                    child: Text(isAuthError ? 'Login' : 'Retry'),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 16),
+            Text(
+              isAuthError ? 'Authentication Required' : 'Failed to load profile', 
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              isAuthError ? 'Please login to continue' : (userProvider.profileError ?? 'Unknown error'), 
+              style: TextStyle(color: Colors.grey.shade600), 
+              textAlign: TextAlign.center
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: isAuthError 
+                ? () {
+                    // Navigate to login screen
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Please navigate to login screen')),
+                    );
+                  }
+                : () => userProvider.fetchProfile(),
+              child: Text(isAuthError ? 'Login' : 'Retry'),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 

@@ -86,103 +86,32 @@ class _EditProfilePageState extends State<EditProfilePage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
-    final secondaryColor = theme.colorScheme.secondary;
+    final orangeColor = primaryColor;
     
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // Stylish app bar with gradient matching ProfilePage
-          SliverAppBar(
-            expandedHeight: 120.0,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              centerTitle: true,
-              title: Text(
-                'Edit Profile',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [primaryColor, secondaryColor],
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Decorative background elements
-                    Positioned(
-                      top: -20,
-                      left: -20,
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: -30,
-                      right: -20,
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(50),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicatorColor: primaryColor,
-                  indicatorWeight: 3,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  labelColor: primaryColor,
-                  unselectedLabelColor: Colors.grey.shade600,
-                  labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
-                  tabs: [
-                    Tab(icon: Icon(Icons.person_outline, size: 20), text: 'Profile'),
-                    Tab(icon: Icon(Icons.location_on_outlined, size: 20), text: 'Addresses'),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          
-          // Tab content
-          SliverFillRemaining(
-            child: Container(
-              color: Colors.white,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildProfileTab(),
-                  _buildAddressTab(),
-                ],
-              ),
-            ),
-          ),
+      appBar: AppBar(
+        title: const Text('Edit Profile'),
+        elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          indicatorWeight: 5,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.orange.shade300,
+          labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+          tabs: [
+            Tab(icon: Icon(Icons.person_outline, size: 20), text: 'Profile'),
+            Tab(icon: Icon(Icons.location_on_outlined, size: 20), text: 'Addresses'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildProfileTab(),
+          _buildAddressTab(),
         ],
       ),
     );
@@ -191,82 +120,75 @@ class _EditProfilePageState extends State<EditProfilePage>
   Widget _buildProfileTab() {
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
-        return Container(
-          transform: Matrix4.translationValues(0, -20, 0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildProfileInfoTile(
+                icon: Icons.person_outline,
+                label: 'First Name',
+                controller: _firstNameController,
+                hint: 'Enter your first name',
+              ),
+              SizedBox(height: 12),
+              _buildProfileInfoTile(
+                icon: Icons.person,
+                label: 'Last Name',
+                controller: _lastNameController,
+                hint: 'Enter your last name',
+              ),
+              SizedBox(height: 12),
+              _buildProfileInfoTile(
+                icon: Icons.phone,
+                label: 'Phone Number',
+                controller: _phoneController,
+                hint: 'Enter your phone number',
+                keyboardType: TextInputType.phone,
+              ),
+              
+              SizedBox(height: 24),
+              
+              // Password section with toggle
+              _buildPasswordToggle(),
+              
+              if (_showPasswordSection) ...[
+                SizedBox(height: 12),
                 _buildProfileInfoTile(
-                  icon: Icons.person_outline,
-                  label: 'First Name',
-                  controller: _firstNameController,
-                  hint: 'Enter your first name',
+                  icon: Icons.lock_outline,
+                  label: 'Current Password',
+                  controller: _currentPasswordController,
+                  hint: 'Enter your current password',
+                  isPassword: true,
+                  isObscured: _obscureCurrentPassword,
+                  onToggleVisibility: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
                 ),
                 SizedBox(height: 12),
                 _buildProfileInfoTile(
-                  icon: Icons.person,
-                  label: 'Last Name',
-                  controller: _lastNameController,
-                  hint: 'Enter your last name',
+                  icon: Icons.lock,
+                  label: 'New Password',
+                  controller: _newPasswordController,
+                  hint: 'Enter your new password',
+                  isPassword: true,
+                  isObscured: _obscureNewPassword,
+                  onToggleVisibility: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
                 ),
                 SizedBox(height: 12),
                 _buildProfileInfoTile(
-                  icon: Icons.phone,
-                  label: 'Phone Number',
-                  controller: _phoneController,
-                  hint: 'Enter your phone number',
-                  keyboardType: TextInputType.phone,
+                  icon: Icons.lock_reset,
+                  label: 'Confirm New Password',
+                  controller: _confirmPasswordController,
+                  hint: 'Confirm your new password',
+                  isPassword: true,
+                  isObscured: _obscureConfirmPassword,
+                  onToggleVisibility: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                 ),
-                
-                SizedBox(height: 24),
-                
-                // Password section with toggle
-                _buildPasswordToggle(),
-                
-                if (_showPasswordSection) ...[
-                  SizedBox(height: 12),
-                  _buildProfileInfoTile(
-                    icon: Icons.lock_outline,
-                    label: 'Current Password',
-                    controller: _currentPasswordController,
-                    hint: 'Enter your current password',
-                    isPassword: true,
-                    isObscured: _obscureCurrentPassword,
-                    onToggleVisibility: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
-                  ),
-                  SizedBox(height: 12),
-                  _buildProfileInfoTile(
-                    icon: Icons.lock,
-                    label: 'New Password',
-                    controller: _newPasswordController,
-                    hint: 'Enter your new password',
-                    isPassword: true,
-                    isObscured: _obscureNewPassword,
-                    onToggleVisibility: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
-                  ),
-                  SizedBox(height: 12),
-                  _buildProfileInfoTile(
-                    icon: Icons.lock_reset,
-                    label: 'Confirm New Password',
-                    controller: _confirmPasswordController,
-                    hint: 'Confirm your new password',
-                    isPassword: true,
-                    isObscured: _obscureConfirmPassword,
-                    onToggleVisibility: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                  ),
-                ],
-                
-                SizedBox(height: 32),
-                
-                _buildUpdateButton(userProvider),
               ],
-            ),
+              
+              SizedBox(height: 32),
+              
+              _buildUpdateButton(userProvider),
+            ],
           ),
         );
       },
@@ -276,40 +198,30 @@ class _EditProfilePageState extends State<EditProfilePage>
   Widget _buildAddressTab() {
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
-        return Container(
-          transform: Matrix4.translationValues(0, -20, 0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          ),
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
               // Header with add button
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'My Addresses',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                      ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'My Addresses',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
-                    _buildAddButton(),
-                  ],
-                ),
+                  ),
+                  _buildAddButton(),
+                ],
               ),
               
               // Address list
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                  child: userProvider.isAddressesLoading
-                      ? _buildLoadingState()
-                      : userProvider.addresses.isEmpty
-                          ? _buildEmptyState()
-                          : _buildAddressList(userProvider),
-                ),
+                child: userProvider.isAddressesLoading
+                    ? _buildLoadingState()
+                    : userProvider.addresses.isEmpty
+                        ? _buildEmptyState()
+                        : _buildAddressList(userProvider),
               ),
             ],
           ),
