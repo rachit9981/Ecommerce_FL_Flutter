@@ -210,7 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 20),
                     
                     // Logout button
-                    _buildLogoutButton(),
+                    Center(child: _buildLogoutButton()),
                     
                     // Bottom padding to ensure all content is visible
                     const SizedBox(height: 20),
