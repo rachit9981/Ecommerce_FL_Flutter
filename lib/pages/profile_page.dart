@@ -17,94 +17,74 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final AuthService _authService = AuthService();
-  bool _isLoadingAddresses = false;
-  List<Address>? _addresses;
-  String? _addressError;
+  bool _isLoading = false;
   
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      if (userProvider.userProfile == null && userProvider.isAuthenticated) {
-        await userProvider.initializeUserData();
-        await Future.delayed(const Duration(milliseconds: 500));
-        // await _refreshUserData();
-      }
-      await _refreshUserData();
-      if (mounted && userProvider.isAuthenticated) {
-        _loadAddresses();
-      }
+    // Simplified initialization - only load data once
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
     });
   }
 
-  Future<void> _loadAddresses() async {
+  // New method to handle initial data loading
+  Future<void> _initializeData() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    if (!userProvider.isAuthenticated) return;
     
-    setState(() {
-      _isLoadingAddresses = true;
-      _addressError = null;
-    });
-    
-    try {
-      final userService = UserService();
-      final addresses = await userService.getAddresses();
+    // Only load if authenticated and data not already loaded
+    if (userProvider.isAuthenticated && !userProvider.hasUserData && !_isLoading) {
+      setState(() {
+        _isLoading = true;
+      });
       
-      if (mounted) {
-        setState(() {
-          _addresses = addresses;
-          _isLoadingAddresses = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _addressError = e.toString().replaceAll('Exception: ', '');
-          _isLoadingAddresses = false;
-        });
-        
-        // Auto-retry loading addresses after 3 seconds if there was an error
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted && _addressError != null) {
-            _loadAddresses();
-          }
-        });
+      try {
+        await userProvider.refreshUserData();
+      } catch (e) {
+        print('Error initializing profile data: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
 
-  // Get the default address from the address list
+  // Simplify refresh method to avoid multiple calls
+  Future<void> _refreshUserData() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
+    if (!_isLoading) {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      try {
+        await userProvider.refreshUserData();
+      } catch (e) {
+        print('Error refreshing profile data: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    }
+  }
+
+  // Get the default address from the provider
   Address? get _defaultAddress {
-    if (_addresses == null || _addresses!.isEmpty) return null;
-    
-    // Try to find the default address
-    final defaultAddress = _addresses!.firstWhere(
-      (address) => address.isDefault,
-      orElse: () => _addresses!.first, // Use the first address if no default is set
-    );
-    
-    return defaultAddress;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    return userProvider.defaultAddress;
   }
 
   // Count orders (for now using a placeholder, would be fetched from an orders service)
   int get _orderCount {
     // This would be replaced with actual order count from API
     return 0;
-  }
-
-  // Modify the refresh method to be more reliable
-  Future<void> _refreshUserData() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
-    // First refresh the user profile
-    await userProvider.refreshUserData();
-    
-    // Then refresh addresses with a slight delay to ensure authentication is ready
-    if (mounted) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      await _loadAddresses();
-    }
   }
 
   @override
@@ -131,8 +111,8 @@ class _ProfilePageState extends State<ProfilePage> {
             );
           }
 
-          // Show loading state
-          if (userProvider.isProfileLoading && userProvider.userProfile == null) {
+          // Show loading state - combine local and provider loading states
+          if (_isLoading || (userProvider.isProfileLoading && userProvider.userProfile == null)) {
             return _buildLoadingState(primaryColor, secondaryColor);
           }
 
@@ -160,14 +140,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 12),
                     
                     // Show loading indicator while fetching addresses
-                    if (_isLoadingAddresses)
+                    if (userProvider.isAddressesLoading)
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
-                    else if (_addressError != null)
+                    else if (userProvider.addressError != null)
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 20),
@@ -183,14 +163,14 @@ class _ProfilePageState extends State<ProfilePage> {
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 32),
                                 child: Text(
-                                  _addressError!,
+                                  userProvider.addressError!,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                 ),
                               ),
                               SizedBox(height: 12),
                               TextButton.icon(
-                                onPressed: _loadAddresses,
+                                onPressed: () => userProvider.fetchAddresses(),
                                 icon: Icon(Icons.refresh),
                                 label: Text('Retry'),
                               )
@@ -199,7 +179,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       )
                     else
-                      _buildContactInfo(profile, _defaultAddress, primaryColor),
+                      _buildContactInfo(profile, userProvider.defaultAddress, primaryColor),
                       
                     const SizedBox(height: 32),
 
@@ -584,14 +564,8 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     ).then((_) async {
       // Refresh user data when returning from edit profile
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.refreshUserData();
-      
-      // Add a small delay before loading addresses
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      // Then reload addresses
-      _loadAddresses();
+      // Use a single refresh call to avoid multiple data loads
+      _refreshUserData();
     });
   }
 }

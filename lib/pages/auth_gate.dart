@@ -2,6 +2,8 @@ import 'package:ecom/pages/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ecom/pages/login_page.dart';
+import 'package:provider/provider.dart'; // Add this import
+import 'package:ecom/providers/user_provider.dart'; // Add this import
 
 class AuthGate extends StatefulWidget {
   const AuthGate({Key? key}) : super(key: key);
@@ -28,6 +30,9 @@ class _AuthGateState extends State<AuthGate> {
       
       // Check if user has valid authentication data
       if (token != null && token.isNotEmpty && userId != null && userId.isNotEmpty) {
+        // Load user data before proceeding
+        await _loadUserData();
+        
         // Optional: Validate token with backend
         // bool isTokenValid = await _validateToken(token);
         // For now, we'll assume token is valid if it exists
@@ -47,6 +52,26 @@ class _AuthGateState extends State<AuthGate> {
         _isLoggedIn = false;
         _isLoading = false;
       });
+    }
+  }
+
+  // Add method to load user data
+  Future<void> _loadUserData() async {
+    try {
+      // Get the UserProvider and initialize user data
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      
+      // Set authentication state to true before loading data
+      userProvider.setAuthenticationState(true);
+      
+      // Load user profile and addresses
+      await userProvider.initializeUserData();
+      
+      print('User data loaded successfully in AuthGate');
+    } catch (e) {
+      print('Error loading user data in AuthGate: $e');
+      // Even if we fail to load user data, we can still proceed
+      // The user provider will handle authentication failures
     }
   }
 
