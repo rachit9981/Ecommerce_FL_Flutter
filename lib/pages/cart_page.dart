@@ -68,15 +68,11 @@ class _CartPageState extends State<CartPage> {
       });
 
       if (addresses.isEmpty) {
-        // No addresses available - prompt to add an address
         _showAddAddressDialog(context);
         return;
       } else if (addresses.length == 1) {
-        // Only one address - use it automatically
-        print("Using single address: ${addresses[0].id}");
         _navigateToCheckout(context, addresses[0].id, productIds, amountInPaise);
       } else {
-        // Multiple addresses - show selection dialog
         _showAddressSelectionDialog(context, addresses, productIds, amountInPaise);
       }
     } catch (e) {
@@ -84,7 +80,6 @@ class _CartPageState extends State<CartPage> {
         _isAddressLoading = false;
       });
       
-      print("Error loading addresses: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading addresses: $e')),
       );
