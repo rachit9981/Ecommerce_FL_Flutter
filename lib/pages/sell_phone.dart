@@ -4,6 +4,7 @@ import 'package:ecom/components/sell_phone/search_feature.dart';
 import 'package:ecom/services/sell_phone.dart';
 import 'package:ecom/pages/search_phone.dart';
 import 'package:ecom/pages/sell_phone_requests.dart';
+import 'package:ecom/pages/sell_phone_by_brand.dart';
 
 class SellPhonePage extends StatefulWidget {
   const SellPhonePage({Key? key}) : super(key: key);
@@ -182,20 +183,17 @@ class _SellPhonePageState extends State<SellPhonePage> {
         ),
       );
     } else {
-      // Navigate to search with pre-filtered results
+      // Navigate to dedicated brand page instead of search
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SearchPhonePage(
-            allModels: brandModels,
+          builder: (context) => SellPhoneByBrandPage(
+            brand: brand,
+            brandModels: brandModels,
+            onModelSelected: _onModelSelected,
           ),
         ),
-      ).then((result) {
-        // If a model was selected, handle it
-        if (result != null && result is PhoneModel) {
-          _onModelSelected(result);
-        }
-      });
+      );
     }
   }
 
