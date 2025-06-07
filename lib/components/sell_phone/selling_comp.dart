@@ -86,49 +86,94 @@ class SellingComponents {
         'postal_code': address.pincode.trim(),
         'country': address.country.trim().isNotEmpty ? address.country.trim() : 'India',
       };
-
-      // Submit inquiry without showing loading dialog
-      final sellPhoneService = SellPhoneService();
-      final result = await sellPhoneService.submitInquiry(
-        sellMobileId: model.id,
-        userId: userId,
-        buyerPhone: phoneNumber,
-        selectedVariant: storage,
-        selectedCondition: condition,
-        address: inquiryAddress,
-      ).timeout(const Duration(seconds: 15), onTimeout: () {
-        throw TimeoutException('The request took too long to complete.');
-      });
       
-      debugPrint('API response received: $result');
-
-      // Check context validity before proceeding
-      if (!context.mounted) return;
-      
-      // If we got here, request was successful
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result != null && result['message'] != null 
-              ? result['message'] 
-              : 'Inquiry submitted successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      
-      // Call success callback or navigate
-      if (onSuccess != null) {
-        onSuccess();
-      } else if (context.mounted) {
-        // Navigate to requests page
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const SellPhoneRequestsPage(),
+      // Add a UI indicator that something is happening - FIXED DURATION FROM MICROSECONDS TO MILLISECONDS
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Processing your request...'),
+            duration: Duration(milliseconds: 800), // Changed from microseconds to milliseconds
           ),
         );
       }
+
+      // Submit inquiry without showing loading dialog
+      final sellPhoneService = SellPhoneService();
+      
+      try {
+        // Make the API call with a timeout
+        final result = await sellPhoneService.submitInquiry(
+          sellMobileId: model.id,
+          userId: userId,
+          buyerPhone: phoneNumber,
+          selectedVariant: storage,
+          selectedCondition: condition,
+          address: inquiryAddress,
+        ).timeout(const Duration(seconds: 15));
+        
+        debugPrint('API response received: $result');
+        
+        // Check if context is still valid
+        if (!context.mounted) return;
+        
+        // Clear any existing SnackBars to avoid conflicts
+        ScaffoldMessenger.of(context).clearSnackBars();
+        
+        // Add a delay to ensure UI updates
+        await Future.delayed(const Duration(milliseconds: 300));
+        
+        // Explicitly handle success based on response status
+        if (result['status'] == 'success') {
+          // Show success message with longer duration
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Inquiry submitted successfully'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 4), // Increased duration
+            ),
+          );
+          
+          // Allow UI to update before navigation
+          await Future.delayed(const Duration(seconds: 1));
+          
+          // Call success callback if provided
+          if (onSuccess != null) {
+            onSuccess();
+          } else if (context.mounted) {
+            // Navigate to requests page to show pending requests
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SellPhoneRequestsPage(),
+              ),
+            );
+          }
+        } else {
+          // Handle non-success status in the response
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result?['message'] ?? 'Failed to submit inquiry'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      } catch (apiError) {
+        // Handle API error
+        debugPrint('API call error: $apiError');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error submitting inquiry: ${apiError.toString()}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
     } catch (e) {
-      // Show error message
+      // Show error message for any other errors
+      debugPrint('General error in _processInquiryWithAddress: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
