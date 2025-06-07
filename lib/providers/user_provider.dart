@@ -54,7 +54,7 @@ class UserProvider with ChangeNotifier {
       }
     } finally {
       _isProfileLoading = false;
-      notifyListeners();
+      notifyListeners(); 
     }
   }
   
