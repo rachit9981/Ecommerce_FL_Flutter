@@ -60,7 +60,7 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
               controller: widget.controller,
               autofocus: widget.autofocus,
               decoration: const InputDecoration(
-                hintText: 'Search products, brands and more',
+                hintText: 'Search products...',
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(vertical: 12),
               ),

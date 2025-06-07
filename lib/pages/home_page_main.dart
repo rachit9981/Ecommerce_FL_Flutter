@@ -574,9 +574,7 @@ class _HomePageState extends State<HomePage> {
                             Icon(Icons.search, color: Colors.grey.shade600),
                             const SizedBox(width: 12),
                             Text(
-                              products.isNotEmpty 
-                                  ? 'Search ${products.length} products...'
-                                  : 'Search products...',
+                              'Search products...',
                               style: TextStyle(
                                 color: Colors.grey.shade600,
                                 fontSize: 16,
