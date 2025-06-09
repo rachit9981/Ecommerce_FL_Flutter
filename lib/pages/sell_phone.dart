@@ -3,7 +3,6 @@ import 'package:ecom/components/sell_phone/phones_brands.dart';
 import 'package:ecom/components/sell_phone/search_feature.dart';
 import 'package:ecom/components/sell_phone/selling_comp.dart';
 import 'package:ecom/services/sell_phone.dart';
-import 'package:ecom/models/sell_phone_inquiry.dart';
 import 'package:ecom/pages/search_phone.dart';
 import 'package:ecom/pages/sell_phone_requests.dart';
 import 'package:ecom/pages/sell_phone_by_brand.dart';
@@ -23,9 +22,6 @@ class _SellPhonePageState extends State<SellPhonePage> {
   List<PhoneBrand> _brands = [];
   List<PhoneModel> _allModels = [];
   List<PhoneModel> _popularModels = []; // Separate list for popular models
-  PhoneModel? _selectedModel;
-  String? _selectedStorage;
-  String? _selectedCondition;
   bool _isLoading = true;
 
   @override

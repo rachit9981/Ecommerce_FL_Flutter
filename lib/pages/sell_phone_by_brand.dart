@@ -1,7 +1,5 @@
-import 'package:ecom/pages/sell_phone_requests.dart';
 import 'package:flutter/material.dart';
 import 'package:ecom/components/sell_phone/phones_brands.dart';
-import 'package:ecom/components/sell_phone/selling_comp.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../components/common/login_required.dart';

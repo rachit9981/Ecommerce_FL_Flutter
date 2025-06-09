@@ -10,59 +10,6 @@ import '../../providers/user_provider.dart';
 
 /// Shared selling components and utilities for sell phone pages
 class SellingComponents {
-  /// Helper method to show a dismissible loading dialog with a safety timeout
-  static Future<void> _showLoadingDialog(BuildContext context) async {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      pageBuilder: (BuildContext buildContext, Animation<double> animation, Animation<double> secondaryAnimation) {
-        // Set a safety timeout to auto-dismiss after 30 seconds
-        Timer(const Duration(seconds: 30), () {
-          // Only pop if the dialog is still showing
-          if (buildContext.mounted) {
-            try {
-              Navigator.of(buildContext, rootNavigator: true).pop();
-            } catch (e) {
-              debugPrint("Error auto-dismissing dialog: $e");
-            }
-          }
-        });
-
-        return WillPopScope(
-          onWillPop: () async => false,
-          child: const Center(
-            child: Material(
-              color: Colors.transparent,
-              child: CircularProgressIndicator(),
-            ),
-          ),
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 200),
-    );
-  }
-
-  /// Helper method to safely dismiss loading dialog
-  static Future<void> _dismissLoadingDialog(BuildContext context) async {
-    try {
-      // Try to dismiss using root navigator
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
-    } catch (e) {
-      debugPrint("Error dismissing loading dialog: $e");
-      // Try alternate method if first fails
-      try {
-        if (context.mounted) {
-          Navigator.of(context).pop();
-        }
-      } catch (e) {
-        debugPrint("Both dialog dismiss methods failed: $e");
-      }
-    }
-  }
-
   /// Show confirmation dialog before processing inquiry
   static Future<bool> _showConfirmationDialog(
     BuildContext context,
@@ -236,7 +183,7 @@ class SellingComponents {
           // Handle non-success status in the response
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result?['message'] ?? 'Failed to submit inquiry'),
+              content: Text(result['message'] ?? 'Failed to submit inquiry'),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 4),
             ),
