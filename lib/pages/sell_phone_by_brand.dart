@@ -136,15 +136,7 @@ class _SellPhoneByBrandPageState extends State<SellPhoneByBrandPage> {
       model: model,
       storage: storage,
       condition: condition,
-      onSuccess: () {
-        // Show a success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Your inquiry was submitted successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
+      onSuccess: () { 
         // Navigate to sell phone requests page to show the submitted inquiry
         Navigator.push(
           context,
