@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.ecom"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973" // Updated NDK version
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -30,13 +30,37 @@ android {
         versionName = flutter.versionName
     }
 
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+    signingConfigs {
+        create("release") {
+            storeFile = file("../../upload-keystore.jks")
+            storePassword = "12345678"
+            keyAlias = "upload"
+            keyPassword = "12345678"
         }
     }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+
+            // Add ProGuard rules
+            isShrinkResources = true
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android.txt"),
+                "proguard-rules.pro"
+            )
+            
+            // Disable R8 full mode if it's causing issues
+            // This is optional - try with full mode first
+            // enableR8FullMode = false
+        }
+    }
+}
+
+dependencies {
+    // Add Play Core library
+    implementation("com.google.android.play:core:1.10.3")
 }
 
 flutter {

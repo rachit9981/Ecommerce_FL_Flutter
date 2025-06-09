@@ -75,22 +75,6 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
-  // Optional: Method to validate token with backend
-  // Future<bool> _validateToken(String token) async {
-  //   try {
-  //     final response = await http.get(
-  //       Uri.parse('$apiUrl/auth/validate/'),
-  //       headers: {
-  //         'Authorization': 'Bearer $token',
-  //         'Content-Type': 'application/json',
-  //       },
-  //     );
-  //     return response.statusCode == 200;
-  //   } catch (e) {
-  //     return false;
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
