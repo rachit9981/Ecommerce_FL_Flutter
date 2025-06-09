@@ -99,15 +99,15 @@ class _CartPageState extends State<CartPage> {
             },
             child: Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to add address page
-              // Replace with your actual navigation code
-              Navigator.pushNamed(context, '/addresses/add');
-            },
-            child: Text('Add Address'),
-          ),
+          // ElevatedButton(
+          //   onPressed: () {
+          //     Navigator.pop(context);
+          //     // Navigate to add address page
+          //     // Replace with your actual navigation code
+          //     Navigator.pushNamed(context, '/addresses/add');
+          //   },
+          //   child: Text('Add Address'),
+          // ),
         ],
       ),
     );

@@ -170,32 +170,6 @@ class _CheckoutPageState extends State<CheckoutPage>
               ],
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Continue Shopping',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Navigate to orders page
-                Navigator.pushReplacementNamed(context, '/orders');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: const Text('View Orders'),
-            ),
-          ],
         );
       },
     );
@@ -271,6 +245,11 @@ class _CheckoutPageState extends State<CheckoutPage>
         'prefill': {'contact': '8888888888', 'email': 'test@example.com'},
         'external': {
           'wallets': ['paytm']
+        },
+        'theme': {
+          'color': Theme.of(context).primaryColor.value.toRadixString(16).substring(2),
+          'backdrop_color': '#ffffff',
+          'hide_topbar': false
         }
       };
 
@@ -309,181 +288,183 @@ class _CheckoutPageState extends State<CheckoutPage>
         elevation: 0,
         centerTitle: true,
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Order Summary Card
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 10,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.primaryColor.withOpacity(0.1),
-                              shape: BoxShape.circle,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Order Summary Card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: theme.primaryColor.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.receipt_long,
+                                color: theme.primaryColor,
+                                size: 24,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.receipt_long,
-                              color: theme.primaryColor,
-                              size: 24,
+                            const SizedBox(width: 16),
+                            Text(
+                              'Order Summary',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'Order Summary',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildSummaryRow('Items', '${widget.productIds.length}'),
-                      _buildSummaryRow('Subtotal', '₹${amount.toStringAsFixed(2)}'),
-                      _buildSummaryRow('Shipping', 'Free'),
-                      _buildSummaryRow('Tax', 'Included'),
-                      const Divider(height: 30),
-                      _buildSummaryRow(
-                        'Total Amount',
-                        '₹${amount.toStringAsFixed(2)}',
-                        isBold: true,
-                        isTotal: true,
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Payment Methods Section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 10,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.payment,
-                              color: Colors.blue,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'Payment Methods',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildPaymentOption(
-                        icon: Icons.credit_card,
-                        title: 'Credit/Debit Card',
-                        subtitle: 'Visa, Mastercard, RuPay',
-                        color: Colors.purple,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildPaymentOption(
-                        icon: Icons.account_balance_wallet,
-                        title: 'UPI',
-                        subtitle: 'PhonePe, Google Pay, Paytm',
-                        color: Colors.green,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildPaymentOption(
-                        icon: Icons.account_balance,
-                        title: 'Net Banking',
-                        subtitle: 'All major banks supported',
-                        color: Colors.orange,
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Security Notice
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.green.withOpacity(0.3),
-                      width: 1,
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildSummaryRow('Items', '${widget.productIds.length}'),
+                        _buildSummaryRow('Subtotal', '₹${amount.toStringAsFixed(2)}'),
+                        _buildSummaryRow('Shipping', 'Free'),
+                        _buildSummaryRow('Tax', 'Included'),
+                        const Divider(height: 30),
+                        _buildSummaryRow(
+                          'Total Amount',
+                          '₹${amount.toStringAsFixed(2)}',
+                          isBold: true,
+                          isTotal: true,
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.security,
-                        color: Colors.green,
-                        size: 20,
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Payment Methods Section
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.payment,
+                                color: Colors.blue,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              'Payment Methods',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildPaymentOption(
+                          icon: Icons.credit_card,
+                          title: 'Credit/Debit Card',
+                          subtitle: 'Visa, Mastercard, RuPay',
+                          color: Colors.purple,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildPaymentOption(
+                          icon: Icons.account_balance_wallet,
+                          title: 'UPI',
+                          subtitle: 'PhonePe, Google Pay, Paytm',
+                          color: Colors.green,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildPaymentOption(
+                          icon: Icons.account_balance,
+                          title: 'Net Banking',
+                          subtitle: 'All major banks supported',
+                          color: Colors.orange,
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Security Notice
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.green.withOpacity(0.3),
+                        width: 1,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Your payment information is secure and encrypted',
-                          style: TextStyle(
-                            color: Colors.green[800],
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.security,
+                          color: Colors.green,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Your payment information is secure and encrypted',
+                            style: TextStyle(
+                              color: Colors.green[800],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                
-                const SizedBox(height: 32),
-              ],
+                  
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
         ),

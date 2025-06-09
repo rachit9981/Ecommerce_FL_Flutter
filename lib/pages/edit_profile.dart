@@ -852,6 +852,10 @@ class _EditProfilePageState extends State<EditProfilePage>
 
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
+      
+      // Check if this is the first address being added
+      final isFirstAddress = userProvider.addresses.isEmpty;
+      
       final address = Address(
         id: _editingAddress?.id,
         type: _addressTypeController.text.trim(),
@@ -860,7 +864,8 @@ class _EditProfilePageState extends State<EditProfilePage>
         state: _stateController.text.trim(),
         postalCode: _postalCodeController.text.trim(),
         phoneNumber: _addressPhoneController.text.trim(),
-        isDefault: _editingAddress?.isDefault ?? false,
+        // Set as default if it's the first address or if the address being edited was already default
+        isDefault: isFirstAddress || (_editingAddress?.isDefault ?? false),
       );
 
       bool success;
@@ -874,7 +879,11 @@ class _EditProfilePageState extends State<EditProfilePage>
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_editingAddress != null ? 'Address updated successfully!' : 'Address added successfully!'),
+            content: Text(_editingAddress != null 
+              ? 'Address updated successfully!' 
+              : isFirstAddress 
+                ? 'Address added and set as default!' 
+                : 'Address added successfully!'),
             backgroundColor: Colors.green,
           ),
         );

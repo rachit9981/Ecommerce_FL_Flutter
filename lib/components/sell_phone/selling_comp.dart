@@ -294,14 +294,14 @@ class SellingComponents {
             },
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to add address page
-              Navigator.pushNamed(context, '/addresses/add');
-            },
-            child: const Text('Add Address'),
-          ),
+          // ElevatedButton(
+          //   onPressed: () {
+          //     Navigator.pop(context);
+          //     // Navigate to add address page
+          //     Navigator.pushNamed(context, '/addresses/add');
+          //   },
+          //   child: const Text('Add Address'),
+          // ),
         ],
       ),
     );

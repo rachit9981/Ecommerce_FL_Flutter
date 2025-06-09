@@ -1,8 +1,7 @@
+import 'package:ecom/pages/home_page.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ecom/components/login_signup/login_signup_comps.dart';
 import 'package:ecom/pages/login_page.dart';
-import 'package:ecom/pages/home_page_main.dart';
 import 'package:ecom/services/auth.dart';
 
 class SignupPage extends StatefulWidget {
@@ -14,19 +13,23 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController(); // Changed to first name
+  final _lastNameController = TextEditingController();  // Added last name
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
   final AuthService _authService = AuthService();
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose(); // Updated
+    _lastNameController.dispose();  // Added
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -48,13 +51,6 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  List<String> _splitName(String fullName) {
-    final parts = fullName.trim().split(' ');
-    final firstName = parts.isNotEmpty ? parts[0] : '';
-    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-    return [firstName, lastName];
-  }
-
   Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -62,40 +58,29 @@ class _SignupPageState extends State<SignupPage> {
       });
 
       try {
-        final nameParts = _splitName(_nameController.text);
-        final firstName = nameParts[0];
-        final lastName = nameParts[1];
+        final firstName = _firstNameController.text.trim();
+        final lastName = _lastNameController.text.trim();
 
-        // Validate that we have all required fields
+        // Validate that we have first name
         if (firstName.isEmpty) {
-          throw Exception('Please enter at least a first name');
+          throw Exception('Please enter your first name');
         }
-
-        print('Sending signup data:');
-        print('Email: ${_emailController.text.trim()}');
-        print('Password: ${_passwordController.text.isNotEmpty ? "***" : "empty"}');
-        print('First Name: $firstName');
-        print('Last Name: $lastName');
-
+        
         final response = await _authService.signup(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           firstName: firstName,
           lastName: lastName.isEmpty ? ' ' : lastName, // Ensure lastName is not empty
+          phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+          context: context, // Pass context to initialize user provider
         );
 
         _showSuccess(response.message);
         
-        // Store user data and token in shared preferences
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', response.token);
-        await prefs.setString('user_id', response.user.userId);
-        await prefs.setString('user_email', response.user.email);
-        await prefs.setString('user_first_name', response.user.firstName);
-        await prefs.setString('user_last_name', response.user.lastName);
-
+        // No need to manually store user data as AuthService._saveUserData already handles this
+        // Navigate to home page
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => HomePageBase()),
         );
       } catch (e) {
         _showError(e.toString().replaceFirst('Exception: ', ''));
@@ -123,15 +108,23 @@ class _SignupPageState extends State<SignupPage> {
                   subtitle: 'Sign up to get started',
                 ),
                 CustomTextField(
-                  hintText: 'Full Name',
+                  hintText: 'First Name',
                   prefixIcon: Icons.person_outline,
-                  controller: _nameController,
+                  controller: _firstNameController,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
+                      return 'Please enter your first name';
                     }
-                    if (value.trim().split(' ').isEmpty) {
-                      return 'Please enter at least your first name';
+                    return null;
+                  },
+                ),
+                CustomTextField(
+                  hintText: 'Last Name',
+                  prefixIcon: Icons.person_outline,
+                  controller: _lastNameController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your last name';
                     }
                     return null;
                   },
@@ -147,6 +140,21 @@ class _SignupPageState extends State<SignupPage> {
                     }
                     if (!value.contains('@') || !value.contains('.')) {
                       return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+                CustomTextField(
+                  hintText: 'Phone Number',
+                  prefixIcon: Icons.phone_outlined,
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      // Simple validation for phone number - can be enhanced
+                      if (value.length < 10) {
+                        return 'Please enter a valid phone number';
+                      }
                     }
                     return null;
                   },

@@ -46,6 +46,7 @@ class AuthService {
       final Map<String, dynamic> data = json.decode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Create an enhanced AuthResponse that includes all fields from the Django response
         final authResponse = AuthResponse.fromJson(data);
         await _saveUserData(authResponse);
         
@@ -152,9 +153,15 @@ class AuthService {
     if (authResponse.user.phoneNumber != null) {
       await prefs.setString('user_phone_number', authResponse.user.phoneNumber!);
     }
+    if (authResponse.user.authProvider != null) {
+      await prefs.setString('user_auth_provider', authResponse.user.authProvider!);
+    }
+    if (authResponse.user.uid != null) {
+      await prefs.setString('user_uid', authResponse.user.uid!);
+    }
   }
 
-  // Private method to initialize user data in UserProvider
+  // Private method to initialize user provider
   Future<void> _initializeUserProvider(BuildContext context, AuthResponse authResponse) async {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -166,8 +173,8 @@ class AuthService {
         firstName: authResponse.user.firstName,
         lastName: authResponse.user.lastName,
         phoneNumber: authResponse.user.phoneNumber,
-        authProvider: 'email', // or determine from response
-        uid: null,
+        authProvider: authResponse.user.authProvider ?? 'email',
+        uid: authResponse.user.uid,
       );
       
       // Set the user profile directly in provider
@@ -191,6 +198,8 @@ class AuthService {
       String? firstName = prefs.getString('user_first_name');
       String? lastName = prefs.getString('user_last_name');
       String? phoneNumber = prefs.getString('user_phone_number');
+      String? authProvider = prefs.getString('user_auth_provider');
+      String? uid = prefs.getString('user_uid');
       
       if (token != null && userId != null && email != null && firstName != null && lastName != null) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -202,8 +211,8 @@ class AuthService {
           firstName: firstName,
           lastName: lastName,
           phoneNumber: phoneNumber,
-          authProvider: 'email',
-          uid: null,
+          authProvider: authProvider ?? 'email',
+          uid: uid,
         );
         
         // Set the user profile in provider
@@ -318,6 +327,8 @@ class User {
   final String firstName;
   final String lastName;
   final String? phoneNumber;
+  final String? authProvider;
+  final String? uid;
 
   User({
     required this.userId,
@@ -325,6 +336,8 @@ class User {
     required this.firstName,
     required this.lastName,
     this.phoneNumber,
+    this.authProvider,
+    this.uid,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -334,6 +347,8 @@ class User {
       firstName: json['first_name'],
       lastName: json['last_name'],
       phoneNumber: json['phone_number'],
+      authProvider: json['auth_provider'],
+      uid: json['uid'],
     );
   }
 }
