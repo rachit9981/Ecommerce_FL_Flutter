@@ -7,6 +7,7 @@ import 'package:ecom/models/sell_phone_inquiry.dart';
 import 'package:ecom/pages/search_phone.dart';
 import 'package:ecom/pages/sell_phone_requests.dart';
 import 'package:ecom/pages/sell_phone_by_brand.dart';
+import 'package:ecom/pages/sell_phone_details.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../components/common/login_required.dart';
@@ -166,13 +167,15 @@ class _SellPhonePageState extends State<SellPhonePage> {
   }
 
   void _onModelSelected(PhoneModel model) {
-    setState(() {
-      _selectedModel = model;
-      _selectedStorage = model.storageOptions.isNotEmpty ? model.storageOptions.first : null;
-      _selectedCondition = model.conditions.isNotEmpty ? model.conditions.first : null;
-    });
-    
-    _showModelDetailsModal(model);
+    // Navigate to the details page instead of showing a modal
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SellPhoneDetailsPage(
+          model: model,
+        ),
+      ),
+    );
   }
 
   void _onBrandSelected(PhoneBrand brand) {
@@ -201,187 +204,6 @@ class _SellPhonePageState extends State<SellPhonePage> {
     }
   }
 
-  // Update this method to use the shared components
-  void _showModelDetailsModal(PhoneModel model) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Model header
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Model image
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            model.imageUrl,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => 
-                                const Center(child: Icon(Icons.smartphone, size: 50, color: Colors.grey)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      
-                      // Model info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              model.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Brand: ${_brands.firstWhere((b) => b.id == model.brandId, orElse: () => PhoneBrand(id: '', name: 'Unknown', logoUrl: '')).name}',
-                              style: TextStyle(
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${model.storageOptions.length} storage options',
-                              style: TextStyle(
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 16),
-                  
-                  // Storage options using shared component
-                  if (model.storageOptions.isNotEmpty) ...[
-                    StorageOptionSelector(
-                      options: model.storageOptions,
-                      selectedOption: _selectedStorage,
-                      onOptionSelected: (storage) {
-                        setModalState(() {
-                          _selectedStorage = storage;
-                        });
-                        setState(() {
-                          _selectedStorage = storage;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  
-                  // Condition options using shared component
-                  if (model.conditions.isNotEmpty) ...[
-                    ConditionOptionSelector(
-                      options: model.conditions,
-                      selectedOption: _selectedCondition,
-                      onOptionSelected: (condition) {
-                        setModalState(() {
-                          _selectedCondition = condition;
-                        });
-                        setState(() {
-                          _selectedCondition = condition;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  
-                  // Price estimate using shared component
-                  if (_selectedStorage != null && _selectedCondition != null) ...[
-                    PriceEstimateDisplay(
-                      modelName: model.name,
-                      estimatedPrice: model.getEstimatedPrice(_selectedStorage!, _selectedCondition!),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  
-                  // CTA button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _submitModelInquiry(model),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Proceed to Sell',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  // Safe area padding for bottom sheet
-                  Padding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-  
-  // New simplified method using the shared component
-  void _submitModelInquiry(PhoneModel model) {
-    // Close the current modal first
-    Navigator.pop(context);
-    
-    // Use the shared inquiry submission logic with address handling
-    SellingComponents.submitInquiry(
-      context: context,
-      model: model,
-      storage: _selectedStorage ?? model.storageOptions.first,
-      condition: _selectedCondition ?? model.conditions.first,
-      onSuccess: () {
-        // Explicit success callback to ensure we handle the flow properly
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Your inquiry was submitted successfully!')),
-        );
-        
-        // Refresh the model list to show updated state
-        _loadData();
-      },
-    );
-  }
-  
   @override
   Widget build(BuildContext context) {
     final featuredBrands = PhoneBrandsData.getFeaturedBrands();

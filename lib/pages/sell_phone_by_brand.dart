@@ -5,6 +5,7 @@ import 'package:ecom/components/sell_phone/selling_comp.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../components/common/login_required.dart';
+import 'sell_phone_details.dart';
 
 class SellPhoneByBrandPage extends StatefulWidget {
   final PhoneBrand brand;
@@ -128,23 +129,17 @@ class _SellPhoneByBrandPageState extends State<SellPhoneByBrandPage> {
     return highestPrice;
   }
 
-  // Use the shared component for submitting inquiries
+  // Update the method to navigate to the details page instead of using modal
   void _handleQuickInquiry(PhoneModel model, String storage, String condition) {
-    // Use the updated SellingComponents method that includes address handling
-    SellingComponents.submitInquiry(
-      context: context,
-      model: model,
-      storage: storage,
-      condition: condition,
-      onSuccess: () { 
-        // Navigate to sell phone requests page to show the submitted inquiry
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const SellPhoneRequestsPage(),
-          ),
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SellPhoneDetailsPage(
+          model: model,
+          preSelectedStorage: storage,
+          preSelectedCondition: condition,
+        ),
+      ),
     );
   }
 
@@ -412,7 +407,7 @@ class _SellPhoneByBrandPageState extends State<SellPhoneByBrandPage> {
   }
 }
 
-// Update the PhoneModelItem widget to include inquiry functionality
+// Update the PhoneModelItem widget implementation
 class PhoneModelItemWithInquiry extends StatelessWidget {
   final PhoneModel model;
   final Function(PhoneModel) onTap;
@@ -446,7 +441,14 @@ class PhoneModelItemWithInquiry extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => onTap(model),
+        onTap: () => Navigator.push(
+          context, 
+          MaterialPageRoute(
+            builder: (context) => SellPhoneDetailsPage(
+              model: model,
+            ),
+          ),
+        ),
         borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -497,7 +499,7 @@ class PhoneModelItemWithInquiry extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   
-                  // Quick inquiry button
+                  // Quick inquiry button - update to navigate directly
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(

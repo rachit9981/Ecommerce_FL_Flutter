@@ -63,7 +63,79 @@ class SellingComponents {
     }
   }
 
-  /// Process inquiry after address is selected
+  /// Show confirmation dialog before processing inquiry
+  static Future<bool> _showConfirmationDialog(
+    BuildContext context,
+    PhoneModel model,
+    String storage,
+    String condition,
+    UserAddress address,
+  ) async {
+    // Calculate the estimated price for display
+    final estimatedPrice = model.getEstimatedPrice(storage, condition);
+    
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Sell Request'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Please confirm your sell request details:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              
+              // Phone details
+              Text('Phone: ${model.name}'),
+              Text('Storage: $storage'),
+              Text('Condition: $condition'),
+              Text(
+                'Estimated Price: ₹$estimatedPrice',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              
+              const Divider(height: 24),
+              
+              // Address details
+              const Text(
+                'Selected Address:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(address.name),
+              Text('${address.street}, ${address.city}'),
+              Text('${address.state} ${address.pincode}'),
+              if (address.country.isNotEmpty) Text(address.country),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
+            child: const Text('Confirm Sell Request',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    ) ?? false; // Default to false if dialog is dismissed
+  }
+
+  /// Process inquiry after address is selected and confirmed
   static Future<void> _processInquiryWithAddress(
     BuildContext context,
     PhoneModel model,
@@ -74,6 +146,18 @@ class SellingComponents {
     UserAddress address,
     VoidCallback? onSuccess,
   ) async {
+    // Show confirmation dialog first
+    final confirmed = await _showConfirmationDialog(
+      context,
+      model,
+      storage,
+      condition,
+      address,
+    );
+    
+    // Only proceed if user confirmed
+    if (!confirmed) return;
+    
     try {
       // Debug address data in detail
       debugPrint('Submitting inquiry with address data...');
@@ -87,12 +171,12 @@ class SellingComponents {
         'country': address.country.trim().isNotEmpty ? address.country.trim() : 'India',
       };
       
-      // Add a UI indicator that something is happening - FIXED DURATION FROM MICROSECONDS TO MILLISECONDS
+      // Add a UI indicator that something is happening
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Processing your request...'),
-            duration: Duration(milliseconds: 800), // Changed from microseconds to milliseconds
+            duration: Duration(milliseconds: 800),
           ),
         );
       }
@@ -307,7 +391,7 @@ class SellingComponents {
     );
   }
 
-  /// Show address selection dialog
+  /// Show address selection dialog with confirmation
   static void _showAddressSelectionDialog(
     BuildContext context,
     List<UserAddress> addresses,
