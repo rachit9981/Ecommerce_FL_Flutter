@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/sell_phone/phones_brands.dart';
 import 'package:intl/intl.dart';
+import 'package:ecom/services/sell_phone.dart'; // Import SellPhoneService
 
 // Model for sell phone request
 class SellPhoneRequest {
@@ -126,22 +127,127 @@ class SellPhoneRequestsPage extends StatefulWidget {
 }
 
 class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
-  late List<SellPhoneRequest> _requests;
+  late List<SellPhoneRequest> _requests = [];
   String _filter = 'all'; // all, pending, accepted, completed, rejected
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+  
+  bool _isLoading = true;
+  String? _errorMessage;
+  final SellPhoneService _sellPhoneService = SellPhoneService();
 
   @override
   void initState() {
     super.initState();
-    _requests = SellPhoneRequest.getMockRequests();
+    _fetchInquiries();
+  }
+
+  Future<void> _fetchInquiries() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final inquiries = await _sellPhoneService.getUserInquiries();
+      final mappedRequests = _mapInquiriesToRequests(inquiries);
+      
+      setState(() {
+        _requests = mappedRequests;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load your requests: $e';
+        _isLoading = false;
+        _requests = []; // Clear any previous data
+      });
+    }
+  }
+
+  // Map API inquiry model to UI request model
+  List<SellPhoneRequest> _mapInquiriesToRequests(List<SellPhoneInquiry> inquiries) {
+    return inquiries.map((inquiry) {
+      // Create a phone model from the inquiry's phone details
+      PhoneModel phone;
+      if (inquiry.phoneDetails != null) {
+        // If we have phone details, use them
+        final variantPrices = <String, Map<String, int>>{};
+        inquiry.phoneDetails!.variantPrices.forEach((variant, conditions) {
+          variantPrices[variant] = conditions;
+        });
+        
+        phone = PhoneModel(
+          id: inquiry.phoneDetails!.id,
+          brandId: inquiry.phoneDetails!.brand.toLowerCase(),
+          name: inquiry.phoneDetails!.name,
+          imageUrl: inquiry.phoneDetails!.image.isEmpty 
+              ? 'https://img.freepik.com/free-psd/smartphone-mockup_1310-812.jpg' 
+              : inquiry.phoneDetails!.image,
+          storageOptions: inquiry.phoneDetails!.variantPrices.keys.toList(),
+          conditions: inquiry.phoneDetails!.variantPrices.values.first.keys.toList(),
+          variantPrices: variantPrices,
+        );
+      } else {
+        // If no phone details, create a generic model
+        phone = PhoneModel(
+          id: inquiry.sellMobileId,
+          brandId: 'unknown',
+          name: 'Phone #${inquiry.sellMobileId.substring(0, min(8, inquiry.sellMobileId.length))}',
+          imageUrl: 'https://img.freepik.com/free-psd/smartphone-mockup_1310-812.jpg',
+          storageOptions: [inquiry.selectedVariant],
+          conditions: [inquiry.selectedCondition],
+          variantPrices: {
+            inquiry.selectedVariant: {
+              inquiry.selectedCondition: 0, // We don't have the price in the inquiry
+            }
+          },
+        );
+      }
+
+      // Parse date from API format
+      DateTime requestDate;
+      try {
+        requestDate = inquiry.createdAt != null 
+            ? DateTime.parse(inquiry.createdAt!) 
+            : DateTime.now();
+      } catch (e) {
+        requestDate = DateTime.now();
+      }
+
+      // Create a request from the inquiry
+      return SellPhoneRequest(
+        id: inquiry.id,
+        phone: phone,
+        storage: inquiry.selectedVariant,
+        condition: inquiry.selectedCondition,
+        requestDate: requestDate,
+        status: inquiry.status,
+        offeredPrice: _getOfferedPrice(inquiry, phone),
+        // Optional fields that may not be in the API response
+        paymentStatus: null, // API doesn't provide this yet
+        rejectionReason: inquiry.status == 'rejected' ? 'Request was rejected' : null,
+        pickupDate: inquiry.status == 'accepted' ? DateTime.now().add(const Duration(days: 2)) : null,
+      );
+    }).toList();
+  }
+
+  // Helper to get price from phone details or use a default
+  int _getOfferedPrice(SellPhoneInquiry inquiry, PhoneModel phone) {
+    try {
+      // Try to get price from the phone's variant prices
+      return phone.variantPrices[inquiry.selectedVariant]?[inquiry.selectedCondition] ?? 0;
+    } catch (e) {
+      return 0; // Default if price info is missing
+    }
+  }
+
+  // Helper to get minimum of two integers
+  int min(int a, int b) {
+    return a < b ? a : b;
   }
 
   Future<void> _refreshData() async {
-    // Simulate fetching data from server
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _requests = SellPhoneRequest.getMockRequests();
-    });
+    await _fetchInquiries();
   }
 
   List<SellPhoneRequest> get _filteredRequests {
@@ -190,82 +296,146 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
       body: RefreshIndicator(
         key: _refreshIndicatorKey,
         onRefresh: _refreshData,
-        child: CustomScrollView(
-          slivers: [
-            // Filter chips
-            SliverToBoxAdapter(
-              child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Filter by status',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade700,
-                          fontSize: 14,
+        child: _isLoading 
+            ? _buildLoadingState()
+            : _errorMessage != null
+                ? _buildErrorState()
+                : CustomScrollView(
+                    slivers: [
+                      // Filter chips
+                      SliverToBoxAdapter(
+                        child: Container(
+                          color: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  'Filter by status',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey.shade700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Row(
+                                  children: [
+                                    _buildModernFilterChip('All', 'all'),
+                                    _buildModernFilterChip('Pending', 'pending'),
+                                    _buildModernFilterChip('Accepted', 'accepted'),
+                                    _buildModernFilterChip('Completed', 'completed'),
+                                    _buildModernFilterChip('Rejected', 'rejected'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Row(
-                        children: [
-                          _buildModernFilterChip('All', 'all'),
-                          _buildModernFilterChip('Pending', 'pending'),
-                          _buildModernFilterChip('Accepted', 'accepted'),
-                          _buildModernFilterChip('Completed', 'completed'),
-                          _buildModernFilterChip('Rejected', 'rejected'),
-                        ],
+
+                      // Request count
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          child: Text(
+                            _filteredRequests.isEmpty 
+                                ? 'No requests found' 
+                                : '${_filteredRequests.length} ${_filter == 'all' ? '' : _filter} request${_filteredRequests.length == 1 ? '' : 's'}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+
+                      // Requests list
+                      _filteredRequests.isEmpty
+                          ? SliverFillRemaining(
+                              child: _buildEmptyState(),
+                            )
+                          : SliverPadding(
+                              padding: const EdgeInsets.all(16),
+                              sliver: SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final request = _filteredRequests[index];
+                                    return _buildModernRequestCard(request);
+                                  },
+                                  childCount: _filteredRequests.length,
+                                ),
+                              ),
+                            ),
+                    ],
+                  ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('Loading your sell requests...'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: Colors.red.shade300,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.red.shade300,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              _errorMessage ?? 'Something went wrong',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey.shade700,
               ),
             ),
-
-            // Request count
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text(
-                  _filteredRequests.isEmpty 
-                      ? 'No requests found' 
-                      : '${_filteredRequests.length} ${_filter == 'all' ? '' : _filter} request${_filteredRequests.length == 1 ? '' : 's'}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _refreshData,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Try Again'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-
-            // Requests list
-            _filteredRequests.isEmpty
-                ? SliverFillRemaining(
-                    child: _buildEmptyState(),
-                  )
-                : SliverPadding(
-                    padding: const EdgeInsets.all(16),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final request = _filteredRequests[index];
-                          return _buildModernRequestCard(request);
-                        },
-                        childCount: _filteredRequests.length,
-                      ),
-                    ),
-                  ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -352,11 +522,14 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              '#${request.id}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                            Flexible(
+                              child: Text(
+                                '#${request.id}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 8),

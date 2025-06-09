@@ -177,6 +177,51 @@ class SellPhoneService {
       rethrow;
     }
   }
+  
+  // Fetch all inquiries made by the current user
+  Future<List<SellPhoneInquiry>> getUserInquiries() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$apiUrl/sell-mobile/user_inquires/'),
+        headers: headers,
+      );
+      
+      debugPrint('Fetching user inquiries response: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        
+        // Handle the actual API response format which uses 'inquiries' field
+        if (data['inquiries'] != null && data['inquiries'] is List) {
+          final List<dynamic> inquiriesJson = data['inquiries'];
+          return inquiriesJson.map((json) => SellPhoneInquiry.fromJson(json)).toList();
+        } else if (data['status'] == 'success' && data['data'] != null) {
+          // Keep original format as fallback
+          final List<dynamic> inquiriesJson = data['data'];
+          return inquiriesJson.map((json) => SellPhoneInquiry.fromJson(json)).toList();
+        } else {
+          debugPrint('API returned unexpected format: $data');
+          throw Exception('Unexpected API response format');
+        }
+      } else {
+        // Try to extract error message from response
+        Map<String, dynamic> errorData = {};
+        try {
+          errorData = json.decode(response.body);
+        } catch (e) {
+          debugPrint('Failed to parse error response: $e');
+        }
+        
+        final errorMsg = errorData['message'] ?? 'Server error ${response.statusCode}';
+        debugPrint('Error fetching inquiries: $errorMsg');
+        throw Exception('Error fetching inquiries: $errorMsg');
+      }
+    } catch (e) {
+      debugPrint('Failed to load user inquiries: $e');
+      throw Exception('Failed to load user inquiries: $e');
+    }
+  }
 }
 
 class SellPhone {
@@ -302,6 +347,98 @@ class SellPhoneReview {
       comment: json['comment'] ?? '',
       date: DateTime.parse(json['date'] ?? DateTime.now().toIso8601String()),
       helpfulCount: json['helpful_count'] ?? 0,
+    );
+  }
+}
+
+// Model class for sell phone inquiries
+class SellPhoneInquiry {
+  final String id;
+  final String sellMobileId;
+  final String userId;
+  final String buyerPhone;
+  final String selectedVariant;
+  final String selectedCondition;
+  final Map<String, dynamic> address;
+  final String status;
+  final String? createdAt;
+  final String? updatedAt;
+  final SellPhone? phoneDetails;
+  final int? price; // Add price field
+
+  SellPhoneInquiry({
+    required this.id,
+    required this.sellMobileId,
+    required this.userId,
+    required this.buyerPhone,
+    required this.selectedVariant,
+    required this.selectedCondition,
+    required this.address,
+    required this.status,
+    this.createdAt,
+    this.updatedAt,
+    this.phoneDetails,
+    this.price, // Include price in constructor
+  });
+
+  factory SellPhoneInquiry.fromJson(Map<String, dynamic> json) {
+    // Parse address which might be a string or a map
+    Map<String, dynamic> addressMap = {};
+    if (json['address'] is String) {
+      try {
+        addressMap = Map<String, dynamic>.from(jsonDecode(json['address']));
+      } catch (e) {
+        debugPrint('Failed to parse address string: $e');
+      }
+    } else if (json['address'] is Map) {
+      addressMap = Map<String, dynamic>.from(json['address']);
+    }
+
+    // Create phone details object if available
+    SellPhone? phoneDetails;
+    if (json['phone_details'] != null) {
+      try {
+        phoneDetails = SellPhone.fromJson(json['phone_details']);
+      } catch (e) {
+        debugPrint('Failed to parse phone details: $e');
+      }
+    }
+
+    // Handle both 'id' and 'inquiry_id' field names
+    String id = '';
+    if (json['inquiry_id'] != null) {
+      id = json['inquiry_id'].toString();
+    } else if (json['id'] != null) {
+      id = json['id'].toString();
+    } else {
+      id = DateTime.now().millisecondsSinceEpoch.toString();
+    }
+
+    // Parse price field with fallback
+    int? price;
+    if (json['price'] != null) {
+      if (json['price'] is int) {
+        price = json['price'];
+      } else if (json['price'] is double) {
+        price = json['price'].toInt();
+      } else if (json['price'] is String) {
+        price = int.tryParse(json['price']);
+      }
+    }
+
+    return SellPhoneInquiry(
+      id: id,
+      sellMobileId: json['sell_mobile_id'] ?? '',
+      userId: json['user_id'] ?? '',
+      buyerPhone: json['buyer_phone'] ?? '',
+      selectedVariant: json['selected_variant'] ?? '',
+      selectedCondition: json['selected_condition'] ?? '',
+      address: addressMap,
+      status: json['status'] ?? 'pending',
+      createdAt: json['created_at'] ?? json['timestamp'],
+      updatedAt: json['updated_at'],
+      phoneDetails: phoneDetails,
+      price: price, // Include parsed price
     );
   }
 }
