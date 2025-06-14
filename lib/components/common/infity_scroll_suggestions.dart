@@ -51,20 +51,6 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
   int _currentPage = 1;
   bool _hasInitialized = false;
 
-  // Responsive helper methods
-  int _getResponsiveCrossAxisCount(BuildContext context) {
-    if (widget.crossAxisCount != null) return widget.crossAxisCount!;
-    
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth < 600) {
-      return 2; // Mobile
-    } else if (screenWidth < 900) {
-      return 3; // Tablet
-    } else {
-      return 4; // Desktop
-    }
-  }
-
   double _getResponsiveSpacing(BuildContext context) {
     if (widget.spacing != null) return widget.spacing!;
     
