@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/common/suggestions.dart';
+import 'package:ecom/components/product/product_comps.dart'; // Added import
 
 enum LoadingStatus { idle, loading, error, noMoreData }
 
@@ -267,223 +268,140 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
     final isVerySmallScreen = screenWidth < 360;
-    
+
     // Adjust padding based on screen size
-    final contentPadding = isVerySmallScreen ? 6.0 : 
-                           isLargeScreen ? 12.0 : 8.0;
-    
+    final contentPadding = isVerySmallScreen ? 8.0 : // Increased padding slightly
+                           isLargeScreen ? 12.0 : 10.0; // Increased padding slightly
+
     return Hero(
       tag: heroTag,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+          color: Colors.white, // Match ProductHeader background
+          borderRadius: BorderRadius.circular(16), // Match ProductHeader borderRadius
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).shadowColor.withOpacity(0.06),
-              blurRadius: isLargeScreen ? 8 : 6,
+              color: Colors.grey.shade200, // Match ProductHeader boxShadow
+              blurRadius: 4,
               offset: const Offset(0, 2),
-              spreadRadius: 0,
             ),
           ],
         ),
         child: Material(
-          borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+          borderRadius: BorderRadius.circular(16), // Match ProductHeader borderRadius
           color: Colors.transparent,
           child: InkWell(
             onTap: product.onTap,
-            borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+            borderRadius: BorderRadius.circular(16), // Match ProductHeader borderRadius
             child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.08),
-                  width: 1,
-                ),
-              ),
+              // Removed redundant decoration, parent Container handles it
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product image section - 60% of height
+                  // Product Image - AspectRatio for consistent image height
                   AspectRatio(
-                    aspectRatio: 1.0, // Square image
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(isLargeScreen ? 16 : 12),
-                            topRight: Radius.circular(isLargeScreen ? 16 : 12),
-                          ),
-                          child: Container(
-                            width: double.infinity,
-                            height: double.infinity,
-                            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                            child: _buildProductImage(product, isLargeScreen),
-                          ),
-                        ),
-                        
-                        // Product badges
-                        if (product.discountPercentage != null || product.isNew || product.isFeatured)
-                          Positioned(
-                            top: isLargeScreen ? 10 : 8,
-                            left: isLargeScreen ? 10 : 8,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (product.discountPercentage != null)
-                                  _buildBadge(
-                                    "-${product.discountPercentage}%",
-                                    Theme.of(context).colorScheme.error,
-                                    isLargeScreen,
-                                  ),
-                                
-                                if (product.isNew)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: _buildBadge(
-                                      "NEW",
-                                      Theme.of(context).colorScheme.tertiary,
-                                      isLargeScreen,
-                                    ),
-                                  ),
-                                if (product.isFeatured)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: _buildBadge(
-                                      "FEATURED",
-                                      Theme.of(context).colorScheme.secondary,
-                                      isLargeScreen,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                      ],
+                    aspectRatio: 1.0, // Square aspect ratio for image container
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      child: _buildProductImage(product, isLargeScreen),
                     ),
                   ),
-                
-                // Improved product information section
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.all(contentPadding),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title with adaptive size
-                        Flexible(
-                          flex: 3,
-                          child: Text(
+                  // Product Information
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(contentPadding),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute space
+                        children: [
+                          // Product Title
+                          Text(
                             product.title,
-                            style: TextStyle(
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith( // Adjusted style
                               fontWeight: FontWeight.w600,
-                              fontSize: _getResponsiveFontSize(context, isVerySmallScreen ? 12 : 13),
-                              height: 1.2,
-                              letterSpacing: -0.2,
+                              fontSize: _getResponsiveFontSize(context, 14),
+                              height: 1.3,
                             ),
-                            maxLines: isVerySmallScreen ? 1 : 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.start,
+                            maxLines: 2, // Keep maxLines to 2 to avoid overly tall items
+                            overflow: TextOverflow.ellipsis, // Use ellipsis for overflow
+                            softWrap: true, // Ensure text wraps before ellipsis if possible
                           ),
-                        ),
-                        
-                        // Description with adaptive visibility
-                        if (product.description != null && !isVerySmallScreen)
-                          Padding(
-                            padding: EdgeInsets.only(top: isLargeScreen ? 3 : 2),
-                            child: Text(
-                              product.description!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                fontSize: _getResponsiveFontSize(context, isLargeScreen ? 11 : 10),
-                                height: 1.1,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        
-                        // Ratings with adaptive size
-                        if (product.rating != null)
-                          Padding(
-                            padding: EdgeInsets.only(top: isLargeScreen ? 3 : 2),
-                            child: Row(
-                              children: [
-                                _buildRatingStars(product.rating!, isLargeScreen),
-                                if (product.reviewCount != null && !isVerySmallScreen)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 2),
-                                    child: Text(
-                                      "(${product.reviewCount})",
-                                      style: TextStyle(
-                                        fontSize: _getResponsiveFontSize(context, isLargeScreen ? 9 : 8),
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        
-                        const Spacer(),
-                        
-                        // Price section with adaptive layout
-                        if (product.price != null)
+                          
+                          // Spacer to push price and rating down if title is short
+                          const Spacer(),
+
+                          // Price and Rating Row
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Flexible(
-                                flex: 3,
-                                child: Text(
-                                  "₹${product.price!.toStringAsFixed(0)}",
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: _getResponsiveFontSize(context, isVerySmallScreen ? 13 : 14),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (product.originalPrice != null && 
-                                  product.originalPrice! > product.price! &&
-                                  screenWidth > 320) // Hide on extremely small screens
-                                Flexible(
-                                  flex: 2,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 4),
-                                    child: Text(
-                                      "₹${product.originalPrice!.toStringAsFixed(0)}",
+                              // Product Price
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (product.originalPrice != null && product.price != null && product.originalPrice! > product.price!)
+                                    Text(
+                                      '₹${product.originalPrice!.toStringAsFixed(0)}',
                                       style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                        fontSize: _getResponsiveFontSize(context, isVerySmallScreen ? 10 : 11),
                                         decoration: TextDecoration.lineThrough,
+                                        color: Colors.grey.shade500,
+                                        fontSize: _getResponsiveFontSize(context, 11),
                                       ),
-                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  if (product.price != null)
+                                  Text(
+                                    '₹${product.price!.toStringAsFixed(0)}',
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: _getResponsiveFontSize(context, 15),
                                     ),
                                   ),
-                                ),
+                                ],
+                              ),
+                              // Rating
+                              if (product.rating != null && product.rating! > 0)
+                                _buildRatingStars(product.rating!, isLargeScreen),
                             ],
                           ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),),);
+      ),);
   }
 
   Widget _buildProductImage(SuggestionItem product, bool isLargeScreen) {
     return product.imageUrl != null
-        ? SmoothNetworkImage(
+        ? CustomNetworkImage( // Replaced SmoothNetworkImage
             imageUrl: product.imageUrl!,
             fit: BoxFit.cover,
+            width: double.infinity, // Ensure it fills the AspectRatio
+            height: double.infinity, // Ensure it fills the AspectRatio
+            placeholder: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary)),
+            errorWidget: Container(
+              color: Colors.grey.shade100,
+              child: Icon(
+                Icons.broken_image_outlined,
+                size: isLargeScreen ? 40 : 32,
+                color: Colors.grey.shade400,
+              ),
+            ),
           )
-        : Icon(
-            Icons.image,
-            size: isLargeScreen ? 40 : 32, // Reduced size
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+        : Container( // Added a container for consistent background
+            color: Colors.grey.shade50,
+            child: Center(
+              child: Icon(
+                Icons.image_not_supported_outlined,
+                size: isLargeScreen ? 40 : 32,
+                color: Colors.grey.shade400,
+              ),
+            ),
           );
   }
 
@@ -563,56 +481,34 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     );
   }
   
-  Widget _buildBadge(String text, Color color, bool isLargeScreen) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isLargeScreen ? 8 : 6, 
-        vertical: isLargeScreen ? 4 : 3
-      ),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(isLargeScreen ? 8 : 6),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-          fontSize: _getResponsiveFontSize(context, 9), // Reduced size
-        ),
-      ),);
-  }
-
   Widget _buildRatingStars(double rating, bool isLargeScreen) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isVerySmallScreen = screenWidth < 360;
     
-    // Adjust star size based on screen size
-    final starSize = isVerySmallScreen ? 10.0 : 
-                     isLargeScreen ? 14.0 : 12.0;
+    final starSize = isVerySmallScreen ? 12.0 : 
+                     isLargeScreen ? 16.0 : 14.0; // Slightly larger stars
     
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(isVerySmallScreen ? 3 : 5, (index) {
-        if (index < rating.floor()) {
-          return Icon(
-            Icons.star_rounded,
-            size: starSize,
-            color: Colors.amber.shade600,
-          );
-        } else if (index < rating.ceil() && index >= rating.floor()) {
-          return Icon(
-            Icons.star_half_rounded,
-            size: starSize,
-            color: Colors.amber.shade600,
-          );
+      children: List.generate(5, (index) { // Always show 5 stars for consistency
+        final starValue = index + 1;
+        IconData iconData;
+        Color starColor = Colors.amber.shade600;
+
+        if (starValue <= rating) {
+          iconData = Icons.star_rounded;
+        } else if (starValue - 0.5 <= rating) {
+          iconData = Icons.star_half_rounded;
         } else {
-          return Icon(
-            Icons.star_border_rounded,
-            size: starSize,
-            color: Colors.amber.shade600.withOpacity(0.4),
-          );
+          iconData = Icons.star_border_rounded;
+          starColor = Colors.grey.shade400; // Dimmer color for empty stars
         }
+        
+        return Icon(
+          iconData,
+          size: starSize,
+          color: starColor,
+        );
       }),
     );
   }
