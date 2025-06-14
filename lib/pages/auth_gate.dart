@@ -66,12 +66,9 @@ class _AuthGateState extends State<AuthGate> {
       
       // Load user profile and addresses
       await userProvider.initializeUserData();
-      
-      print('User data loaded successfully in AuthGate');
+      //
     } catch (e) {
-      print('Error loading user data in AuthGate: $e');
-      // Even if we fail to load user data, we can still proceed
-      // The user provider will handle authentication failures
+      //
     }
   }
 
