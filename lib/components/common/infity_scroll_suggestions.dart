@@ -104,15 +104,20 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     }
   }
 
+  // Add a more refined responsive font size calculation
   double _getResponsiveFontSize(BuildContext context, double baseFontSize) {
     final screenWidth = MediaQuery.of(context).size.width;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
     
     double scaleFactor = 1.0;
-    if (screenWidth < 600) {
-      scaleFactor = 0.9; // Slightly smaller on mobile
-    } else if (screenWidth > 900) {
-      scaleFactor = 1.1; // Slightly larger on desktop
+    if (screenWidth < 360) {
+      scaleFactor = 0.8; // Very small screens
+    } else if (screenWidth < 600) {
+      scaleFactor = 0.85; // Small screens
+    } else if (screenWidth < 900) {
+      scaleFactor = 0.9; // Medium screens
+    } else {
+      scaleFactor = 0.95; // Large screens
     }
     
     return baseFontSize * scaleFactor * textScaleFactor;
@@ -206,8 +211,8 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
               widget.title!,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-                fontSize: _getResponsiveFontSize(context, 20),
+                letterSpacing: -0.3,
+                fontSize: _getResponsiveFontSize(context, 18),
               ),
             ),
           ),
@@ -217,142 +222,132 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
               ? const Center(child: CircularProgressIndicator())
               : _products.isEmpty
                   ? _buildEmptyState()
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        final crossAxisCount = _getResponsiveCrossAxisCount(context);
-                        final spacing = _getResponsiveSpacing(context);
-                        final childAspectRatio = _getResponsiveChildAspectRatio(context);
-                        
-                        return GridView.builder(
-                          controller: _scrollController,
-                          padding: responsivePadding,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: spacing,
-                            mainAxisSpacing: spacing,
-                            childAspectRatio: childAspectRatio,
+                  : ListView.builder(
+                    controller: _scrollController,
+                    padding: responsivePadding,
+                    itemCount: (_products.length / 2).ceil() + (_loadingStatus == LoadingStatus.noMoreData ? 0 : 1),
+                    itemBuilder: (context, index) {
+                      // If this is the last row and we're loading more items
+                      if (index >= (_products.length / 2).ceil()) {
+                        return _buildLoadingRow();
+                      }
+                      
+                      // Calculate the indices for the two products in this row
+                      final firstProductIndex = index * 2;
+                      final secondProductIndex = firstProductIndex + 1;
+                      
+                      // Calculate the product item height based on screen width
+                      final screenWidth = MediaQuery.of(context).size.width;
+                      final itemWidth = (screenWidth - responsivePadding.horizontal - _getResponsiveSpacing(context)) / 2;
+                      final aspectRatio = _getResponsiveChildAspectRatio(context);
+                      final itemHeight = itemWidth / aspectRatio;
+                      
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: _getResponsiveSpacing(context)),
+                        child: SizedBox(
+                          height: itemHeight, // Explicitly set the row height
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // First product
+                              Expanded(
+                                child: _buildProductItem(_products[firstProductIndex]),
+                              ),
+                              
+                              SizedBox(width: _getResponsiveSpacing(context)),
+                              
+                              // Second product (if available)
+                              if (secondProductIndex < _products.length)
+                                Expanded(
+                                  child: _buildProductItem(_products[secondProductIndex]),
+                                )
+                              else
+                                // Empty placeholder to maintain the layout
+                                Expanded(
+                                  child: SizedBox.shrink(),
+                                ),
+                            ],
                           ),
-                          itemCount: _products.length + (_loadingStatus == LoadingStatus.noMoreData ? 0 : 1),
-                          itemBuilder: (context, index) {
-                            if (index >= _products.length) {
-                              return Center(child: _buildLoadMoreIndicator());
-                            }
-                            
-                            return _buildProductItem(_products[index]);
-                          },
-                        );
-                      },
-                    ),
-        ),
-      ],
-    );
+                        ),
+                      );
+                    },
+                  ),
+      ),
+    ]);
   }
   
   Widget _buildProductItem(SuggestionItem product) {
     final heroTag = 'infinite_grid_product_${product.id}';
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
+    final isVerySmallScreen = screenWidth < 360;
+    
+    // Adjust padding based on screen size
+    final contentPadding = isVerySmallScreen ? 6.0 : 
+                           isLargeScreen ? 12.0 : 8.0;
     
     return Hero(
       tag: heroTag,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),          boxShadow: [
+          borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+          boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: isLargeScreen ? 12 : 8,
-              offset: const Offset(0, 4),
-              spreadRadius: 0,
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: isLargeScreen ? 6 : 4,
+              color: Theme.of(context).shadowColor.withOpacity(0.06),
+              blurRadius: isLargeScreen ? 8 : 6,
               offset: const Offset(0, 2),
               spreadRadius: 0,
             ),
           ],
         ),
         child: Material(
-          borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),
+          borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
           color: Colors.transparent,
           child: InkWell(
             onTap: product.onTap,
-            borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),
+            borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 16),
+                borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.08),
                   width: 1,
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product image with badges
-                  Expanded(
-                    flex: 3,
+                  // Product image section - 60% of height
+                  AspectRatio(
+                    aspectRatio: 1.0, // Square image
                     child: Stack(
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(isLargeScreen ? 20 : 16),
-                            topRight: Radius.circular(isLargeScreen ? 20 : 16),
+                            topLeft: Radius.circular(isLargeScreen ? 16 : 12),
+                            topRight: Radius.circular(isLargeScreen ? 16 : 12),
                           ),
                           child: Container(
                             width: double.infinity,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.grey.shade50,
-                                  Colors.grey.shade100,
-                                ],
-                              ),
-                            ),
+                            height: double.infinity,
+                            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                             child: _buildProductImage(product, isLargeScreen),
                           ),
                         ),
                         
-                        // Gradient overlay for better badge visibility
-                        if (product.discountPercentage != null || product.isNew || product.isFeatured)
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: 60,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withOpacity(0.3),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(isLargeScreen ? 20 : 16),
-                                  topRight: Radius.circular(isLargeScreen ? 20 : 16),
-                                ),
-                              ),
-                            ),
-                          ),
-                        
                         // Product badges
                         if (product.discountPercentage != null || product.isNew || product.isFeatured)
                           Positioned(
-                            top: isLargeScreen ? 12 : 8,
-                            left: isLargeScreen ? 12 : 8,
+                            top: isLargeScreen ? 10 : 8,
+                            left: isLargeScreen ? 10 : 8,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (product.discountPercentage != null)
                                   _buildBadge(
                                     "-${product.discountPercentage}%",
-                                    [Colors.red.shade700, Colors.red.shade500],
+                                    Theme.of(context).colorScheme.error,
                                     isLargeScreen,
                                   ),
                                 
@@ -361,7 +356,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                                     padding: const EdgeInsets.only(top: 4),
                                     child: _buildBadge(
                                       "NEW",
-                                      [Colors.green.shade700, Colors.green.shade500],
+                                      Theme.of(context).colorScheme.tertiary,
                                       isLargeScreen,
                                     ),
                                   ),
@@ -370,7 +365,7 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                                     padding: const EdgeInsets.only(top: 4),
                                     child: _buildBadge(
                                       "FEATURED",
-                                      [Colors.purple.shade700, Colors.purple.shade500],
+                                      Theme.of(context).colorScheme.secondary,
                                       isLargeScreen,
                                     ),
                                   ),
@@ -381,36 +376,39 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                     ),
                   ),
                 
-                // Product information
+                // Improved product information section
                 Expanded(
-                  flex: 2,
                   child: Padding(
-                    padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
+                    padding: EdgeInsets.all(contentPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Title with adaptive size
                         Flexible(
+                          flex: 3,
                           child: Text(
                             product.title,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              fontSize: _getResponsiveFontSize(context, 14),
+                              fontSize: _getResponsiveFontSize(context, isVerySmallScreen ? 12 : 13),
                               height: 1.2,
+                              letterSpacing: -0.2,
                             ),
-                            maxLines: 2,
+                            maxLines: isVerySmallScreen ? 1 : 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.start,
                           ),
                         ),
                         
-                        if (product.description != null)
+                        // Description with adaptive visibility
+                        if (product.description != null && !isVerySmallScreen)
                           Padding(
-                            padding: const EdgeInsets.only(top: 4),
+                            padding: EdgeInsets.only(top: isLargeScreen ? 3 : 2),
                             child: Text(
                               product.description!,
                               style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: _getResponsiveFontSize(context, 12),
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                fontSize: _getResponsiveFontSize(context, isLargeScreen ? 11 : 10),
                                 height: 1.1,
                               ),
                               maxLines: 1,
@@ -418,20 +416,21 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                             ),
                           ),
                         
+                        // Ratings with adaptive size
                         if (product.rating != null)
                           Padding(
-                            padding: const EdgeInsets.only(top: 4),
+                            padding: EdgeInsets.only(top: isLargeScreen ? 3 : 2),
                             child: Row(
                               children: [
                                 _buildRatingStars(product.rating!, isLargeScreen),
-                                if (product.reviewCount != null)
+                                if (product.reviewCount != null && !isVerySmallScreen)
                                   Padding(
-                                    padding: const EdgeInsets.only(left: 4),
+                                    padding: const EdgeInsets.only(left: 2),
                                     child: Text(
                                       "(${product.reviewCount})",
                                       style: TextStyle(
-                                        fontSize: _getResponsiveFontSize(context, 10),
-                                        color: Colors.grey.shade600,
+                                        fontSize: _getResponsiveFontSize(context, isLargeScreen ? 9 : 8),
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                       ),
                                     ),
                                   ),
@@ -441,30 +440,35 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                         
                         const Spacer(),
                         
+                        // Price section with adaptive layout
                         if (product.price != null)
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
+                                flex: 3,
                                 child: Text(
                                   "₹${product.price!.toStringAsFixed(0)}",
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: _getResponsiveFontSize(context, 16),
+                                    fontSize: _getResponsiveFontSize(context, isVerySmallScreen ? 13 : 14),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (product.originalPrice != null && product.originalPrice! > product.price!)
+                              if (product.originalPrice != null && 
+                                  product.originalPrice! > product.price! &&
+                                  screenWidth > 320) // Hide on extremely small screens
                                 Flexible(
+                                  flex: 2,
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 4),
                                     child: Text(
                                       "₹${product.originalPrice!.toStringAsFixed(0)}",
                                       style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: _getResponsiveFontSize(context, 12),
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                        fontSize: _getResponsiveFontSize(context, isVerySmallScreen ? 10 : 11),
                                         decoration: TextDecoration.lineThrough,
                                       ),
                                       overflow: TextOverflow.ellipsis,
@@ -492,97 +496,42 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
           )
         : Icon(
             Icons.image,
-            size: isLargeScreen ? 50 : 40,
-            color: Colors.grey,
+            size: isLargeScreen ? 40 : 32, // Reduced size
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
           );
   }
 
-  Widget _buildLoadMoreIndicator() {
-    switch (_loadingStatus) {
-      case LoadingStatus.loading:
-        return widget.centerLoading 
-          ? Container(
-              width: double.infinity,
-              height: double.infinity,
-              alignment: Alignment.center,
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width, // Take full width
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center, // Center horizontally
-                  children: [
-                    CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Loading more products...',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+  Widget _buildLoadingRow() {
+    return Container(
+      height: 80,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
                 ),
-              ),
-            )
-          : Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Loading more products...',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-
-      case LoadingStatus.error:
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 30),
-                  const SizedBox(height: 8),
-                  const Text('Failed to load more products'),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _retryLoading,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Retry'),
-                  ),
-                ],
               ),
             ),
-          ),
-        );
-
-      case LoadingStatus.noMoreData:
-        return const SizedBox.shrink();
-
-      default:
-        return const SizedBox(height: 80);
-    }
+            const SizedBox(width: 12),
+            Text(
+              'Loading more products...',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                fontSize: _getResponsiveFontSize(context, 14),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
   
   Widget _buildEmptyState() {
@@ -592,32 +541,35 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
         children: [
           Icon(
             Icons.shopping_bag_outlined,
-            size: 80,
-            color: Colors.grey.shade400,
+            size: 60,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'No Products Found',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: _getResponsiveFontSize(context, 16),
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Try adjusting your filters or check back later',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontSize: _getResponsiveFontSize(context, 12),
+            ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           if (_loadingStatus == LoadingStatus.error)
-            ElevatedButton.icon(
+            OutlinedButton.icon(
               onPressed: _retryLoading,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh, size: 16),
               label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
               ),
             ),
         ],
@@ -625,60 +577,54 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     );
   }
   
-  Widget _buildBadge(String text, List<Color> gradientColors, bool isLargeScreen) {
+  Widget _buildBadge(String text, Color color, bool isLargeScreen) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isLargeScreen ? 10 : 8, 
-        vertical: isLargeScreen ? 6 : 4
+        horizontal: isLargeScreen ? 8 : 6, 
+        vertical: isLargeScreen ? 4 : 3
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(isLargeScreen ? 10 : 8),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.first.withOpacity(0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: color,
+        borderRadius: BorderRadius.circular(isLargeScreen ? 8 : 6),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: _getResponsiveFontSize(context, 10),
+          fontWeight: FontWeight.w600,
+          fontSize: _getResponsiveFontSize(context, 9), // Reduced size
         ),
       ),);
   }
 
   Widget _buildRatingStars(double rating, bool isLargeScreen) {
-    final starSize = isLargeScreen ? 16.0 : 14.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isVerySmallScreen = screenWidth < 360;
+    
+    // Adjust star size based on screen size
+    final starSize = isVerySmallScreen ? 10.0 : 
+                     isLargeScreen ? 14.0 : 12.0;
     
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (index) {
+      children: List.generate(isVerySmallScreen ? 3 : 5, (index) {
         if (index < rating.floor()) {
           return Icon(
             Icons.star_rounded,
             size: starSize,
-            color: Colors.amber,
+            color: Colors.amber.shade600,
           );
         } else if (index < rating.ceil() && index >= rating.floor()) {
           return Icon(
             Icons.star_half_rounded,
             size: starSize,
-            color: Colors.amber,
+            color: Colors.amber.shade600,
           );
         } else {
           return Icon(
             Icons.star_border_rounded,
             size: starSize,
-            color: Colors.amber.withOpacity(0.7),
+            color: Colors.amber.shade600.withOpacity(0.4),
           );
         }
       }),
@@ -694,7 +640,7 @@ class InfiniteProductList extends StatelessWidget {
   final bool showTitle;
   final EdgeInsets? padding;
   final bool loadOnInit;
-  final bool centerLoading;  // Add centerLoading parameter here too
+  final bool centerLoading;
 
   const InfiniteProductList({
     Key? key,
@@ -704,7 +650,7 @@ class InfiniteProductList extends StatelessWidget {
     this.showTitle = true,
     this.padding,
     this.loadOnInit = false,
-    this.centerLoading = false,  // Default to false
+    this.centerLoading = false,
   }) : super(key: key);
 
   @override
@@ -715,13 +661,13 @@ class InfiniteProductList extends StatelessWidget {
       initialProducts: initialProducts,
       loadMoreProducts: loadMoreProducts,
       crossAxisCount: 1,
-      childAspectRatio: screenWidth < 600 ? 2.2 : 2.8, // Responsive aspect ratio
-      spacing: screenWidth < 600 ? 12.0 : 16.0,
+      childAspectRatio: screenWidth < 600 ? 2.5 : 3.0, // Adjusted aspect ratio
+      spacing: screenWidth < 600 ? 10.0 : 14.0, // Reduced spacing
       padding: padding,
       title: title,
       showTitle: showTitle,
       loadOnInit: loadOnInit,
-      centerLoading: centerLoading,  // Pass the parameter
+      centerLoading: centerLoading,
     );
   }
 }
