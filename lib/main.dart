@@ -3,7 +3,7 @@ import 'package:ecom/providers/product_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
-import 'providers/cart_provider.dart'; // Import CartProvider
+import 'providers/cart_provider.dart';
 
 void main() {
   runApp(MyApp());

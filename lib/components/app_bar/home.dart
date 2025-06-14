@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ecom/pages/notification_page.dart'; // Add import for notification page
 
 class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   final double height;
@@ -24,7 +23,6 @@ class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
   AnimationController? _notificationAnimController;
-  Animation<double>? _notificationScaleAnimation;
   
   AnimationController? _cartAnimController;
   Animation<double>? _cartScaleAnimation;
