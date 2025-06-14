@@ -315,16 +315,18 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute space
                         children: [
                           // Product Title
-                          Text(
-                            product.title,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith( // Adjusted style
-                              fontWeight: FontWeight.w600,
-                              fontSize: _getResponsiveFontSize(context, 14),
-                              height: 1.3,
+                          Flexible(
+                            child: Text(
+                              product.title,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith( // Adjusted style
+                                fontWeight: FontWeight.w600,
+                                fontSize: _getResponsiveFontSize(context, 14),
+                                height: 1.3,
+                              ),
+                              maxLines: 2, // Keep maxLines to 2 to avoid overly tall items
+                              overflow: TextOverflow.ellipsis, // Use ellipsis for overflow
+                              softWrap: true, // Ensure text wraps before ellipsis if possible
                             ),
-                            maxLines: 2, // Keep maxLines to 2 to avoid overly tall items
-                            overflow: TextOverflow.ellipsis, // Use ellipsis for overflow
-                            softWrap: true, // Ensure text wraps before ellipsis if possible
                           ),
                           
                           // Spacer to push price and rating down if title is short

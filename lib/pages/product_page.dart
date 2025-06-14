@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/product/product_comps.dart';
-import 'package:ecom/services/products.dart';
+// import 'package:ecom/services/products.dart'; // Kept for Review class if needed, or can be removed if DetailedProduct handles all Review aspects
+import 'package:ecom/services/detailed_product.dart'; // Added for DetailedProductService and DetailedProduct
 import 'package:ecom/services/cart_wishlist.dart';
 import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/wishlist.dart';
@@ -18,7 +19,7 @@ class ProductPage extends StatefulWidget {
 
 class _ProductPageState extends State<ProductPage>
     with TickerProviderStateMixin {
-  Product? _product;
+  DetailedProduct? _product; // Changed from Product?
   bool _isLoading = true;
   String? _error;
   Map<String, String> _selectedVariants = {};
@@ -26,7 +27,7 @@ class _ProductPageState extends State<ProductPage>
   bool _isAddingToCart = false;
   bool _isTogglingWishlist = false;
 
-  final ProductService _productService = ProductService();
+  final DetailedProductService _productService = DetailedProductService(); // Changed from ProductService
   final CartWishlistService _cartService = CartWishlistService();
 
   late AnimationController _fadeController;
@@ -81,25 +82,18 @@ class _ProductPageState extends State<ProductPage>
         _error = null;
       });
 
-      final products = await _productService.getProducts();
-
-      final product = products.firstWhere(
-        (p) => p.id == widget.productId,
-        orElse:
-            () =>
-                products.isNotEmpty
-                    ? products.first
-                    : throw Exception('No products found'),
-      );
+      // Fetch detailed product info
+      final detailedProduct = await _productService.getDetailedProduct(widget.productId);
 
       // Check if product is in wishlist
-      await _checkWishlistStatus(product.id);
+      await _checkWishlistStatus(detailedProduct.id);
 
       setState(() {
-        _product = product;
+        _product = detailedProduct;
         _isLoading = false;
 
-        product.variant.forEach((key, values) {
+        // Initialize selected variants from the DetailedProduct model
+        _product!.variants.forEach((key, values) {
           if (values.isNotEmpty) {
             _selectedVariants[key] = values.first;
           }
@@ -362,7 +356,7 @@ class _ProductPageState extends State<ProductPage>
                       // Connected product information
                       _buildConnectedProductInfo(),
 
-                      const SizedBox(height: 120),
+                      const SizedBox(height: 120), // Space for the AddToCartSection
                     ],
                   ),
                 ),
@@ -629,19 +623,20 @@ class _ProductPageState extends State<ProductPage>
               title: _product!.name,
               price: _product!.discountPrice,
               originalPrice: _product!.price,
-              rating: _product!.rating,
-              reviews: _product!.reviews,
+              // Defensively pass 0.0 for rating if totalReviews is 0 to avoid potential division by zero in ProductHeader
+              rating: (_product!.totalReviews == 0) ? 0.0 : _product!.rating,
+              reviews: _product!.totalReviews,
               brand: _product!.brand,
               onReviewsTap: _scrollToReviews,
             ),
           ),
 
-          if (_product!.variant.isNotEmpty) ...[
+          if (_product!.variants.isNotEmpty) ...[ // Changed from _product!.variant
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: ProductVariantSelector(
-                variants: _product!.variant,
+                variants: _product!.variants, // Changed from _product!.variant
                 selectedVariants: _selectedVariants,
                 onVariantSelected: (variantName, value) {
                   setState(() {
@@ -813,59 +808,49 @@ class _ProductPageState extends State<ProductPage>
           ),
         ),
 
-        // Features list
-        Column(
-          children:
-              _product!.features.asMap().entries.map<Widget>((entry) {
-                int index = entry.key;
-                String feature = entry.value;
-                return TweenAnimationBuilder<double>(
-                  duration: Duration(milliseconds: 400 + (index * 120)),
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  builder: (context, value, child) {
-                    return Transform.translate(
-                      offset: Offset(30 * (1 - value), 0),
-                      child: Opacity(
-                        opacity: value,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.only(top: 2),
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade600,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.check_rounded,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Text(
-                                  feature,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade800,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
+    // Features list
+    Column(
+      children: _product!.features.asMap().entries.map<Widget>((entry) {
+        int index = entry.key;
+        String feature = entry.value;
+        return TweenAnimationBuilder<double>(
+          duration: Duration(milliseconds: 400 + (index * 120)),
+          tween: Tween(begin: 0.0, end: 1.0),
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(30 * (1 - value), 0),
+              child: Opacity(
+                opacity: value,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline_rounded, color: Colors.green.shade700, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          feature,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.w500
                           ),
                         ),
                       ),
-                    );
-                  },
-                );
-              }).toList(),
-        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      }).toList(),
+    )
       ],
     );
   }

@@ -508,37 +508,61 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
 
   Widget _buildGlassmorphicBadge(
     String text,
-    List<Color> gradientColors,
-    Color shadowColor,
+    List<Color> gradientColors, // This will be unused, but kept for compatibility if other badges use it.
+    Color shadowColor, // This will be unused.
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    // Determine if this is the discount badge based on text content
+    bool isDiscountBadge = text.contains('%');
+    final theme = Theme.of(context);
+
+    if (isDiscountBadge) {
+      // New subtle style for discount badge
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.error.withOpacity(0.15), // Subtle, transparent background
+          borderRadius: BorderRadius.circular(8), // Simpler border radius
         ),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: shadowColor,
-            blurRadius: 8,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: theme.colorScheme.error, // Text color that matches the subtle theme
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
           ),
-        ],
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 10,
         ),
-      ),
-    );
+      );
+    } else {
+      // Original glassmorphic style for other badges (NEW, FEATURED)
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor,
+              blurRadius: 8,
+              spreadRadius: 0,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
+          ),
+        ),
+      );
+    }
   }
 
     Widget _buildRatingStars(double rating, bool isSmallScreen) {

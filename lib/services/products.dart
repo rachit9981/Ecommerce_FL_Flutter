@@ -2,6 +2,34 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'config.dart';
 
+// --- Helper Functions for Safe Parsing (copied from detailed_product.dart or define globally) ---
+double _parseDouble(dynamic value, {double defaultValue = 0.0}) {
+  if (value == null) return defaultValue;
+  if (value is int) return value.toDouble();
+  if (value is double) return value.isFinite ? value : defaultValue;
+  if (value is String) {
+    final parsed = double.tryParse(value);
+    return (parsed != null && parsed.isFinite) ? parsed : defaultValue;
+  }
+  return defaultValue;
+}
+
+int _parseInt(dynamic value, {int defaultValue = 0}) {
+  if (value == null) return defaultValue;
+  if (value is int) return value;
+  if (value is double) {
+    if (value.isFinite && value == value.truncateToDouble()) { // Check if it's a whole number
+      return value.toInt();
+    }
+    return defaultValue;
+  }
+  if (value is String) {
+    final parsed = int.tryParse(value);
+    return parsed ?? defaultValue;
+  }
+  return defaultValue;
+}
+
 class ProductService {
   Future<List<Product>> getProducts() async {
     try {
@@ -60,26 +88,31 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'],
-      name: json['name'],
-      brand: json['brand'],
-      category: json['category'],
-      description: json['description'],
-      price: (json['price'] is int) ? (json['price'] as int).toDouble() : json['price'],
-      discountPrice: (json['discount_price'] is int) ? (json['discount_price'] as int).toDouble() : json['discount_price'],
-      discount: json['discount'],
-      stock: json['stock'],
-      rating: (json['rating'] is int) ? (json['rating'] as int).toDouble() : json['rating'],
-      reviews: json['reviews'],
-      images: List<String>.from(json['images']),
-      features: List<String>.from(json['features']),
-      specifications: json['specifications'],
-      variant: Map<String, List<String>>.from(
-        json['variant'].map(
-          (key, value) => MapEntry(key, List<String>.from(value)),
-        ),
-      ),
-      featured: json['featured'],
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      brand: json['brand'] as String? ?? '',
+      category: json['category'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      price: _parseDouble(json['price']), // Updated
+      discountPrice: _parseDouble(json['discount_price']), // Updated
+      discount: json['discount'] as String?,
+      stock: _parseInt(json['stock']), // Updated
+      rating: _parseDouble(json['rating']), // Updated
+      reviews: _parseInt(json['reviews']), // Updated
+      images: List<String>.from(json['images'] ?? []),
+      features: List<String>.from(json['features'] ?? []),
+      specifications: Map<String, dynamic>.from(json['specifications'] ?? {}),
+      variant: (json['variant'] is Map)
+          ? Map<String, List<String>>.from(
+              (json['variant'] as Map).map(
+                (key, value) => MapEntry(
+                  key.toString(),
+                  (value is List) ? List<String>.from(value.map((e) => e.toString())) : <String>[],
+                ),
+              ),
+            )
+          : {},
+      featured: json['featured'] as bool?,
     );
   }
 }
@@ -103,12 +136,12 @@ class Review {
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
-      id: json['id'],
-      userName: json['user_name'],
-      rating: (json['rating'] is int) ? (json['rating'] as int).toDouble() : json['rating'],
-      comment: json['comment'],
-      date: DateTime.parse(json['date']),
-      helpfulCount: json['helpful_count'] ?? 0,
+      id: json['id'] as String? ?? '', // Added null check and default
+      userName: json['user_name'] as String? ?? 'Anonymous', // Added null check and default
+      rating: _parseDouble(json['rating']), // Updated
+      comment: json['comment'] as String? ?? '', // Added null check and default
+      date: (json['date'] is String) ? DateTime.tryParse(json['date']) ?? DateTime.now() : DateTime.now(), // Safer date parsing
+      helpfulCount: _parseInt(json['helpful_count'], defaultValue: 0), // Updated and ensured default
     );
   }
 }

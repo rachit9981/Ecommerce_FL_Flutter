@@ -500,34 +500,35 @@ class ProductHeader extends StatelessWidget {
             children: [
               Text(
                 '₹${price.toStringAsFixed(0)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              if (originalPrice != null) ...[
+              if (originalPrice != null && originalPrice! > price) ...[
                 const SizedBox(width: 12),
                 Text(
                   '₹${originalPrice!.toStringAsFixed(0)}',
                   style: TextStyle(
                     fontSize: 18,
+                    color: Colors.grey.shade500,
                     decoration: TextDecoration.lineThrough,
-                    color: Colors.grey.shade600,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Adjusted padding
                   decoration: BoxDecoration(
-                    color: Colors.red.shade500,
-                    borderRadius: BorderRadius.circular(12),
+                    color: Theme.of(context).colorScheme.error.withOpacity(0.15), // Subtle, transparent background
+                    borderRadius: BorderRadius.circular(8), // Simpler border radius
                   ),
                   child: Text(
                     '$discount% OFF',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error, // Text color that matches the subtle theme
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 13, // Slightly smaller font
                     ),
                   ),
                 ),

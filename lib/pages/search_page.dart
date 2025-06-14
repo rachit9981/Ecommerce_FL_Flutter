@@ -34,7 +34,6 @@ class _SearchPageState extends State<SearchPage> {
   String? _selectedBrand;
 
   List<Product> _filteredProducts = [];
-  List<String> _popularSearches = [];
   List<String> _availableCategories = [];
   List<String> _availableBrands = [];
 
@@ -66,12 +65,6 @@ class _SearchPageState extends State<SearchPage> {
       
       _priceRange = RangeValues(minPrice, maxPrice);
       _selectedPriceRange = RangeValues(minPrice, maxPrice);
-
-      // Generate popular searches from product names and categories
-      _popularSearches = [
-        ..._availableCategories.take(4),
-        ...products.take(4).map((p) => p.name.split(' ').first),
-      ].toSet().toList();
 
       setState(() {});
     }
@@ -451,23 +444,6 @@ class _SearchPageState extends State<SearchPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Popular Searches',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Column(
-            children: _popularSearches
-                .map((search) => SearchSuggestionItem(
-                      suggestion: search,
-                      onTap: () {
-                        _searchController.text = search;
-                        _performSearch(search);
-                      },
-                    ))
-                .toList(),
-          ),
-          const SizedBox(height: 24),
           const Text(
             'Browse by Category',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
