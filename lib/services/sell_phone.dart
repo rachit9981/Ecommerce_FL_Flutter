@@ -286,6 +286,27 @@ class PhoneModelUI {
     required this.questionGroups,
   });
 
+  // Convert PhoneModelData to PhoneModelUI for compatibility
+  static PhoneModelUI fromPhoneModelData(
+    PhoneModelData modelData, 
+    String brandId, 
+    String seriesId
+  ) {
+    return PhoneModelUI(
+      id: modelData.id,
+      brandId: brandId,
+      seriesId: seriesId,
+      phoneId: modelData.id,
+      name: modelData.displayName,
+      imageUrl: modelData.imageUrl,
+      launchYear: modelData.launchYear,
+      variantPrices: modelData.variantPrices,
+      variantOptions: modelData.variantOptions,
+      demandScore: modelData.demandScore,
+      questionGroups: modelData.questionGroups,
+    );
+  }
+
   // Get the highest price variant for this model
   int getMaxPrice() {
     int maxPrice = 0;
@@ -737,6 +758,69 @@ class SellPhoneService {
     }
   }
   
+  // Submit an inquiry for a sell mobile listing with questionnaire answers
+  Future<Map<String, dynamic>> submitInquiryWithAnswers({
+    required String phoneModelId,
+    required String userId,
+    required String buyerPhone,
+    required String selectedStorage,
+    required String selectedRam,
+    required Map<String, List<String>> questionnaireAnswers,
+    required Map<String, String> address,
+    String? status,
+  }) async {
+    try {
+      // Get auth headers
+      final headers = await _getAuthHeaders();
+      debugPrint('Submitting inquiry with answers for phone: $phoneModelId');
+      
+      // Create request body
+      final requestBody = {
+        'phone_model_id': phoneModelId,
+        'user_id': userId,
+        'buyer_phone': buyerPhone,
+        'selected_storage': selectedStorage,
+        'selected_ram': selectedRam,
+        'questionnaire_answers': questionnaireAnswers,
+        'address': address,
+      };
+      
+      if (status != null) {
+        requestBody['status'] = status;
+      }
+      
+      debugPrint('Submitting inquiry with answers:');
+      debugPrint('URL: $submitInquiryUrl');
+      debugPrint('Request body: ${json.encode(requestBody)}');
+      
+      final response = await http.post(
+        Uri.parse(submitInquiryUrl),
+        headers: headers,
+        body: json.encode(requestBody),
+      );
+      
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+      
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'status': data['status'] ?? 'success',
+          'message': data['message'] ?? 'Inquiry submitted successfully',
+          'id': data['id'] ?? '',
+          'estimated_price': data['estimated_price'] ?? 0,
+        };
+      } else {
+        final errorMsg = data['message'] ?? 'Failed to submit inquiry';
+        throw Exception(errorMsg);
+      }
+    } catch (e) {
+      debugPrint('Error submitting inquiry with answers: $e');
+      rethrow;
+    }
+  }
+
   // Fetch all inquiries made by the current user
   Future<List<SellPhoneInquiry>> getUserInquiries() async {
     try {
@@ -779,6 +863,17 @@ class SellPhoneService {
     } catch (e) {
       debugPrint('Failed to load user inquiries: $e');
       throw Exception('Failed to load user inquiries: $e');
+    }
+  }
+
+  // Get specific brand data by ID
+  Future<PhoneBrandData?> getBrandData(String brandId) async {
+    try {
+      final catalog = await getMobileCatalog();
+      return catalog[brandId];
+    } catch (e) {
+      print('Error getting brand data for $brandId: $e');
+      return null;
     }
   }
 }

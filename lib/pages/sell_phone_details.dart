@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/sell_phone/phones_brands.dart';
 import 'package:ecom/components/sell_phone/selling_comp.dart';
-import 'package:ecom/pages/sell_phone_requests.dart';
-import 'package:ecom/pages/sell_phone_questionnaire.dart';
+import 'package:ecom/pages/sell_phone_multi_page_questionnaire.dart';
 import 'package:ecom/services/sell_phone.dart';
 
 class SellPhoneDetailsPage extends StatefulWidget {
@@ -214,9 +213,8 @@ class _SellPhoneDetailsPageState extends State<SellPhoneDetailsPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                child: Text(
-                  hasQuestions ? 'Continue Assessment' : 'Proceed to Sell',
+                ),                child: Text(
+                  hasQuestions ? 'Proceed to Get Accurate Pricing' : 'Proceed to Get Accurate Pricing',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -228,39 +226,20 @@ class _SellPhoneDetailsPageState extends State<SellPhoneDetailsPage> {
         ),
       ),
     );
-  }
-  void _submitInquiry() {
-    if (hasQuestions && widget.modelUI != null) {
-      // Navigate to questionnaire for detailed assessment
+  }  void _submitInquiry() {
+    if (widget.modelUI != null) {
+      // Navigate to questionnaire for all models using new API structure
       Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SellPhoneQuestionnairePage(
+        context,        MaterialPageRoute(
+          builder: (context) => SellPhoneMultiPageQuestionnairePage(
             phoneModel: widget.modelUI!,
             selectedStorage: _selectedStorage,
             selectedRam: _selectedRam,
           ),
         ),
       );
-    } else if (widget.model != null) {
-      // Use the shared component for legacy models
-      SellingComponents.submitInquiry(
-        context: context,
-        model: widget.model!,
-        storage: _selectedStorage,
-        condition: _selectedCondition,
-        onSuccess: () {
-          // Navigate to sell phone requests page to show the submitted inquiry
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const SellPhoneRequestsPage(),
-            ),
-          );
-        },
-      );
     } else {
-      // Fallback for modelUI without questions
+      // Fallback error case
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Unable to proceed with this model. Please try again.'),

@@ -79,8 +79,10 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
   bool _isOptionSelected(String questionId, String optionLabel) {
     return selectedAnswers[questionId]?.contains(optionLabel) ?? false;
   }
-
   bool _areAllRequiredQuestionsAnswered() {
+    // If no question groups, consider all questions answered
+    if (widget.phoneModel.questionGroups.isEmpty) return true;
+    
     for (var group in widget.phoneModel.questionGroups.values) {
       for (var question in group.questions) {
         if (question.type == 'single_choice') {
@@ -92,9 +94,9 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
     }
     return true;
   }
-
   void _proceedToFinalQuote() {
-    if (!_areAllRequiredQuestionsAnswered()) {
+    // Check if there are question groups and if all required questions are answered
+    if (widget.phoneModel.questionGroups.isNotEmpty && !_areAllRequiredQuestionsAnswered()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please answer all required questions'),
@@ -135,7 +137,6 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Navigate to inquiry submission page
               _submitInquiry();
             },
             child: const Text('Accept Quote'),
@@ -145,15 +146,65 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
     );
   }
 
-  void _submitInquiry() {
-    // TODO: Implement inquiry submission logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Inquiry submitted successfully!'),
-        backgroundColor: Colors.green,
+  void _submitInquiry() async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
-    Navigator.pop(context); // Go back to previous page
+
+    try {
+      final sellPhoneService = SellPhoneService();
+      
+      // Dummy user data - in a real app, get from user provider/auth
+      final userId = 'user123'; // TODO: Get from actual user provider
+      final buyerPhone = '1234567890'; // TODO: Get from user profile
+      final address = {
+        'street': '123 Main St',
+        'city': 'City',
+        'state': 'State',
+        'zipCode': '12345',
+      }; // TODO: Get from user address
+      
+      final result = await sellPhoneService.submitInquiryWithAnswers(
+        phoneModelId: widget.phoneModel.id,
+        userId: userId,
+        buyerPhone: buyerPhone,
+        selectedStorage: widget.selectedStorage,
+        selectedRam: widget.selectedRam,
+        questionnaireAnswers: selectedAnswers,
+        address: address,
+      );
+
+      // Hide loading indicator
+      Navigator.of(context).pop();
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Inquiry submitted successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate back to main sell phone page
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      
+    } catch (e) {
+      // Hide loading indicator
+      Navigator.of(context).pop();
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting inquiry: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -231,16 +282,44 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
                 ),
               ],
             ),
-          ),
-
-          // Questions
+          ),          // Questions or No Questions Message
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: widget.phoneModel.questionGroups.length,
-              itemBuilder: (context, index) {
-                final groupEntry = widget.phoneModel.questionGroups.entries.elementAt(index);
-                final group = groupEntry.value;
+            child: widget.phoneModel.questionGroups.isEmpty 
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 64,
+                        color: Colors.green.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'All Set!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Your phone information is complete.\nReady to get your quote!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: widget.phoneModel.questionGroups.length,
+                  itemBuilder: (context, index) {
+                    final groupEntry = widget.phoneModel.questionGroups.entries.elementAt(index);
+                    final group = groupEntry.value;
                 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -333,11 +412,12 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: Container(
+      ),      bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         child: ElevatedButton(
-          onPressed: _areAllRequiredQuestionsAnswered() ? _proceedToFinalQuote : null,
+          onPressed: (widget.phoneModel.questionGroups.isEmpty || _areAllRequiredQuestionsAnswered()) 
+              ? _proceedToFinalQuote 
+              : null,
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
@@ -345,7 +425,9 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
             ),
           ),
           child: Text(
-            'Get Final Quote - ₹${finalPrice.toStringAsFixed(0)}',
+            widget.phoneModel.questionGroups.isEmpty 
+                ? 'Get Quote - ₹${finalPrice.toStringAsFixed(0)}'
+                : 'Get Final Quote - ₹${finalPrice.toStringAsFixed(0)}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),

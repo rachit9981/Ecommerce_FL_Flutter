@@ -98,40 +98,67 @@ class _SellPhonePageState extends State<SellPhonePage> {
       );
     }
   }
-
-  void _onBrandSelected(dynamic brand) {
+  void _onBrandSelected(dynamic brand) async {
     // Handle both PhoneBrand and PhoneBrandUI
     String brandId;
     String brandName;
+    String logoUrl = '';
     
     if (brand is PhoneBrandUI) {
       brandId = brand.id;
       brandName = brand.name;
+      logoUrl = brand.logoUrl;
     } else {
       brandId = (brand as PhoneBrand).id;
       brandName = brand.name;
     }
     
-    // Filter models by brand
-    final brandModels = _allModels.where((model) => model.brandId == brandId).toList();
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
     
-    if (brandModels.isEmpty) {
+    try {
+      // Get full brand data from API
+      final sellPhoneService = SellPhoneService();
+      final brandData = await sellPhoneService.getBrandData(brandId);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      if (brandData == null || brandData.phoneSeries.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No phone series available for $brandName'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {        // Navigate directly to the series/models page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SellPhoneBySeriesPage(
+              brandId: brandId,
+              brandName: brandName,
+              brandLogoUrl: logoUrl,
+              brandData: brandData,
+              onModelSelected: _onModelSelected,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No models available for $brandName'),
+          content: Text('Error loading $brandName data. Please try again.'),
           duration: const Duration(seconds: 2),
-        ),
-      );
-    } else {
-      // Navigate to dedicated brand page instead of search
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SellPhoneByBrandPage(
-            brand: PhoneBrand(id: brandId, name: brandName, logoUrl: ''),
-            brandModels: _convertToPhoneModels(brandModels),
-            onModelSelected: _onModelSelected,
-          ),
         ),
       );
     }
