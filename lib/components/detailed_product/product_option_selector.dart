@@ -23,26 +23,36 @@ class _ProductOptionSelectorState extends State<ProductOptionSelector> {
   void initState() {
     super.initState();
     _initializeDefaultSelection();
-  }
-
-  void _initializeDefaultSelection() {
+  }  void _initializeDefaultSelection() {
     if (widget.product.validOptions.isNotEmpty) {
-      final firstOption = widget.product.validOptions.first;
-      selectedAttributes = Map.from(firstOption.attributes);
-      selectedOption = firstOption;
+      // Choose the best default option (preferably one with good price/availability)
+      ValidOption bestOption = widget.product.validOptions.first;
+      
+      // Try to find an option with good stock and pricing
+      for (final option in widget.product.validOptions) {
+        if (option.stock > 0) {
+          // Prefer options with better discount (lower discounted price relative to original price)
+          if (option.discountedPrice < bestOption.discountedPrice || 
+              (option.discountedPrice == bestOption.discountedPrice && option.stock > bestOption.stock)) {
+            bestOption = option;
+          }
+        }
+      }
+      
+      selectedAttributes = Map.from(bestOption.attributes);
+      selectedOption = bestOption;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onOptionSelected(selectedOption);
-      });    }
+      });
+    }
   }
 
   Map<String, List<String>> _getAvailableAttributeValues() {
     Map<String, Set<String>> attributeValues = {};
 
-    // Get all compatible options based on current selection
-    List<ValidOption> compatibleOptions = _getCompatibleOptions();
-
-    for (final option in compatibleOptions) {
+    // Show ALL possible options from all valid_options
+    for (final option in widget.product.validOptions) {
       for (final entry in option.attributes.entries) {
         attributeValues[entry.key] ??= <String>{};
         attributeValues[entry.key]!.add(entry.value);
@@ -50,31 +60,6 @@ class _ProductOptionSelectorState extends State<ProductOptionSelector> {
     }
 
     return attributeValues.map((key, value) => MapEntry(key, value.toList()));
-  }
-
-  List<ValidOption> _getCompatibleOptions() {
-    if (selectedAttributes.isEmpty) {
-      return widget.product.validOptions;
-    }
-
-    return widget.product.validOptions.where((option) {
-      for (final entry in selectedAttributes.entries) {
-        if (option.attributes[entry.key] != entry.value) {
-          return false;
-        }
-      }
-      return true;
-    }).toList();
-  }
-
-  bool _isValueAvailable(String attributeKey, String value) {
-    Map<String, String> testAttributes = Map.from(selectedAttributes);
-    testAttributes[attributeKey] = value;
-    
-    return widget.product.validOptions.any((option) {
-      return testAttributes.entries.every((entry) =>
-          option.attributes[entry.key] == entry.value);
-    });
   }
   String _formatAttributeName(String attributeKey) {
     switch (attributeKey.toLowerCase()) {
@@ -247,11 +232,12 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
     super.initState();
     selectedAttributes = Map.from(widget.selectedAttributes);
     selectedOption = _findExactMatch();
-  }
-  void _updateSelection(String attributeKey, String value) {
+  }  void _updateSelection(String attributeKey, String value) {
+    print('_updateSelection called: $attributeKey = $value');
     setState(() {
       // Update the selected attribute
       selectedAttributes[attributeKey] = value;
+      print('Updated selectedAttributes: $selectedAttributes');
       
       // Check if current combination is still valid
       ValidOption? exactMatch = _findExactMatch();
@@ -259,14 +245,23 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
       if (exactMatch != null) {
         // Exact match found, use it
         selectedOption = exactMatch;
+        print('Exact match found: ${exactMatch.attributes}');
       } else {
-        // No exact match, find the best partial match
-        selectedOption = _findBestPartialMatch();
+        // No exact match, find the best compatible option while preserving user selections
+        selectedOption = _findSmartFallbackOption(attributeKey, value);
         
         // Update other attributes to match the selected option if found
         if (selectedOption != null) {
-          selectedAttributes.clear();
-          selectedAttributes.addAll(selectedOption!.attributes);
+          // Only update attributes that are not the one the user just selected
+          // This preserves the user's choice while auto-selecting compatible options
+          Map<String, String> newAttributes = Map.from(selectedOption!.attributes);
+          newAttributes[attributeKey] = value; // Ensure user's selection is preserved
+          selectedAttributes = newAttributes;
+          print('Smart fallback to: ${selectedOption!.attributes}');
+          print('Final selectedAttributes: $selectedAttributes');
+        } else {
+          // If no valid option found, keep user selection but clear option
+          print('No valid option found for current selection');
         }
       }
     });
@@ -290,34 +285,52 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
     }
     return null;
   }
-
-  ValidOption? _findBestPartialMatch() {
-    // Find options that match as many selected attributes as possible
+  ValidOption? _findSmartFallbackOption(String changedAttributeKey, String changedValue) {
+    // Strategy: Find the option that matches the most important attributes
+    // Priority: 1. The changed attribute, 2. Other user-selected attributes, 3. Any remaining attributes
+    
     ValidOption? bestMatch;
-    int maxMatches = 0;
+    int maxScore = 0;
     
     for (final option in widget.product.validOptions) {
-      int matches = 0;
+      // Must match the attribute that user just changed
+      if (option.attributes[changedAttributeKey] != changedValue) {
+        continue; // Skip options that don't have the required attribute value
+      }
+      
+      int score = 0;
+      
+      // Count how many other currently selected attributes this option matches
       for (final entry in selectedAttributes.entries) {
-        if (option.attributes[entry.key] == entry.value) {
-          matches++;
+        if (entry.key != changedAttributeKey && 
+            option.attributes[entry.key] == entry.value) {
+          score += 10; // High priority for maintaining user selections
         }
       }
-      if (matches > maxMatches) {
-        maxMatches = matches;
+      
+      // If this option has better compatibility, choose it
+      if (score > maxScore) {
+        maxScore = score;
         bestMatch = option;
       }
-    }    
-    return bestMatch;
-  }
-
+    }
+    
+    // If no perfect matches for user selections, find any option with the changed attribute
+    if (bestMatch == null) {
+      for (final option in widget.product.validOptions) {
+        if (option.attributes[changedAttributeKey] == changedValue) {
+          bestMatch = option;
+          break;
+        }
+      }
+    }
+    
+    return bestMatch;  }
   Map<String, List<String>> _getAvailableAttributeValues() {
     Map<String, Set<String>> attributeValues = {};
 
-    // Get all compatible options based on current selection
-    List<ValidOption> compatibleOptions = _getCompatibleOptions();
-
-    for (final option in compatibleOptions) {
+    // Show ALL possible options from all valid_options
+    for (final option in widget.product.validOptions) {
       for (final entry in option.attributes.entries) {
         attributeValues[entry.key] ??= <String>{};
         attributeValues[entry.key]!.add(entry.value);
@@ -325,32 +338,6 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
     }
 
     return attributeValues.map((key, value) => MapEntry(key, value.toList()));
-  }
-
-  List<ValidOption> _getCompatibleOptions() {
-    if (selectedAttributes.isEmpty) {
-      return widget.product.validOptions;
-    }
-
-    return widget.product.validOptions.where((option) {
-      for (final entry in selectedAttributes.entries) {
-        if (option.attributes[entry.key] != entry.value) {
-          return false;
-        }
-      }
-      return true;
-    }).toList();
-  }
-
-  bool _isValueAvailable(String attributeKey, String value) {
-    Map<String, String> testAttributes = Map.from(selectedAttributes);
-    testAttributes[attributeKey] = value;
-
-    return widget.product.validOptions.any((option) {
-      return testAttributes.entries.every(
-        (entry) => option.attributes[entry.key] == entry.value,
-      );
-    });
   }
   String _formatAttributeName(String attributeKey) {
     switch (attributeKey.toLowerCase()) {
@@ -405,19 +392,15 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
     final double discountPercentage =
         hasDiscount
             ? ((originalPrice - currentPrice) / originalPrice) * 100
-            : 0;
-
-    return GestureDetector(
-      onTap: () => Navigator.pop(context), // Close on background tap
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
+            : 0;    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
+      ),
         child: Column(
           children: [
             // Handle bar for swipe down
@@ -505,9 +488,7 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Scrollable content
+            const SizedBox(height: 16),            // Scrollable content
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -516,6 +497,7 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                       availableAttributes.entries.map((entry) {
                         final attributeKey = entry.key;
                         final availableValues = entry.value;
+                        final contextualValues = _getContextuallyAvailableValues()[attributeKey] ?? [];
                         final selectedValue = selectedAttributes[attributeKey];
 
                         return Padding(
@@ -535,6 +517,7 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                               _buildOptionsList(
                                 attributeKey,
                                 availableValues,
+                                contextualValues,
                                 selectedValue,
                               ),
                             ],
@@ -542,105 +525,25 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                         );
                       }).toList(),
                 ),
-              ),
-            ),
+              ),            ),
             // Add some bottom padding instead of buttons
             const SizedBox(height: 20),
           ],
         ),
-      ),
-    ); // Close child Container
-  } // Close GestureDetector
-  Widget _buildOptionsList(
+      );
+  }
+    Widget _buildOptionsList(
     String attributeKey,
     List<String> availableValues,
+    List<String> contextualValues,
     String? selectedValue,
   ) {
-    if (attributeKey.toLowerCase() == 'color' || attributeKey.toLowerCase() == 'colors') {
-      return _buildColorOptions(attributeKey, availableValues, selectedValue);
-    } else {
-      return _buildPillOptions(attributeKey, availableValues, selectedValue);
-    }
-  }
-
-  Widget _buildColorOptions(
+    // Use pill options for all attributes (simplified design)
+    return _buildPillOptions(attributeKey, availableValues, contextualValues, selectedValue);
+  }  Widget _buildPillOptions(
     String attributeKey,
     List<String> availableValues,
-    String? selectedValue,
-  ) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        alignment: WrapAlignment.start,
-        children:
-            availableValues.map((value) {
-              final isSelected = selectedValue == value;
-              final isAvailable = _isValueAvailable(attributeKey, value);
-
-              return GestureDetector(
-                onTap:
-                    isAvailable
-                        ? () => _updateSelection(attributeKey, value)
-                        : null,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: _getColorFromName(value),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color:
-                              isSelected
-                                  ? Colors
-                                      .blue
-                                      .shade300 // Lighter tone of primary color
-                                  : isAvailable
-                                  ? Colors.grey.shade300
-                                  : Colors.grey.shade200,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child:
-                          isSelected
-                              ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 20,
-                              )
-                              : null,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
-                        color:
-                            isSelected
-                                ? Colors
-                                    .black87 // Black text instead of primary color
-                                : isAvailable
-                                ? Colors.black87
-                                : Colors.grey.shade400,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildPillOptions(
-    String attributeKey,
-    List<String> availableValues,
+    List<String> contextualValues,
     String? selectedValue,
   ) {
     return Align(
@@ -648,17 +551,14 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
-        alignment: WrapAlignment.start,
-        children:
+        alignment: WrapAlignment.start,        children:
             availableValues.map((value) {
               final isSelected = selectedValue == value;
-              final isAvailable = _isValueAvailable(attributeKey, value);
-
-              return GestureDetector(
-                onTap:
-                    isAvailable
-                        ? () => _updateSelection(attributeKey, value)
-                        : null,
+              final isContextuallyAvailable = contextualValues.contains(value);              return GestureDetector(
+                onTap: () {
+                  print('Pill tapped: $attributeKey = $value');
+                  _updateSelection(attributeKey, value);
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -678,56 +578,69 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                               ? Colors
                                   .blue
                                   .shade300 // Lighter tone of primary color
-                              : isAvailable
-                              ? Colors.grey.shade300
-                              : Colors.grey.shade200,
+                              : isContextuallyAvailable
+                                  ? Colors.grey.shade300
+                                  : Colors.grey.shade200, // Lighter for unavailable options
                       width: 1.5,
                     ),
                   ),
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      color:
-                          isSelected
-                              ? Colors
-                                  .black87 // Black text instead of white
-                              : isAvailable
-                              ? Colors.black87
-                              : Colors.grey.shade400,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        value,
+                        style: TextStyle(
+                          color:
+                              isSelected
+                                  ? Colors
+                                      .black87 // Black text instead of white
+                                  : isContextuallyAvailable
+                                      ? Colors.black87
+                                      : Colors.grey.shade500, // Grayed out for unavailable
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
+                      ),
+                      if (!isContextuallyAvailable && !isSelected) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: Colors.grey.shade400,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               );
-            }).toList(),
-      ),
+            }).toList(),      ),
     );
   }
+  Map<String, List<String>> _getContextuallyAvailableValues() {
+    Map<String, Set<String>> attributeValues = {};
 
-  Color _getColorFromName(String colorName) {
-    switch (colorName.toLowerCase()) {
-      case 'midnight':
-      case 'black':
-        return Colors.black87;
-      case 'silver':
-        return Colors.grey.shade300;
-      case 'sky blue':
-      case 'blue':
-        return Colors.blue.shade400;
-      case 'starlight':
-      case 'gold':
-        return Colors.amber.shade300;
-      case 'white':
-        return Colors.grey.shade100;
-      case 'red':
-        return Colors.red.shade400;
-      case 'green':
-        return Colors.green.shade400;
-      case 'purple':
-        return Colors.purple.shade400;
-      default:
-        return Colors.grey.shade400;
+    // Get all possible attribute values that are compatible with current selections
+    for (final option in widget.product.validOptions) {
+      for (final entry in option.attributes.entries) {
+        attributeValues[entry.key] ??= <String>{};
+        
+        // For each attribute, check if selecting this value would be compatible
+        // with other currently selected attributes
+        bool wouldBeCompatible = true;
+        for (final selectedEntry in selectedAttributes.entries) {
+          if (selectedEntry.key != entry.key && 
+              option.attributes[selectedEntry.key] != selectedEntry.value) {
+            wouldBeCompatible = false;
+            break;
+          }
+        }
+        
+        if (wouldBeCompatible) {
+          attributeValues[entry.key]!.add(entry.value);
+        }
+      }
     }
+
+    return attributeValues.map((key, value) => MapEntry(key, value.toList()));
   }
 }
