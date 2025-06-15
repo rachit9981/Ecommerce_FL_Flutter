@@ -176,8 +176,7 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
         ],
       ),
     );
-  }
-  void _submitInquiry() async {
+  }  void _submitInquiry() async {
     // Show loading indicator
     showDialog(
       context: context,
@@ -190,7 +189,8 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
     try {
       final sellPhoneService = SellPhoneService();
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-        // Check if user is authenticated
+      
+      // Check if user is authenticated
       if (!userProvider.isAuthenticated || userProvider.userProfile == null) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -200,7 +200,27 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
           ),
         );
         return;
-      }      // Get user data from provider
+      }
+
+      // Refresh user data to ensure we have the latest info
+      if (userProvider.userProfile == null) {
+        await userProvider.fetchProfile();
+        await userProvider.fetchAddresses();
+      }
+
+      // Check again after refresh
+      if (userProvider.userProfile == null) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to load user data. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Get user data from provider
       final user = userProvider.userProfile!;
       final userId = user.userId;
       final buyerPhone = user.phoneNumber ?? '';
@@ -213,6 +233,10 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
         'state': defaultAddr?.state ?? 'Not provided',
         'postal_code': defaultAddr?.postalCode ?? 'Not provided',
       };
+
+      debugPrint('Submitting inquiry with userId: $userId');
+      debugPrint('User profile: ${user.toJson()}');
+      debugPrint('Address: $address');
       
       final result = await sellPhoneService.submitInquiryWithAnswers(
         phoneModelId: widget.phoneModel.id,

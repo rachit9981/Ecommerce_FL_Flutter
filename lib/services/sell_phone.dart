@@ -642,8 +642,7 @@ class SellPhoneService {
       });
     }
     
-    return phones;
-  }
+    return phones;  }
   
   // Helper method to get auth headers with token (similar to OrderService)
   Future<Map<String, String>> _getAuthHeaders() async {
@@ -677,7 +676,6 @@ class SellPhoneService {
       throw Exception('Failed to get authentication token: $e');
     }
   }
-  
   // Helper method to get the minimum of two integers
   int min(int a, int b) {
     return a < b ? a : b;
@@ -758,8 +756,7 @@ class SellPhoneService {
     }
   }
   
-  // Submit an inquiry for a sell mobile listing with questionnaire answers
-  Future<Map<String, dynamic>> submitInquiryWithAnswers({
+  // Submit an inquiry for a sell mobile listing with questionnaire answers  Future<Map<String, dynamic>> submitInquiryWithAnswers({
     required String phoneModelId,
     required String userId,
     required String buyerPhone,
@@ -772,17 +769,15 @@ class SellPhoneService {
     try {
       // Get auth headers
       final headers = await _getAuthHeaders();
-      debugPrint('Submitting inquiry with answers for phone: $phoneModelId');
-      
-      // Create request body
+      debugPrint('Submitting inquiry with answers for phone: $phoneModelId');        // Create request body - match backend expected field names
       final requestBody = {
-        'phone_model_id': phoneModelId,
+        'sell_mobile_id': phoneModelId, // Backend expects sell_mobile_id, not phone_model_id
         'user_id': userId,
         'buyer_phone': buyerPhone,
         'selected_storage': selectedStorage,
         'selected_ram': selectedRam,
         'questionnaire_answers': questionnaireAnswers,
-        'address': address,
+        'address': address, // Address is already in correct format from caller
       };
       
       if (status != null) {
