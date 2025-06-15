@@ -122,12 +122,12 @@ class _ProductPageState extends State<ProductPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
-                      children: [
-                        // Product Images
+                      children: [                        // Product Images and Videos
                         ProductImageCarousel(
                           images: product.images,
+                          videos: product.videos,
                           heroTag: widget.heroTag,
-                        ),                        // Content with proper spacing
+                        ),// Content with proper spacing
                         Column(
                           children: [
                             // Basic Product Info

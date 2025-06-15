@@ -143,12 +143,8 @@ class _ProductOptionSelectorState extends State<ProductOptionSelector> {
                       : _buildMultipleOptions(attributeKey, availableValues, selectedValue, context),
                 ],
               ),
-            );
-          }),
+            );          }),
 
-          // Simplified stock indicator
-          if (selectedOption != null) 
-            _buildStockIndicator(context),
         ],
       ),
     );
@@ -235,42 +231,5 @@ class _ProductOptionSelectorState extends State<ProductOptionSelector> {
           ),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildStockIndicator(BuildContext context) {
-    final isInStock = selectedOption!.stock > 0;
-    final isLowStock = selectedOption!.stock <= 5 && selectedOption!.stock > 0;
-    
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isInStock ? Colors.green.shade50 : Colors.red.shade50,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isInStock ? Icons.check_circle : Icons.error,
-            size: 16,
-            color: isInStock ? Colors.green.shade600 : Colors.red.shade600,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            isInStock
-                ? isLowStock
-                    ? 'Only ${selectedOption!.stock} left'
-                    : 'In Stock'
-                : 'Out of Stock',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: isInStock ? Colors.green.shade700 : Colors.red.shade700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    );  }
 }
