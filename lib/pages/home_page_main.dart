@@ -5,6 +5,7 @@ import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/infity_scroll_suggestions.dart';
 import 'package:ecom/components/home/banners.dart';
 import 'package:ecom/components/home/categories.dart';
+import 'package:ecom/components/home/brands.dart';
 import 'package:ecom/components/home/searchbar.dart'; // Added import for the new search bar
 import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/category_page.dart';

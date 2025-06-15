@@ -5,139 +5,32 @@ class CategoryItem {
   final String id;
   final String title;
   final String? imageUrl;
-  final IconData? icon;
   final Color? backgroundColor;
-  final Color? iconColor;
   final VoidCallback? onTap;
 
   CategoryItem({
     required this.id,
     required this.title,
     this.imageUrl,
-    this.icon,
     this.backgroundColor,
-    this.iconColor,
     this.onTap,
   });
 
   // Helper method to get normalized category ID for case-insensitive comparison
   String get normalizedId => id.toLowerCase().trim();
   
-  // Helper method to check if this is a brand category
-  bool get isBrand {
-    final knownCategories = [
-      'electronics', 'fashion', 'home', 'beauty', 'sports', 'books',
-      'automotive', 'health', 'toys', 'grocery', 'mobiles', 'mobile',
-      'phones', 'phone', 'laptops', 'laptop', 'computers', 'computer'
-    ];
-    return !knownCategories.contains(normalizedId);
-  }
-  
-  // Create a copy of this category with a new onTap handler
+    // Create a copy of this category with a new onTap handler
   CategoryItem copyWith({VoidCallback? onTap}) {
     return CategoryItem(
       id: id,
       title: title,
       imageUrl: imageUrl,
-      icon: icon,
       backgroundColor: backgroundColor,
-      iconColor: iconColor,
       onTap: onTap ?? this.onTap,
-    );
-  }
-  
-  // Find the best icon for this category based on its ID
-  static IconData getBestIconForCategory(String categoryId) {
-    final normalizedId = categoryId.toLowerCase().trim();
-    
-    // Map category keywords to icons
-    final Map<String, IconData> iconMap = {
-      'mobile': Icons.smartphone,
-      'phone': Icons.smartphone,
-      'laptop': Icons.laptop,
-      'computer': Icons.computer,
-      'electronic': Icons.devices,
-      'watch': Icons.watch,
-      'wearable': Icons.watch,
-      'headphone': Icons.headphones,
-      'audio': Icons.headphones,
-      'speaker': Icons.speaker,
-      'tv': Icons.tv,
-      'fashion': Icons.checkroom,
-      'clothing': Icons.checkroom,
-      'apparel': Icons.checkroom,
-      'shoe': Icons.hiking,
-      'footwear': Icons.hiking,
-      'home': Icons.home,
-      'furniture': Icons.chair,
-      'kitchen': Icons.kitchen,
-      'appliance': Icons.kitchen,
-      'book': Icons.book,
-      'sport': Icons.sports_basketball,
-      'fitness': Icons.fitness_center,
-      'toy': Icons.toys,
-      'beauty': Icons.face,
-      'health': Icons.health_and_safety,
-      'grocery': Icons.local_grocery_store,
-      'food': Icons.fastfood,
-      'car': Icons.directions_car,
-      'automotive': Icons.directions_car,
-      'tool': Icons.build,
-      'garden': Icons.yard,
-      'camera': Icons.camera_alt,
-      'tablet': Icons.tablet_android,
-      'gaming': Icons.sports_esports,
-    };
-    
-    // Find the first matching keyword
-    for (final entry in iconMap.entries) {
-      if (normalizedId.contains(entry.key)) {
-        return entry.value;
-      }
-    }
-    
-    // Default icon if no match found
-    return Icons.category;
-  }
+    );  }
 }
 
-/// Utility class with sample categories for testing
-class CategoryData {
-  static List<CategoryItem> getSampleCategories() {
-    return [
-      CategoryItem(
-        id: 'smartphone',
-        title: 'Smartphone',
-        icon: Icons.smartphone,
-        backgroundColor: Colors.blue.shade50,
-      ),
-      CategoryItem(
-        id: 'laptop',
-        title: 'Laptop',
-        icon: Icons.laptop,
-        backgroundColor: Colors.purple.shade50,
-      ),
-      CategoryItem(
-        id: 'television',
-        title: 'Television',
-        icon: Icons.tv,
-        backgroundColor: Colors.red.shade50,
-      ),
-      CategoryItem(
-        id: 'speaker',
-        title: 'Speaker',
-        icon: Icons.speaker,
-        backgroundColor: Colors.green.shade50,
-      ),
-      CategoryItem(
-        id: 'tablet',
-        title: 'Tablet',
-        icon: Icons.tablet_android,
-        backgroundColor: Colors.orange.shade50,
-      ),
-    ];
-  }
-}
+
 
 class CategoryGridView extends StatelessWidget {
   final List<CategoryItem> categories;
@@ -247,13 +140,20 @@ class CategoryGridItem extends StatelessWidget {
                       offset: const Offset(0, 2),
                     ),
                   ],
-                ),
-                child: category.imageUrl != null 
+                ),                child: category.imageUrl != null 
                   ? _buildCategoryImage(context)
-                  : Icon(
-                      category.icon ?? Icons.category,
-                      color: category.iconColor ?? defaultColor,
-                      size: 26, // Reduced size
+                  : Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.category,
+                        color: defaultColor,
+                        size: 26,
+                      ),
                     ),
               ),
               const SizedBox(height: 8), // Reduced spacing
@@ -279,8 +179,7 @@ class CategoryGridItem extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildCategoryImage(BuildContext context) {
+    Widget _buildCategoryImage(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(50),
       child: Image.network(
@@ -290,8 +189,8 @@ class CategoryGridItem extends StatelessWidget {
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Icon(
-            category.icon ?? Icons.category,
-            color: category.iconColor ?? Theme.of(context).colorScheme.primary,
+            Icons.category,
+            color: Theme.of(context).colorScheme.primary,
             size: 26, // Match icon size
           );
         },
@@ -307,7 +206,6 @@ class HorizontalCategoryList extends StatelessWidget {
   final double itemHeight;
   final double spacing;
   final bool showShadow;
-  final bool brandMode; // Flag for brand styling
   final ValueChanged<CategoryItem>? onCategoryTap;
 
   const HorizontalCategoryList({
@@ -317,7 +215,6 @@ class HorizontalCategoryList extends StatelessWidget {
     this.itemHeight = 120,
     this.spacing = 16,
     this.showShadow = false,
-    this.brandMode = false,
     this.onCategoryTap,
   }) : super(key: key);
 
@@ -377,15 +274,12 @@ class HorizontalCategoryList extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                mainAxisAlignment: MainAxisAlignment.center,                children: [
                   if (item.imageUrl != null && item.imageUrl!.isNotEmpty) ...[
                     Expanded(
-                      child: brandMode 
-                          ? _buildBrandLogo(item.imageUrl!)
-                          : _buildCategoryImage(item.imageUrl!),
+                      child: _buildCategoryImage(item.imageUrl!),
                     ),
-                  ] else if (item.icon != null) ...[
+                  ] else ...[
                     Container(
                       width: 48,
                       height: 48,
@@ -395,8 +289,8 @@ class HorizontalCategoryList extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        item.icon,
-                        color: item.iconColor ?? Theme.of(context).colorScheme.primary,
+                        Icons.category,
+                        color: Theme.of(context).colorScheme.primary,
                         size: 24,
                       ),
                     ),
@@ -420,24 +314,12 @@ class HorizontalCategoryList extends StatelessWidget {
       ),
     );
   }
-
   Widget _buildCategoryImage(String imageUrl) {
     return Container(
       padding: const EdgeInsets.all(8),
       child: Image.network(
         imageUrl,
         fit: BoxFit.cover,
-      ),
-    );
-  }
-
-  // Specialized widget for brand logos
-  Widget _buildBrandLogo(String imageUrl) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      child: Image.network(
-        imageUrl,
-        fit: BoxFit.contain,
       ),
     );
   }
