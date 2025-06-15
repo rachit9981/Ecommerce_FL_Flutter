@@ -1,7 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/common/categories.dart' show CategoryItem, HorizontalCategoryList;
 import 'package:ecom/services/products.dart' show Product;
+import 'package:ecom/services/categories.dart';
 import 'package:ecom/pages/category_page.dart';
+
+// Method to get categories from API service and filter for mobile brands
+Future<List<CategoryItem>> getApiBrands(BuildContext context) async {
+  try {
+    final categoriesService = CategoriesService();
+    final categories = await categoriesService.getCategories();
+    
+    // Filter categories that might be mobile-related
+    final mobileBrands = categories.where((category) {
+      final nameLower = category.name.toLowerCase();
+      return nameLower.contains('mobile') || 
+             nameLower.contains('phone') || 
+             nameLower.contains('smartphone') ||
+             _isMobileBrand(nameLower);
+    }).toList();
+    
+    List<CategoryItem> brandItems = [];
+    
+    for (var brand in mobileBrands) {
+      final item = CategoryItem(
+        id: brand.id,
+        title: brand.name,
+        imageUrl: brand.imageUrl,
+      );
+      
+      brandItems.add(
+        item.copyWith(onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CategoryPage(category: item)),
+          );
+        }),
+      );
+    }
+    
+    return brandItems;
+  } catch (e) {
+    // If API fails, return empty list or fallback to dynamic brands
+    return [];
+  }
+}
+
+// Helper method to check if a name is a known mobile brand
+bool _isMobileBrand(String name) {
+  final mobileBrands = [
+    'samsung', 'apple', 'xiaomi', 'oneplus', 'oppo', 'vivo', 
+    'google', 'huawei', 'motorola', 'realme', 'nokia', 'sony', 
+    'asus', 'htc', 'pixel', 'iphone', 'galaxy'
+  ];
+  
+  return mobileBrands.any((brand) => name.contains(brand));
+}
+
+// Method to get categories from API service
+Future<List<CategoryItem>> getApiCategories(BuildContext context) async {
+  try {
+    final categoriesService = CategoriesService();
+    final categories = await categoriesService.getCategories();
+    
+    final List<Color> colorOptions = [
+      Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.teal,
+      Colors.pink, Colors.indigo, Colors.amber, Colors.cyan,
+    ];
+    
+    List<CategoryItem> categoryItems = [];
+    int colorIndex = 0;
+    
+    for (var category in categories) {
+      IconData icon = CategoryItem.getBestIconForCategory(category.name);
+      
+      final item = CategoryItem(
+        id: category.id,
+        title: category.name,
+        imageUrl: category.imageUrl,
+        icon: icon,
+        backgroundColor: colorOptions[colorIndex % colorOptions.length].withOpacity(0.2),
+        iconColor: colorOptions[colorIndex % colorOptions.length],
+      );
+      
+      categoryItems.add(
+        item.copyWith(onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CategoryPage(category: item)),
+          );
+        }),
+      );
+      colorIndex++;
+    }
+    
+    return categoryItems;
+  } catch (e) {
+    // If API fails, return empty list or fallback to dynamic categories
+    return [];
+  }
+}
 
 // Method to get dynamic categories from product data
 List<CategoryItem> getDynamicCategories(BuildContext context, List<Product> products) {
@@ -135,20 +232,51 @@ class HomeCategoriesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categories = getDynamicCategories(context, products);
-    if (categories.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
-          child: Text('Shop by Category', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
-        ),
-        HorizontalCategoryList(categories: categories, itemHeight: 100, itemWidth: 85, spacing: 12),
-        const SizedBox(height: 12),
-      ],
+    return FutureBuilder<List<CategoryItem>>(
+      future: getApiCategories(context),
+      builder: (context, snapshot) {
+        List<CategoryItem> categories = [];
+        
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show loading state
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+                child: Text('Shop by Category', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
+              ),
+              const SizedBox(
+                height: 100,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              const SizedBox(height: 12),
+            ],
+          );
+        } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          // Fallback to dynamic categories from products if API fails
+          categories = getDynamicCategories(context, products);
+        } else {
+          // Use API data
+          categories = snapshot.data!;
+        }
+        
+        if (categories.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+              child: Text('Shop by Category', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
+            ),
+            HorizontalCategoryList(categories: categories, itemHeight: 100, itemWidth: 85, spacing: 12),
+            const SizedBox(height: 12),
+          ],
+        );
+      },
     );
   }
 }
@@ -159,20 +287,51 @@ class HomeBrandsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mobileBrands = products.isNotEmpty ? getDynamicBrands(context, products) : getFallbackBrandItems(context);
-    if (mobileBrands.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-          child: Text('Popular Mobile Brands', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
-        ),
-        HorizontalCategoryList(categories: mobileBrands, itemWidth: 80, itemHeight: 100, spacing: 12, showShadow: true, brandMode: true),
-        const SizedBox(height: 16),
-      ],
+    return FutureBuilder<List<CategoryItem>>(
+      future: getApiBrands(context),
+      builder: (context, snapshot) {
+        List<CategoryItem> mobileBrands = [];
+        
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show loading state
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+                child: Text('Popular Mobile Brands', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
+              ),
+              const SizedBox(
+                height: 100,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              const SizedBox(height: 16),
+            ],
+          );
+        } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          // Fallback to dynamic brands from products or fallback brands if API fails
+          mobileBrands = products.isNotEmpty ? getDynamicBrands(context, products) : getFallbackBrandItems(context);
+        } else {
+          // Use API data
+          mobileBrands = snapshot.data!;
+        }
+        
+        if (mobileBrands.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+              child: Text('Popular Mobile Brands', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
+            ),
+            HorizontalCategoryList(categories: mobileBrands, itemWidth: 80, itemHeight: 100, spacing: 12, showShadow: true, brandMode: true),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
     );
   }
 }
