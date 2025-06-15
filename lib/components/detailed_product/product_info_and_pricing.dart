@@ -162,6 +162,15 @@ class ProductInfoAndPricing extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  Text(
+                    '₹${currentPrice.toStringAsFixed(0)}',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      // color: Theme.of(context).primaryColor,
+                      fontSize: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   if (hasDiscount) ...[
                     Text(
                       '₹${originalPrice.toStringAsFixed(0)}',
@@ -174,14 +183,6 @@ class ProductInfoAndPricing extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                   ],
-                  Text(
-                    '₹${currentPrice.toStringAsFixed(0)}',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                      fontSize: 28,
-                    ),
-                  ),
                 ],
               ),
               
