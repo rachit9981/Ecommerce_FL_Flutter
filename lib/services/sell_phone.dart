@@ -753,10 +753,10 @@ class SellPhoneService {
     } catch (e) {
       debugPrint('Error submitting inquiry: $e');
       rethrow;
-    }
-  }
+    }  }
   
-  // Submit an inquiry for a sell mobile listing with questionnaire answers  Future<Map<String, dynamic>> submitInquiryWithAnswers({
+  // Submit an inquiry for a sell mobile listing with questionnaire answers
+  Future<Map<String, dynamic>> submitInquiryWithAnswers({
     required String phoneModelId,
     required String userId,
     required String buyerPhone,
