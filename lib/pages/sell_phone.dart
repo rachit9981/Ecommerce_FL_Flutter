@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/sell_phone/phones_brands.dart';
-import 'package:ecom/components/sell_phone/search_feature.dart';
 import 'package:ecom/components/sell_phone/selling_comp.dart';
 import 'package:ecom/services/sell_phone.dart';
 import 'package:ecom/pages/search_phone.dart';
@@ -19,139 +18,53 @@ class SellPhonePage extends StatefulWidget {
 }
 
 class _SellPhonePageState extends State<SellPhonePage> {
-  List<PhoneBrand> _brands = [];
-  List<PhoneModel> _allModels = [];
-  List<PhoneModel> _popularModels = []; // Separate list for popular models
+  List<PhoneBrandUI> _brands = [];
+  List<PhoneModelUI> _allModels = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadData();
-  }
-  
-  Future<void> _loadData() async {
+  }  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
-      _allModels = []; // Clear existing models
+      _allModels = [];
     });
     
-    print('Loading sell phone data...');
-    
-    // Always load brands first - these are static
-    _brands = PhoneBrandsData.getAllBrands();
-    print('Loaded ${_brands.length} phone brands');
+    print('Loading sell phone data from catalog API...');
     
     try {
-      // First attempt: Load from API
-      print('Attempting to load phones from API');
       final sellPhoneService = SellPhoneService();
-      final sellPhones = await sellPhoneService.getSellPhones();
       
-      if (sellPhones.isNotEmpty) {
-        print('API returned ${sellPhones.length} phones');
-        // Convert sell phones to phone models
-        _allModels = PhoneBrandsData.convertSellPhonesToPhoneModels(sellPhones);
-        print('Converted to ${_allModels.length} phone models');
-        
-        // If conversion didn't work properly
-        if (_allModels.isEmpty) {
-          print('API returned data but conversion resulted in 0 models. Trying popular models...');
-          _allModels = await PhoneBrandsData.getPopularModels();
-        }
-        
-        // Get top 6 popular models for display
-        _popularModels = _getTopPopularModels(_allModels, 6);
-      } else {
-        print('API returned 0 phones. Trying popular models...');
-        _allModels = await PhoneBrandsData.getPopularModels();
-        _popularModels = _getTopPopularModels(_allModels, 6);
-      }
+      // Load brands from catalog API
+      print('Calling getPhoneBrands()...');
+      _brands = await sellPhoneService.getPhoneBrands();
+      print('Loaded ${_brands.length} phone brands');
+      
+      // Load all models from catalog API
+      print('Calling getPopularModels()...');
+      _allModels = await sellPhoneService.getPopularModels(limit: 50);
+      print('Loaded ${_allModels.length} phone models');
+      
     } catch (e) {
-      print('Error loading sell phones from API: $e');
-      
-      // Second attempt: Try popular models fetch (which has its own API call)
-      try {
-        print('Attempting to load popular models directly...');
-        _allModels = await PhoneBrandsData.getPopularModels();
-        _popularModels = _getTopPopularModels(_allModels, 6);
-      } catch (fallbackError) {
-        print('Error loading popular models: $fallbackError');
-        
-        // Try random selection of fallback models for more variety
-        print('Trying random selection from fallback models');
-        final fallbackModels = PhoneBrandsData.getPopularModelSync();
-        _allModels = fallbackModels;
-        _popularModels = _getTopPopularModels(_allModels, 6);
-      }
+      print('Error loading data from catalog API: $e');
+      // Keep empty lists on error
+      _brands = [];
+      _allModels = [];
     } finally {
-      // Ensure we always have at least one model to display
-      if (_allModels.isEmpty) {
-        print('All data loading attempts failed. Using emergency fallback...');
-        _allModels = [
-          PhoneModel(
-            id: 'emergency_fallback',
-            brandId: 'apple',
-            name: 'iPhone (Generic)',
-            imageUrl: 'https://img.freepik.com/free-psd/smartphone-mockup_1310-812.jpg',
-            storageOptions: ['128GB'],
-            conditions: ['Good'],
-            variantPrices: {
-              '128GB': {'Good': 50000},
-            },
-          ),
-        ];
-        _popularModels = _allModels;
-      }
-      print('Final model count: ${_allModels.length}');
-      print('Popular models to display: ${_popularModels.length}');
       setState(() {
         _isLoading = false;
       });
     }
   }
-  
-  // Helper method to get top N popular models
-  List<PhoneModel> _getTopPopularModels(List<PhoneModel> models, int count) {
-    if (models.isEmpty) return [];
-    
-    // Create a copy to avoid modifying the original list
-    final List<PhoneModel> modelsCopy = List.from(models);
-    
-    // Sort by a popularity metric (here we'll use highest price as a simple metric)
-    modelsCopy.sort((a, b) {
-      int highestPriceA = 0;
-      int highestPriceB = 0;
-      
-      // Find highest price for model A
-      a.variantPrices.forEach((storage, conditions) {
-        conditions.forEach((condition, price) {
-          if (price > highestPriceA) highestPriceA = price;
-        });
-      });
-      
-      // Find highest price for model B
-      b.variantPrices.forEach((storage, conditions) {
-        conditions.forEach((condition, price) {
-          if (price > highestPriceB) highestPriceB = price;
-        });
-      });
-      
-      // Sort in descending order
-      return highestPriceB.compareTo(highestPriceA);
-    });
-    
-    // Return top N models, or all if we have fewer than that
-    return modelsCopy.take(modelsCopy.length < count ? modelsCopy.length : count).toList();
-  }
-
   void _navigateToSearch() async {
     // Navigate to the search page and wait for a result
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SearchPhonePage(
-          allModels: _allModels,
+          allModels: _convertToPhoneModels(_allModels),
         ),
       ),
     );
@@ -161,27 +74,51 @@ class _SellPhonePageState extends State<SellPhonePage> {
       _onModelSelected(result);
     }
   }
-
-  void _onModelSelected(PhoneModel model) {
-    // Navigate to the details page instead of showing a modal
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SellPhoneDetailsPage(
-          model: model,
+  void _onModelSelected(dynamic model) {
+    // Handle both PhoneModel and PhoneModelUI
+    if (model is PhoneModelUI) {
+      // Navigate to the details page with new model type
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SellPhoneDetailsPage(
+            modelUI: model,
+          ),
         ),
-      ),
-    );
+      );
+    } else if (model is PhoneModel) {
+      // Navigate to the details page with legacy model type
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SellPhoneDetailsPage(
+            model: model,
+          ),
+        ),
+      );
+    }
   }
 
-  void _onBrandSelected(PhoneBrand brand) {
+  void _onBrandSelected(dynamic brand) {
+    // Handle both PhoneBrand and PhoneBrandUI
+    String brandId;
+    String brandName;
+    
+    if (brand is PhoneBrandUI) {
+      brandId = brand.id;
+      brandName = brand.name;
+    } else {
+      brandId = (brand as PhoneBrand).id;
+      brandName = brand.name;
+    }
+    
     // Filter models by brand
-    final brandModels = _allModels.where((model) => model.brandId == brand.id).toList();
+    final brandModels = _allModels.where((model) => model.brandId == brandId).toList();
     
     if (brandModels.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No models available for ${brand.name}'),
+          content: Text('No models available for $brandName'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -191,8 +128,8 @@ class _SellPhonePageState extends State<SellPhonePage> {
         context,
         MaterialPageRoute(
           builder: (context) => SellPhoneByBrandPage(
-            brand: brand,
-            brandModels: brandModels,
+            brand: PhoneBrand(id: brandId, name: brandName, logoUrl: ''),
+            brandModels: _convertToPhoneModels(brandModels),
             onModelSelected: _onModelSelected,
           ),
         ),
@@ -200,9 +137,26 @@ class _SellPhonePageState extends State<SellPhonePage> {
     }
   }
 
+  // Convert PhoneModelUI to PhoneModel for backward compatibility
+  PhoneModel _convertUIModelToPhoneModel(PhoneModelUI uiModel) {
+    return PhoneModel(
+      id: uiModel.id,
+      brandId: uiModel.brandId,
+      name: uiModel.name,
+      imageUrl: uiModel.imageUrl,
+      storageOptions: uiModel.storageOptions,
+      conditions: uiModel.ramOptions.isNotEmpty ? uiModel.ramOptions : ['Good'],
+      variantPrices: uiModel.variantPrices,
+    );
+  }
+
+  // Convert list of PhoneModelUI to PhoneModel
+  List<PhoneModel> _convertToPhoneModels(List<PhoneModelUI> uiModels) {
+    return uiModels.map((uiModel) => _convertUIModelToPhoneModel(uiModel)).toList();  }
+
   @override
   Widget build(BuildContext context) {
-    final featuredBrands = PhoneBrandsData.getFeaturedBrands();
+    final featuredBrands = _brands.take(6).toList(); // Use first 6 brands from API
     
     return Scaffold(
       appBar: AppBar(
@@ -255,31 +209,9 @@ class _SellPhonePageState extends State<SellPhonePage> {
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
-                ),
-                FeaturedBrandsRow(
-                  brands: featuredBrands,
-                  onBrandSelected: _onBrandSelected,
-                ),
+                  ),                ),
                 
-                // Popular models section
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Popular Models',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Show loading indicator, empty message, or models grid
+                // Show loading or brands
                 _isLoading
                   ? const Center(
                       child: Padding(
@@ -287,43 +219,96 @@ class _SellPhonePageState extends State<SellPhonePage> {
                         child: CircularProgressIndicator(),
                       ),
                     )
-                  : _popularModels.isEmpty
+                  : _brands.isEmpty
                     ? Center(
-                        child: Column(
-                          children: [
-                            const Icon(Icons.phone_android, size: 64, color: Colors.grey),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No phone models available',
-                              style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Try refreshing the page',
-                              style: TextStyle(fontSize: 14, color: Colors.grey),
-                            ),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.smartphone, size: 64, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Unable to load phone brands',
+                                style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Please check your internet connection',
+                                style: TextStyle(fontSize: 14, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _loadData,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
                         ),
-                      )
-                    : SearchResultsGrid(
-                        models: _popularModels,
-                        onModelSelected: _onModelSelected,
+                      )                    : Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            childAspectRatio: 1.0,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                          itemCount: featuredBrands.length,
+                          itemBuilder: (context, index) {
+                            final brand = featuredBrands[index];
+                            return InkWell(
+                              onTap: () => _onBrandSelected(brand),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 5,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Brand logo
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Image.network(
+                                          brand.logoUrl,
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (context, error, stackTrace) => 
+                                              const Icon(Icons.smartphone, size: 32, color: Colors.grey),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    // Brand name
+                                    Text(
+                                      brand.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: const Text(
-                    'All Brands',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                BrandsGrid(
-                  brands: _brands,
-                  onBrandSelected: _onBrandSelected,
-                ),
                 
                 // Bottom padding
                 const SizedBox(height: 32),
