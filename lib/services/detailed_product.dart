@@ -1,33 +1,79 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import './config.dart'; // Assuming config.dart is in the same directory (lib/services/)
-import './products.dart'; // For Review class, assuming products.dart is in lib/services/
+import './config.dart';
+import './products.dart';
 
-double _parseDouble(dynamic value, {double defaultValue = 0.0}) {
-  if (value == null) return defaultValue;
-  if (value is int) return value.toDouble();
-  if (value is double) return value.isFinite ? value : defaultValue;
-  if (value is String) {
+double _parseDouble(dynamic value, {double defaultValue = 0.0, String? fieldName}) {
+  final String logPrefix = fieldName != null ? "_parseDouble['$fieldName']" : "_parseDouble";
+  if (kDebugMode) print('$logPrefix: Received value \'$value\' (type: ${value.runtimeType})');
+
+  double result;
+  if (value == null) {
+    if (kDebugMode) print('$logPrefix: Null value. Returning default: $defaultValue');
+    result = defaultValue;
+  } else if (value is double) {
+    if (!value.isFinite) {
+      if (kDebugMode) print('$logPrefix: Non-finite double value ($value). Returning default: $defaultValue');
+      result = defaultValue;
+    } else {
+      result = value;
+    }
+  } else if (value is int) {
+    result = value.toDouble();
+  } else if (value is String) {
     final parsed = double.tryParse(value);
-    return (parsed != null && parsed.isFinite) ? parsed : defaultValue;
+    if (parsed == null) {
+      if (kDebugMode) print('$logPrefix: String \'$value\' could not be parsed to double. Returning default: $defaultValue');
+      result = defaultValue;
+    } else if (!parsed.isFinite) {
+      if (kDebugMode) print('$logPrefix: String \'$value\' parsed to non-finite double ($parsed). Returning default: $defaultValue');
+      result = defaultValue;
+    } else {
+      result = parsed;
+    }
+  } else {
+    if (kDebugMode) print('$logPrefix: Unexpected type ${value.runtimeType}. Returning default: $defaultValue');
+    result = defaultValue;
   }
-  return defaultValue;
+  if (kDebugMode) print('$logPrefix: Returning: $result');
+  return result;
 }
 
-int _parseInt(dynamic value, {int defaultValue = 0}) {
-  if (value == null) return defaultValue;
-  if (value is int) return value;
-  if (value is double) {
-    if (value.isFinite && value == value.truncateToDouble()) {
-      return value.toInt();
+int _parseInt(dynamic value, {int defaultValue = 0, String? fieldName}) {
+  final String logPrefix = fieldName != null ? "_parseInt['$fieldName']" : "_parseInt";
+  if (kDebugMode) print('$logPrefix: Received value \'$value\' (type: ${value.runtimeType})');
+
+  int result;
+  if (value == null) {
+    if (kDebugMode) print('$logPrefix: Null value. Returning default: $defaultValue');
+    result = defaultValue;
+  } else if (value is int) {
+    result = value;
+  } else if (value is double) {
+    if (!value.isFinite) {
+      if (kDebugMode) print('$logPrefix: Non-finite double value ($value) for int conversion. Returning default: $defaultValue');
+      result = defaultValue;
+    } else if (value == value.truncateToDouble()) { // Check if it's a whole number
+      result = value.toInt(); // Safe to convert as value is finite and whole
+    } else {
+      if (kDebugMode) print('$logPrefix: Double value $value with fractional part for int conversion. Returning default: $defaultValue');
+      result = defaultValue;
     }
-    return defaultValue;
-  }
-  if (value is String) {
+  } else if (value is String) {
     final parsed = int.tryParse(value);
-    return parsed ?? defaultValue;
+    if (parsed == null) {
+      if (kDebugMode) print('$logPrefix: String \'$value\' could not be parsed to int. Returning default: $defaultValue');
+      result = defaultValue;
+    } else {
+      result = parsed;
+    }
+  } else {
+    if (kDebugMode) print('$logPrefix: Unexpected type ${value.runtimeType}. Returning default: $defaultValue');
+    result = defaultValue;
   }
-  return defaultValue;
+  if (kDebugMode) print('$logPrefix: Returning: $result');
+  return result;
 }
 
 // --- Data Models ---
@@ -55,15 +101,15 @@ class ValidOption {
           key != 'stock' &&
           key != 'discounted_price' &&
           key != 'price') {
-        final k = key.toString(); // Corrected: key is non-null in forEach from Map
+        final k = key.toString();
         attrs[k] = value?.toString() ?? '';
       }
     });
     return ValidOption(
-      id: json['id']?.toString() ?? '', // Ensure id is string and not null
-      stock: _parseInt(json['stock']),
-      discountedPrice: _parseDouble(json['discounted_price']),
-      price: _parseDouble(json['price']),
+      id: json['id']?.toString() ?? '',
+      stock: _parseInt(json['stock'], fieldName: 'ValidOption.stock'),
+      discountedPrice: _parseDouble(json['discounted_price'], fieldName: 'ValidOption.discountedPrice'),
+      price: _parseDouble(json['price'], fieldName: 'ValidOption.price'),
       attributes: attrs,
     );
   }
@@ -115,14 +161,15 @@ class DetailedProduct {
   });
 
   factory DetailedProduct.fromJson(Map<String, dynamic> jsonProduct) {
+    if (kDebugMode) print("DetailedProduct.fromJson: Starting parsing for product ID: ${jsonProduct['id']}");
     List<ValidOption> options = [];
     if (jsonProduct['valid_options'] != null && jsonProduct['valid_options'] is List) {
         options = (jsonProduct['valid_options'] as List<dynamic>)
             .where((optJson) => optJson is Map<String, dynamic>) // Ensure item is a map
             .map((optJson) => ValidOption.fromJson(optJson as Map<String, dynamic>))
             .toList();
-    } else if (jsonProduct['valid_options'] != null) {
-        print("Warning: 'valid_options' was not a List, received: \${jsonProduct['valid_options'].runtimeType}");
+    } else if (jsonProduct['valid_options'] != null && kDebugMode) {
+        print("Warning: 'valid_options' was not a List, received: ${jsonProduct['valid_options'].runtimeType}");
     }
 
 
@@ -147,8 +194,8 @@ class DetailedProduct {
             .where((revJson) => revJson is Map<String, dynamic>) // Ensure item is a map
             .map((revJson) => Review.fromJson(revJson as Map<String, dynamic>)) // Assumes Review.fromJson is also safe
             .toList();
-    } else if (jsonProduct['reviews'] != null) {
-        print("Warning: 'reviews' was not a List, received: \${jsonProduct['reviews'].runtimeType}");
+    } else if (jsonProduct['reviews'] != null && kDebugMode) {
+        print("Warning: 'reviews' was not a List, received: ${jsonProduct['reviews'].runtimeType}");
     }
 
     return DetailedProduct(
@@ -157,12 +204,12 @@ class DetailedProduct {
       brand: jsonProduct['brand']?.toString() ?? '',
       category: jsonProduct['category']?.toString() ?? '',
       description: jsonProduct['description']?.toString() ?? '',
-      price: _parseDouble(jsonProduct['price']),
-      discountPrice: _parseDouble(jsonProduct['discount_price']),
-      discount: jsonProduct['discount']?.toString(), // Handles null by becoming null
-      stock: _parseInt(jsonProduct['stock']),
-      rating: _parseDouble(jsonProduct['rating']),
-      reviews: parsedReviews, // Safely an empty list or list of Review
+      price: _parseDouble(jsonProduct['price'], fieldName: 'DetailedProduct.price'),
+      discountPrice: _parseDouble(jsonProduct['discount_price'], fieldName: 'DetailedProduct.discountPrice'),
+      discount: jsonProduct['discount']?.toString(),
+      stock: _parseInt(jsonProduct['stock'], fieldName: 'DetailedProduct.stock'),
+      rating: _parseDouble(jsonProduct['rating'], fieldName: 'DetailedProduct.rating'),
+      reviews: parsedReviews,
       images: (jsonProduct['images'] is List) 
           ? (jsonProduct['images'] as List<dynamic>).map((e) => e?.toString() ?? '').toList() 
           : <String>[],
@@ -179,7 +226,7 @@ class DetailedProduct {
       productLevelAttributes: (jsonProduct['attributes'] is Map) 
           ? Map<String, dynamic>.from(jsonProduct['attributes'] as Map<String, dynamic>) 
           : <String, dynamic>{}, // Default to empty map
-      totalReviews: _parseInt(jsonProduct['total_reviews']),
+      totalReviews: _parseInt(jsonProduct['total_reviews'], fieldName: 'DetailedProduct.totalReviews'),
       validOptions: options, // Safely an empty list or list of ValidOption
       variants: finalVariants,
     );
