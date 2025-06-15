@@ -42,9 +42,12 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
     _initializeMediaItems();
     _initializeVideoControllers();
   }
-
   void _initializeMediaItems() {
     _mediaItems = [];
+    
+    print('Initializing media items...');
+    print('Images: ${widget.images}');
+    print('Videos: ${widget.videos}');
     
     // Add images
     for (String imageUrl in widget.images) {
@@ -53,24 +56,48 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
     
     // Add videos after images
     for (String videoUrl in widget.videos) {
+      print('Adding video: $videoUrl');
       _mediaItems.add(MediaItem(
         url: videoUrl, 
         type: 'video',
         thumbnailUrl: videoUrl, // In real app, you'd have actual thumbnail
       ));
     }
+    
+    print('Total media items: ${_mediaItems.length}');
   }
-
   void _initializeVideoControllers() {
+    print('Initializing video controllers for ${_mediaItems.length} media items');
+    
     for (final mediaItem in _mediaItems) {
       if (mediaItem.type == 'video') {
-        final controller = VideoPlayerController.networkUrl(Uri.parse(mediaItem.url));
-        _videoControllers[mediaItem.url] = controller;
-        controller.initialize().then((_) {
-          if (mounted) setState(() {});
-        }).catchError((error) {
-          print('Error initializing video: $error');
-        });
+        print('Initializing video: ${mediaItem.url}');
+        
+        try {
+          // Validate URL first
+          final uri = Uri.parse(mediaItem.url);
+          print('Parsed URI: $uri');
+          
+          final controller = VideoPlayerController.networkUrl(uri);
+          _videoControllers[mediaItem.url] = controller;
+          
+          controller.initialize().then((_) {
+            print('Video initialized successfully: ${mediaItem.url}');
+            print('Video duration: ${controller.value.duration}');
+            print('Video size: ${controller.value.size}');
+            if (mounted) setState(() {});
+          }).catchError((error) {
+            print('Error initializing video: $error');
+            print('Video URL: ${mediaItem.url}');
+            print('Error type: ${error.runtimeType}');
+            // Remove failed controller
+            _videoControllers.remove(mediaItem.url);
+            if (mounted) setState(() {});
+          });
+        } catch (e) {
+          print('Error parsing video URL: $e');
+          print('Invalid video URL: ${mediaItem.url}');
+        }
       }
     }
   }
@@ -381,7 +408,8 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
       color: Colors.black,
       child: Stack(
         fit: StackFit.expand,
-        children: [          // Video player
+        children: [
+          // Video player
           Center(
             child: AspectRatio(
               aspectRatio: controller.value.aspectRatio,

@@ -251,113 +251,11 @@ class _ProductOptionSelectorState extends State<ProductOptionSelector> {
                   );
                 }).toList(),
               ),
-            ),          ],
-          
-          // Product variant details section (like in the second image)
-          if (selectedOption != null && isExpanded) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _buildProductVariantName(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Row(
-                        children: List.generate(5, (index) {
-                          return Icon(
-                            index < 4 ? Icons.star : Icons.star_half,
-                            color: Colors.amber,
-                            size: 14,
-                          );
-                        }),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        '4.7',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '• Excellent • 632 ratings',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.blue.shade200),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.verified_user,
-                              size: 12,
-                              color: Colors.blue.shade700,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              'Assured',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
             ),
           ],
         ],
       ),
     );
-  }
-
-  String _buildProductVariantName() {
-    if (selectedOption == null) return widget.product.name;
-    
-    String variantName = widget.product.name;
-    List<String> attributes = [];
-    
-    selectedOption!.attributes.forEach((key, value) {
-      attributes.add(value);
-    });
-    
-    if (attributes.isNotEmpty) {
-      variantName += ' - (${attributes.join('/')})';
-    }
-    
-    return variantName;
   }
 
   Widget _buildOptionsList(String attributeKey, List<String> availableValues, String? selectedValue) {

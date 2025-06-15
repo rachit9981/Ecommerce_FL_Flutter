@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/detailed_product.dart';
 import '../components/detailed_product/product_image_carousel.dart';
-import '../components/detailed_product/product_basic_info.dart';
-import '../components/detailed_product/product_pricing.dart';
+import '../components/detailed_product/product_info_and_pricing.dart';
 import '../components/detailed_product/product_option_selector.dart';
 import '../components/detailed_product/product_description.dart';
 import '../components/detailed_product/product_features.dart';
@@ -126,17 +125,11 @@ class _ProductPageState extends State<ProductPage> {
                         ProductImageCarousel(
                           images: product.images,
                           videos: product.videos,
-                          heroTag: widget.heroTag,
-                        ),// Content with proper spacing
+                          heroTag: widget.heroTag,                        ),// Content with proper spacing
                         Column(
                           children: [
-                            // Basic Product Info
-                            ProductBasicInfo(product: product),
-                            
-                            Divider(color: Colors.grey.shade200, height: 32),
-                            
-                            // Pricing
-                            ProductPricing(
+                            // Combined Product Info and Pricing
+                            ProductInfoAndPricing(
                               product: product,
                               selectedOption: _selectedOption,
                             ),

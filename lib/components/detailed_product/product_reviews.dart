@@ -133,14 +133,14 @@ class ProductReviews extends StatelessWidget {
                                 index < review.rating ? Icons.star : Icons.star_border,
                                 color: Colors.amber,                                size: 12,
                               )),
-                              const SizedBox(width: 6),
-                              Text(
-                                _formatDate(review.date),
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 11,
-                                ),
-                              ),
+                              // const SizedBox(width: 6),
+                              // Text(
+                              //   _formatDate(review.date),
+                              //   style: TextStyle(
+                              //     color: Colors.grey.shade600,
+                              //     fontSize: 11,
+                              //   ),
+                              // ),
                             ],
                           ),
                         ],
@@ -182,7 +182,7 @@ class ProductReviews extends StatelessWidget {
     } else if (difference.inMinutes > 0) {
       return '${difference.inMinutes} minutes ago';
     } else {
-      return 'Just now';
+      return '';
     }
   }
 }
