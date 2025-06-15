@@ -11,7 +11,6 @@ class SuggestionItem {
   final double? price;
   final double? originalPrice;
   final String? description;
-  final bool isNew;
   final bool isFeatured;
   final double? rating;
   final int? reviewCount;
@@ -27,7 +26,6 @@ class SuggestionItem {
     this.price,
     this.originalPrice,
     this.description,
-    this.isNew = false,
     this.isFeatured = false,
     this.rating,
     this.reviewCount,
@@ -351,15 +349,6 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                                 Colors.red.shade700.withOpacity(0.3),
                               ),
 
-                            if (item.isNew)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: _buildGlassmorphicBadge("NEW", [
-                                  Colors.green.shade700,
-                                  Colors.green.shade500,
-                                ], Colors.green.shade700.withOpacity(0.3)),
-                              ),
-
                             if (item.isFeatured)
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
@@ -533,7 +522,7 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
         ),
       );
     } else {
-      // Original glassmorphic style for other badges (NEW, FEATURED)
+      // Original glassmorphic style for other badges (FEATURED)
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(

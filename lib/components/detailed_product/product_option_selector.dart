@@ -233,19 +233,12 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
     selectedAttributes = Map.from(widget.selectedAttributes);
     selectedOption = _findExactMatch();
   }  void _updateSelection(String attributeKey, String value) {
-    print('_updateSelection called: $attributeKey = $value');
     setState(() {
-      // Update the selected attribute
       selectedAttributes[attributeKey] = value;
-      print('Updated selectedAttributes: $selectedAttributes');
-      
-      // Check if current combination is still valid
       ValidOption? exactMatch = _findExactMatch();
       
       if (exactMatch != null) {
-        // Exact match found, use it
         selectedOption = exactMatch;
-        print('Exact match found: ${exactMatch.attributes}');
       } else {
         // No exact match, find the best compatible option while preserving user selections
         selectedOption = _findSmartFallbackOption(attributeKey, value);
@@ -257,11 +250,6 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
           Map<String, String> newAttributes = Map.from(selectedOption!.attributes);
           newAttributes[attributeKey] = value; // Ensure user's selection is preserved
           selectedAttributes = newAttributes;
-          print('Smart fallback to: ${selectedOption!.attributes}');
-          print('Final selectedAttributes: $selectedAttributes');
-        } else {
-          // If no valid option found, keep user selection but clear option
-          print('No valid option found for current selection');
         }
       }
     });

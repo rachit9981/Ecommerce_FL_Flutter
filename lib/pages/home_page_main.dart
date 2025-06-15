@@ -66,7 +66,6 @@ class _HomePageState extends State<HomePage> {
       originalPrice: product.price != product.discountPrice ? product.price : null,
       description: product.description,
       isProduct: true,
-      isNew: product.featured == true,
       rating: product.rating,
       reviewCount: product.reviews,
       onTap: () {
