@@ -174,11 +174,10 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.error_outline, color: Colors.red, size: 60),
-                    const SizedBox(height: 16),
-                    Text(
+                    const SizedBox(height: 16),                    Text(
                       'Failed to load products: ${productProvider.error}', // Changed errorMessage to error
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
@@ -195,17 +194,16 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.info_outline, color: Colors.orange, size: 60),
-                      SizedBox(height: 16),
-                      Text(
-                        'No products found at the moment.',
+                      SizedBox(height: 16),                      Text(
+                        'No products found.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16),
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Please check back later!',
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Check back later!',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -227,22 +225,20 @@ class _HomePageState extends State<HomePage> {
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Add the search bar here
+                children: [                  // Add the search bar here
                   const Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
                     child: HomeSearchBarComponent(),
                   ),
+                  const SizedBox(height: 8),
                   const PromotionalBannerCarousel(),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
 
                   // Dynamic Categories Widget
-                  HomeCategoriesSection(products: products),
-
-                  // Featured Products
+                  HomeCategoriesSection(products: products),                  // Featured Products
                   if (featuredProducts.isNotEmpty) ...[
                     ScrollableSuggestionRow(
-                      title: 'Featured Products', // Added title
+                      title: 'Featured', // Shortened title
                       items: featuredProducts,
                       itemHeight: 220,
                       itemWidth: 145,
@@ -250,19 +246,17 @@ class _HomePageState extends State<HomePage> {
                       onMoreTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'featured', title: 'Featured Products'))), // Pass CategoryItem
+                          MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'featured', title: 'Featured'))), // Pass CategoryItem
                         );
                       },
                     ),
                     const SizedBox(height: 16),
-                  ],
-
-                  // Laptops & Computers
+                  ],                  // Laptops & Computers
                   if (laptopComputerProducts.isNotEmpty && products.any((p) => 
                       p.category.toLowerCase().contains('laptop') || 
                       p.category.toLowerCase().contains('computer'))) ...[
                     ScrollableSuggestionRow(
-                      title: 'Laptops & Computers',
+                      title: 'Laptops',
                       items: laptopComputerProducts,
                       itemHeight: 220,
                       itemWidth: 145,
@@ -271,25 +265,24 @@ class _HomePageState extends State<HomePage> {
                         final laptopCategoryProduct = products.firstWhere(
                           (p) => p.category.toLowerCase().contains('laptop') || 
                                  p.category.toLowerCase().contains('computer'),
-                          orElse: () => Product(id: '_fallback', name: 'Fallback', brand: 'N/A', category: 'Laptops & Computers', description: '', price: 0, discountPrice: 0, stock: 0, rating: 0, reviews: 0, images: [], features: [], specifications: {}, variant: {}),
+                          orElse: () => Product(id: '_fallback', name: 'Fallback', brand: 'N/A', category: 'Laptops', description: '', price: 0, discountPrice: 0, stock: 0, rating: 0, reviews: 0, images: [], features: [], specifications: {}, variant: {}),
                         );
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: laptopCategoryProduct.category, title: 'Laptops & Computers'))),
+                          MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: laptopCategoryProduct.category, title: 'Laptops'))),
                         );
                       },
                     ),
                     const SizedBox(height: 12),
-                  ],
-
-                  // Recommended For You (Electronics)
-                  if (electronicsProducts.isNotEmpty) ...[
-                    Padding(
+                  ],                  // Recommended For You (Electronics)
+                  if (electronicsProducts.isNotEmpty) ...[                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Text(
-                        'Recommended For You',
+                        'Recommended',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
                           letterSpacing: -0.5,
+                          color: Colors.black87,
                         ),
                       ),
                     ),
@@ -304,15 +297,12 @@ class _HomePageState extends State<HomePage> {
                           MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'electronics', title: 'Electronics'))), // Pass CategoryItem
                         );
                       },
-                    ),
-                    const SizedBox(height: 16),
+                    ),                    const SizedBox(height: 12),
                   ],
 
                   // Second Banner Carousel
                   const PromotionalBannerCarousel(), 
-                  const SizedBox(height: 12),
-
-                  // Accessories Section
+                  const SizedBox(height: 8),// Accessories Section
                   if (accessoryProducts.isNotEmpty && products.any((p) => 
                       p.category.toLowerCase().contains('accessori') || // Broader match for accessories
                       p.category.toLowerCase().contains('headphone') ||
@@ -320,7 +310,7 @@ class _HomePageState extends State<HomePage> {
                       p.category.toLowerCase().contains('charger') ||
                       p.category.toLowerCase().contains('cable'))) ...[
                     ScrollableSuggestionRow(
-                      title: 'Gadget Accessories',
+                      title: 'Accessories',
                       items: accessoryProducts,
                       itemHeight: 220,
                       itemWidth: 145,
@@ -341,12 +331,10 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                     const SizedBox(height: 12),
-                  ],
-
-                  // Popular Items
+                  ],                  // Popular Items
                   if (popularProducts.isNotEmpty) ...[
                     ScrollableSuggestionRow(
-                      title: 'Popular Items',
+                      title: 'Popular',
                       items: popularProducts,
                       itemHeight: 220,
                       itemWidth: 145,
@@ -354,21 +342,19 @@ class _HomePageState extends State<HomePage> {
                       onMoreTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'popular', title: 'Popular Items'))),
+                          MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'popular', title: 'Popular'))),
                         );
                       },
                     ),
                     const SizedBox(height: 16),
-                  ],
-
-                  // Top Deals in Fashion
+                  ],                  // Top Deals in Fashion
                   if (fashionProducts.isNotEmpty && products.any((p) => 
                     p.category.toLowerCase().contains('fashion') || 
                     p.category.toLowerCase().contains('clothing') || 
                     p.category.toLowerCase().contains('apparel') || 
                     p.category.toLowerCase().contains('wear'))) ...[
                   ScrollableSuggestionRow(
-                    title: 'Top Deals in Fashion',
+                    title: 'Fashion Deals',
                     items: fashionProducts,
                     itemHeight: 220,
                     itemWidth: 145,
@@ -390,12 +376,10 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   const SizedBox(height: 12),
-                ],
-
-                // Trending Now
+                ],                // Trending Now
                 if (trendingProducts.isNotEmpty) ...[
                   ScrollableSuggestionRow(
-                    title: 'Trending Now',
+                    title: 'Trending',
                     items: trendingProducts,
                     itemHeight: 220,
                     itemWidth: 145,
@@ -403,22 +387,21 @@ class _HomePageState extends State<HomePage> {
                     onMoreTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'trending', title: 'Trending Now'))),
+                        MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'trending', title: 'Trending'))),
                       );
                     },
                   ),
                   const SizedBox(height: 16),
-                ],                
+                ],
                 // Popular Mobile Brands Widget
-                HomeBrandsSection(products: products),
-
-                Padding(
+                HomeBrandsSection(products: products),                Padding(
                   padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 12),
                   child: Text(
-                    'More Products For You',
+                    'More For You',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold, // Re-added bold
+                      fontWeight: FontWeight.w600,
                       letterSpacing: -0.5,
+                      color: Colors.black87,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -454,7 +437,7 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               Icon(Icons.search_off, size: 48, color: Colors.grey),
                               SizedBox(height: 16),
-                              Text('No more products to show.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                              Text('No products available.', style: TextStyle(fontSize: 16, color: Colors.grey)),
                             ],
                           ),
                         ),

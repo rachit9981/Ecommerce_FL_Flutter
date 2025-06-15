@@ -193,13 +193,13 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
               right: responsivePadding.right,
               top: responsivePadding.top,
               bottom: 8,
-            ),
-            child: Text(
+            ),            child: Text(
               widget.title!,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.3,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
                 fontSize: _getResponsiveFontSize(context, 18),
+                color: Colors.black87,
               ),
             ),
           ),
@@ -267,42 +267,39 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
     final heroTag = 'infinite_grid_product_${product.id}';
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
-    final isVerySmallScreen = screenWidth < 360;
-
-    // Adjust padding based on screen size
-    final contentPadding = isVerySmallScreen ? 8.0 : // Increased padding slightly
-                           isLargeScreen ? 12.0 : 10.0; // Increased padding slightly
+    final isVerySmallScreen = screenWidth < 360;    // Adjust padding based on screen size
+    final contentPadding = isVerySmallScreen ? 6.0 : // Reduced padding for cleaner look
+                           isLargeScreen ? 10.0 : 8.0; // Reduced padding for cleaner look
 
     return Hero(
       tag: heroTag,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white, // Match ProductHeader background
-          borderRadius: BorderRadius.circular(16), // Match ProductHeader borderRadius
+      child: Container(        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200, width: 0.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade200, // Match ProductHeader boxShadow
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Material(
-          borderRadius: BorderRadius.circular(16), // Match ProductHeader borderRadius
+          borderRadius: BorderRadius.circular(12), // Match updated border radius
           color: Colors.transparent,
           child: InkWell(
             onTap: product.onTap,
-            borderRadius: BorderRadius.circular(16), // Match ProductHeader borderRadius
+            borderRadius: BorderRadius.circular(12), // Match updated border radius
             child: Container(
               // Removed redundant decoration, parent Container handles it
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Product Image - AspectRatio for consistent image height
+                children: [                  // Product Image - AspectRatio for consistent image height
                   AspectRatio(
                     aspectRatio: 1.0, // Square aspect ratio for image container
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                       child: _buildProductImage(product, isLargeScreen),
                     ),
                   ),
@@ -315,17 +312,18 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute space
                         children: [
                           // Product Title
-                          Flexible(
-                            child: Text(
+                          Flexible(                            child: Text(
                               product.title,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith( // Adjusted style
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 fontSize: _getResponsiveFontSize(context, 14),
                                 height: 1.3,
+                                letterSpacing: -0.3,
+                                color: Colors.black87,
                               ),
-                              maxLines: 2, // Keep maxLines to 2 to avoid overly tall items
-                              overflow: TextOverflow.ellipsis, // Use ellipsis for overflow
-                              softWrap: true, // Ensure text wraps before ellipsis if possible
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true,
                             ),
                           ),
                           
@@ -341,22 +339,22 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (product.originalPrice != null && product.price != null && product.originalPrice! > product.price!)
-                                    Text(
+                                  if (product.originalPrice != null && product.price != null && product.originalPrice! > product.price!)                                    Text(
                                       '₹${product.originalPrice!.toStringAsFixed(0)}',
                                       style: TextStyle(
                                         decoration: TextDecoration.lineThrough,
                                         color: Colors.grey.shade500,
                                         fontSize: _getResponsiveFontSize(context, 11),
+                                        height: 1.2,
                                       ),
                                     ),
-                                  if (product.price != null)
-                                  Text(
+                                  if (product.price != null)                                  Text(
                                     '₹${product.price!.toStringAsFixed(0)}',
                                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w600,
                                       color: Theme.of(context).colorScheme.primary,
                                       fontSize: _getResponsiveFontSize(context, 15),
+                                      height: 1.2,
                                     ),
                                   ),
                                 ],
@@ -406,18 +404,17 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
             ),
           );
   }
-
   Widget _buildLoadingRow() {
     return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      height: 60,
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              width: 20,
-              height: 20,
+              width: 16,
+              height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -425,9 +422,8 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Text(
-              'Loading more products...',
+            const SizedBox(width: 8),Text(
+              'Loading more...',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 fontSize: _getResponsiveFontSize(context, 14),
@@ -443,32 +439,28 @@ class _InfiniteProductGridState extends State<InfiniteProductGrid> {
   Widget _buildEmptyState() {
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        mainAxisAlignment: MainAxisAlignment.center,        children: [
           Icon(
             Icons.shopping_bag_outlined,
-            size: 60,
+            size: 48,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'No Products Found',
+          const SizedBox(height: 12),Text(
+            'No Products',
             style: TextStyle(
               fontSize: _getResponsiveFontSize(context, 16),
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onSurface,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Try adjusting your filters or check back later',
+          ),          const SizedBox(height: 6),          Text(
+            'Check back later',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               fontSize: _getResponsiveFontSize(context, 12),
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           if (_loadingStatus == LoadingStatus.error)
             OutlinedButton.icon(
               onPressed: _retryLoading,
@@ -588,7 +580,7 @@ class InfiniteProductsExample extends StatelessWidget {
                 
             return sampleProducts.sublist(startIndex, endIndex);
           },
-          title: 'All Products',
+          title: 'Products',
           showTitle: true,
           crossAxisCount: 2,
           spacing: 16,

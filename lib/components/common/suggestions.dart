@@ -77,11 +77,9 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
     final theme = Theme.of(context);
 
     // Create a unique section identifier for hero tags
-    final String sectionId = widget.title?.toLowerCase().replaceAll(' ', '_') ?? 'unknown_section';
-
-    final effectivePadding = EdgeInsets.symmetric(
-      horizontal: isSmallScreen ? 8.0 : widget.padding.horizontal,
-      vertical: widget.padding.vertical,
+    final String sectionId = widget.title?.toLowerCase().replaceAll(' ', '_') ?? 'unknown_section';    final effectivePadding = EdgeInsets.symmetric(
+      horizontal: isSmallScreen ? 12.0 : 16.0,
+      vertical: 8.0,
     );
 
     return Column(
@@ -97,28 +95,34 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
+                Expanded(                  child: Text(
                     widget.title!,
                     style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: isSmallScreen ? 16 : null,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isSmallScreen ? 16 : 18,
                       letterSpacing: -0.5,
-                      color: widget.title!.length < 5 ? theme.colorScheme.primary : null,
+                      color: Colors.black87,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                if (widget.showMore)
+                ),                if (widget.showMore)
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: widget.onMoreTap,
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(20),
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: isSmallScreen ? 10.0 : 14.0,
-                          vertical: 8.0,
+                          horizontal: isSmallScreen ? 8.0 : 12.0,
+                          vertical: 6.0,
+                        ),
+                        child: Text(
+                          'View All',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontSize: isSmallScreen ? 12 : 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
@@ -143,12 +147,12 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                 itemCount: widget.items.length,
                 itemBuilder: (context, index) {
                   // Remove animation and directly return the item
-                  return Padding(
+                  return                  Padding(
                     padding: EdgeInsets.only(
                       right: index < widget.items.length - 1
                           ? isSmallScreen
-                              ? widget.spacing / 2
-                              : widget.spacing
+                              ? 8.0
+                              : 12.0
                           : 0,
                     ),
                     child: Hero(
@@ -206,10 +210,9 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
     final theme = Theme.of(context);
 
     return Material(
-      color: Colors.transparent,
-      child: InkWell(
+      color: Colors.transparent,      child: InkWell(
         onTap: item.onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         splashColor: theme.colorScheme.primary.withOpacity(0.1),
         highlightColor: theme.colorScheme.primary.withOpacity(0.05),
         child: Container(
@@ -227,7 +230,7 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                     : theme.colorScheme.primary.withOpacity(0.15),
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: theme.colorScheme.primary.withOpacity(0.1),
               width: 1.5,
@@ -266,14 +269,14 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                     horizontal: 8.0,
                     vertical: 4.0,
                   ),
-                  child: Center(
-                    child: Text(
+                  child: Center(                    child: Text(
                       item.title,
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: isSmallScreen ? 10 : 11,
-                        color: item.textColor ?? theme.colorScheme.onSurface,
+                        color: Colors.black87,
                         letterSpacing: -0.3,
+                        height: 1.2,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 2,
@@ -295,23 +298,22 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
     double screenWidth,
   ) {
     final bool isSmallScreen = screenWidth < 360;
-    final theme = Theme.of(context);
-
-    return Material(
-      borderRadius: BorderRadius.circular(16),
-      elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
+    final theme = Theme.of(context);    return Material(
+      borderRadius: BorderRadius.circular(12),
+      elevation: 1,
+      shadowColor: Colors.black.withOpacity(0.08),
       child: InkWell(
         onTap: item.onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         splashColor: theme.colorScheme.primary.withOpacity(0.1),
         highlightColor: theme.colorScheme.primary.withOpacity(0.05),
         child: Container(
           width: effectiveWidth,
           constraints: const BoxConstraints(minWidth: 110, maxWidth: 160),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200, width: 0.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,11 +322,10 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                 Expanded(
                   flex: 1,
                   child: Stack(
-                    children: [
-                      ClipRRect(
+                    children: [                      ClipRRect(
                         borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
                         ),
                         child: SizedBox(
                           width: double.infinity,
@@ -374,13 +375,14 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
+                    children: [                      Text(
                         item.title,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: isSmallScreen ? 10 : 11,
                           letterSpacing: -0.3,
+                          height: 1.2,
+                          color: Colors.black87,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -388,12 +390,12 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
 
                       if (item.description != null)
                         Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
+                          padding: const EdgeInsets.only(top: 2),                          child: Text(
                             item.description!,
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: isSmallScreen ? 8 : 9,
+                              height: 1.2,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -408,12 +410,12 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                               // Animated rating stars
                               _buildRatingStars(item.rating!, isSmallScreen),
                               const SizedBox(width: 4),
-                              if (item.reviewCount != null)
-                                Text(
+                              if (item.reviewCount != null)                                Text(
                                   "(${item.reviewCount})",
                                   style: TextStyle(
                                     fontSize: isSmallScreen ? 8 : 9,
                                     color: Colors.grey.shade600,
+                                    height: 1.2,
                                   ),
                                 ),
                             ],
@@ -424,24 +426,24 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
 
                       if (item.price != null)
                         Row(
-                          children: [
-                            Text(
+                          children: [                            Text(
                               "₹${item.price!.toStringAsFixed(0)}",
                               style: TextStyle(
                                 color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 fontSize: isSmallScreen ? 11 : 13,
+                                height: 1.2,
                               ),
                             ),
                             if (item.originalPrice != null &&
                                 item.originalPrice! > item.price!) ...[
-                              const SizedBox(width: 4),
-                              Text(
+                              const SizedBox(width: 4),                              Text(
                                 "₹${item.originalPrice!.toStringAsFixed(0)}",
                                 style: TextStyle(
                                   color: Colors.grey,
                                   fontSize: isSmallScreen ? 8 : 10,
                                   decoration: TextDecoration.lineThrough,
+                                  height: 1.2,
                                 ),
                               ),
                             ],
@@ -482,9 +484,8 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
                 ],
               )
               : null,
-      child: ClipRRect(
-        borderRadius:
-            isCircular ? BorderRadius.circular(50) : BorderRadius.zero,
+      child: ClipRRect(        borderRadius:
+            isCircular ? BorderRadius.circular(40) : BorderRadius.zero,
         child: SmoothNetworkImage(
           imageUrl: imageUrl,
           width: size,
@@ -504,50 +505,48 @@ class _ScrollableSuggestionRowState extends State<ScrollableSuggestionRow> {
     bool isDiscountBadge = text.contains('%');
     final theme = Theme.of(context);
 
-    if (isDiscountBadge) {
-      // New subtle style for discount badge
+    if (isDiscountBadge) {      // New subtle style for discount badge
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: theme.colorScheme.error.withOpacity(0.15), // Subtle, transparent background
-          borderRadius: BorderRadius.circular(8), // Simpler border radius
-        ),
-        child: Text(
+          borderRadius: BorderRadius.circular(6), // Smaller border radius
+        ),        child: Text(
           text,
           style: TextStyle(
             color: theme.colorScheme.error, // Text color that matches the subtle theme
-            fontWeight: FontWeight.bold,
-            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            fontSize: 9,
+            height: 1.2,
           ),
         ),
       );
-    } else {
-      // Original glassmorphic style for other badges (FEATURED)
+    } else {      // Original glassmorphic style for other badges (FEATURED)
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: gradientColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           boxShadow: [
             BoxShadow(
               color: shadowColor,
-              blurRadius: 8,
+              blurRadius: 6,
               spreadRadius: 0,
               offset: const Offset(0, 2),
             ),
           ],
           border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
-        ),
-        child: Text(
+        ),        child: Text(
           text,
           style: const TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            fontSize: 9,
+            height: 1.2,
           ),
         ),
       );

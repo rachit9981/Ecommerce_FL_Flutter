@@ -235,16 +235,18 @@ class HomeCategoriesSection extends StatelessWidget {
     return FutureBuilder<List<CategoryItem>>(
       future: getApiCategories(context),
       builder: (context, snapshot) {
-        List<CategoryItem> categories = [];
-        
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        List<CategoryItem> categories = [];        if (snapshot.connectionState == ConnectionState.waiting) {
           // Show loading state
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
-                child: Text('Shop by Category', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
+                child: Text('Categories', style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
+                  color: Colors.black87,
+                )),
               ),
               const SizedBox(
                 height: 100,
@@ -267,10 +269,13 @@ class HomeCategoriesSection extends StatelessWidget {
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
+          children: [            Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
-              child: Text('Shop by Category', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
+              child: Text('Categories', style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+                color: Colors.black87,
+              )),
             ),
             HorizontalCategoryList(categories: categories, itemHeight: 100, itemWidth: 85, spacing: 12),
             const SizedBox(height: 12),
@@ -290,16 +295,18 @@ class HomeBrandsSection extends StatelessWidget {
     return FutureBuilder<List<CategoryItem>>(
       future: getApiBrands(context),
       builder: (context, snapshot) {
-        List<CategoryItem> mobileBrands = [];
-        
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        List<CategoryItem> mobileBrands = [];        if (snapshot.connectionState == ConnectionState.waiting) {
           // Show loading state
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-                child: Text('Popular Mobile Brands', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
+                child: Text('Brands', style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
+                  color: Colors.black87,
+                )),
               ),
               const SizedBox(
                 height: 100,
@@ -322,10 +329,13 @@ class HomeBrandsSection extends StatelessWidget {
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
+          children: [            Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-              child: Text('Popular Mobile Brands', style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: -0.5)),
+              child: Text('Brands', style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+                color: Colors.black87,
+              )),
             ),
             HorizontalCategoryList(categories: mobileBrands, itemWidth: 80, itemHeight: 100, spacing: 12, showShadow: true, brandMode: true),
             const SizedBox(height: 16),

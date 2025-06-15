@@ -12,20 +12,24 @@ class HomeSearchBarComponent extends StatelessWidget {
           context,
           MaterialPageRoute(builder: (context) => const SearchPage()),
         );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      },      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(30),
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!, width: 1),
         ),
         child: Row(
           children: [
-            Icon(Icons.search, color: Colors.grey[600]),
-            const SizedBox(width: 8),
+            Icon(Icons.search, color: Colors.grey[600], size: 22),
+            const SizedBox(width: 12),
             Text(
-              'Search for products, brands and more',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              'Search products...',
+              style: TextStyle(
+                color: Colors.grey[600], 
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ],
         ),
