@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/settings.dart';
 
 class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   final double height;
@@ -27,11 +28,15 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
   AnimationController? _cartAnimController;
   Animation<double>? _cartScaleAnimation;
   
+  String? _logoUrl;
+  bool _isLoadingLogo = true;
+  
   @override
   void initState() {
     super.initState();
     
     _initializeAnimations();
+    _fetchLogo();
   }
 
   void _initializeAnimations() {
@@ -76,6 +81,24 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
     ]).animate(_cartAnimController!);
   }
 
+  Future<void> _fetchLogo() async {
+    try {
+      final logoResponse = await SettingsService.getLogo();
+      if (mounted) {
+        setState(() {
+          _logoUrl = logoResponse.logoUrl;
+          _isLoadingLogo = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingLogo = false;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     _notificationAnimController?.dispose();
@@ -118,27 +141,59 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                'assets/logo.png',
-                fit: BoxFit.contain,
-                height: 36,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback if logo not found
-                  return Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: primaryColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.shopping_bag,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  );
-                },
-              ),
+              child: _isLoadingLogo
+                  ? Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: primaryColor.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                    )
+                  : _logoUrl != null
+                      ? Image.network(
+                          _logoUrl!,
+                          fit: BoxFit.contain,
+                          height: 36,
+                          width: 36,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: primaryColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.shopping_bag,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.shopping_bag,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
             ),
             const SizedBox(width: 8),
           ],

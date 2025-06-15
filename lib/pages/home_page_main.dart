@@ -5,12 +5,12 @@ import 'package:ecom/components/common/suggestions.dart';
 import 'package:ecom/components/common/infity_scroll_suggestions.dart';
 import 'package:ecom/components/home/banners.dart';
 import 'package:ecom/components/home/categories.dart';
-import 'package:ecom/components/home/brands.dart';
 import 'package:ecom/components/home/searchbar.dart'; // Added import for the new search bar
 import 'package:ecom/pages/cart_page.dart';
 import 'package:ecom/pages/category_page.dart';
 import 'package:ecom/pages/product_page.dart';
 import 'package:ecom/providers/product_provider.dart';
+import 'package:ecom/providers/banner_provider.dart';
 import 'package:ecom/services/products.dart';
 import 'package:ecom/services/cart_wishlist.dart';
 import 'package:ecom/components/common/categories.dart' show CategoryItem; // For creating CategoryItem instances
@@ -26,12 +26,12 @@ class _HomePageState extends State<HomePage> {
   final CartWishlistService _cartService = CartWishlistService();
   int _cartItemCount = 0;
   bool _isLoadingCart = false;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().loadProducts();
+      context.read<BannerProvider>().loadBanners();
     });
     _loadCartCount();
   }
@@ -135,12 +135,33 @@ class _HomePageState extends State<HomePage> {
     
     return featuredProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
   }
-
   List<SuggestionItem> _getRandomProducts(List<Product> products, {int limit = 4, String heroTagPrefix = 'random'}) {
     final shuffledProducts = List<Product>.from(products)..shuffle();
     final randomProducts = shuffledProducts.take(limit).toList();
     
     return randomProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
+  }
+
+  List<SuggestionItem> _getNewestProducts(List<Product> products, {int limit = 4, String heroTagPrefix = 'newest'}) {
+    // Sort products by creation date or id (assuming newer products have higher IDs)
+    // If products have a createdAt field, use that instead
+    final sortedProducts = List<Product>.from(products)
+      ..sort((a, b) {
+        // Try to parse product IDs as numbers for date-based sorting
+        // This assumes newer products have higher IDs
+        try {
+          final aId = int.tryParse(a.id) ?? 0;
+          final bId = int.tryParse(b.id) ?? 0;
+          return bId.compareTo(aId); // Descending order (newest first)
+        } catch (e) {
+          // Fallback to string comparison if IDs are not numeric
+          return b.id.compareTo(a.id);
+        }
+      });
+    
+    final newestProducts = sortedProducts.take(limit).toList();
+    
+    return newestProducts.map((product) => _convertProductToSuggestionItem(product, heroTagPrefix)).toList();
   }
 
   @override
@@ -161,11 +182,14 @@ class _HomePageState extends State<HomePage> {
             _loadCartCount();
           });
         },
-      ),
-      body: SafeArea(
-        child: Consumer<ProductProvider>(
-          builder: (context, productProvider, child) {
-            if (productProvider.isLoading && productProvider.products.isEmpty) {
+      ),      body: SafeArea(
+        child: Consumer2<ProductProvider, BannerProvider>(
+          builder: (context, productProvider, bannerProvider, child) {            if (productProvider.isLoading && productProvider.products.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            // Show loading if banners are still loading and we have no banners yet
+            if (bannerProvider.isLoading && bannerProvider.banners.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
 
@@ -180,11 +204,13 @@ class _HomePageState extends State<HomePage> {
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
+                    const SizedBox(height: 16),                    ElevatedButton.icon(
                       icon: const Icon(Icons.refresh),
                       label: const Text('Retry'),
-                      onPressed: () => productProvider.reloadProducts(), // Changed to reloadProducts for a full refresh
+                      onPressed: () {
+                        productProvider.reloadProducts(); // Changed to reloadProducts for a full refresh
+                        bannerProvider.reloadBanners(); // Also reload banners
+                      },
                     ),
                   ],
                 ),
@@ -209,11 +235,11 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 );
-            }
-            
+            }            
             final products = productProvider.products;
-            
-            final featuredProducts = _getFeaturedProducts(products, limit: 6, heroTagPrefix: 'home_featured');
+            final carouselBanners = bannerProvider.carouselBanners;
+            final heroBanners = bannerProvider.heroBanners;
+              final featuredProducts = _getFeaturedProducts(products, limit: 6, heroTagPrefix: 'home_featured');
             final electronicsProducts = _getProductsByCategory(products, 'electronics', limit: 4, heroTagPrefix: 'home_electronics');
             final fashionProducts = _getProductsByCategory(products, 'fashion', limit: 4, heroTagPrefix: 'home_fashion');
             final moreProducts = _getRandomProducts(products, limit: 20, heroTagPrefix: 'home_more');
@@ -222,6 +248,7 @@ class _HomePageState extends State<HomePage> {
             final popularProducts = _getRandomProducts(products, limit: 6, heroTagPrefix: 'home_popular'); // Using random for popular for now
             final trendingProducts = _getFeaturedProducts(products, limit: 5, heroTagPrefix: 'home_trending'); // Using featured for trending for now
             final accessoryProducts = _getProductsByCategory(products, 'accessories', limit: 4, heroTagPrefix: 'home_accessories'); // New list for accessories
+            final newestProducts = _getNewestProducts(products, limit: 6, heroTagPrefix: 'home_newest'); // New products sorted by date
 
             return SingleChildScrollView(
               child: Column(
@@ -230,26 +257,21 @@ class _HomePageState extends State<HomePage> {
                   const Padding(
                     padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
                     child: HomeSearchBarComponent(),
+                  ),                  const SizedBox(height: 8),
+                  PromotionalBannerCarousel(
+                    banners: carouselBanners,
+                    bannerType: 'carousel',
                   ),
-                  const SizedBox(height: 8),
-                  const PromotionalBannerCarousel(),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 8),                  // Dynamic Categories Widget
+                  HomeCategoriesSection(products: products),
 
-                  // Dynamic Categories Widget
-                  HomeCategoriesSection(products: products),                  // Featured Products
-                  if (featuredProducts.isNotEmpty) ...[
-                    ScrollableSuggestionRow(
+                  // Featured Products
+                  if (featuredProducts.isNotEmpty) ...[                    ScrollableSuggestionRow(
                       title: 'Featured', // Shortened title
                       items: featuredProducts,
                       itemHeight: 220,
                       itemWidth: 145,
-                      showMore: true,
-                      onMoreTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'featured', title: 'Featured'))), // Pass CategoryItem
-                        );
-                      },
+                      showMore: false,
                     ),
                     const SizedBox(height: 16),
                   ],                  // Laptops & Computers
@@ -299,10 +321,11 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                     ),                    const SizedBox(height: 12),
-                  ],
-
-                  // Second Banner Carousel
-                  const PromotionalBannerCarousel(), 
+                  ],                  // Second Banner Carousel
+                  PromotionalBannerCarousel(
+                    banners: heroBanners,
+                    bannerType: 'hero',
+                  ), 
                   const SizedBox(height: 8),// Accessories Section
                   if (accessoryProducts.isNotEmpty && products.any((p) => 
                       p.category.toLowerCase().contains('accessori') || // Broader match for accessories
@@ -333,19 +356,12 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 12),
                   ],                  // Popular Items
-                  if (popularProducts.isNotEmpty) ...[
-                    ScrollableSuggestionRow(
+                  if (popularProducts.isNotEmpty) ...[                    ScrollableSuggestionRow(
                       title: 'Popular',
                       items: popularProducts,
                       itemHeight: 220,
                       itemWidth: 145,
-                      showMore: true,
-                      onMoreTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'popular', title: 'Popular'))),
-                        );
-                      },
+                      showMore: false,
                     ),
                     const SizedBox(height: 16),
                   ],                  // Top Deals in Fashion
@@ -378,24 +394,27 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 12),
                 ],                // Trending Now
-                if (trendingProducts.isNotEmpty) ...[
-                  ScrollableSuggestionRow(
+                if (trendingProducts.isNotEmpty) ...[                  ScrollableSuggestionRow(
                     title: 'Trending',
                     items: trendingProducts,
                     itemHeight: 220,
                     itemWidth: 145,
-                    showMore: true,
-                    onMoreTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => CategoryPage(category: CategoryItem(id: 'trending', title: 'Trending'))),
-                      );
-                    },
+                    showMore: false,
+                  ),const SizedBox(height: 16),                ],
+
+                // Just Added (Newest Products)
+                if (newestProducts.isNotEmpty) ...[
+                  ScrollableSuggestionRow(
+                    title: 'Just Added',
+                    items: newestProducts,
+                    itemHeight: 220,
+                    itemWidth: 145,
+                    showMore: false,
                   ),
                   const SizedBox(height: 16),
                 ],
-                // Popular Mobile Brands Widget
-                HomeBrandsSection(products: products),                Padding(
+
+                Padding(
                   padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 12),
                   child: Text(
                     'More For You',

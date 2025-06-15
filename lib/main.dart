@@ -1,5 +1,6 @@
 import 'package:ecom/pages/auth_gate.dart';
 import 'package:ecom/providers/product_provider.dart';
+import 'package:ecom/providers/banner_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
@@ -14,10 +15,10 @@ class MyApp extends StatelessWidget {
     const Color primaryColor = Color(0xFFe76b23);
     const Color secondaryColor = Color(0xFFFFD701);
 
-    return MultiProvider(
-      providers: [
+    return MultiProvider(      providers: [
         ChangeNotifierProvider(create: (context) => UserProvider()),
         ChangeNotifierProvider(create: (context) => ProductProvider()),
+        ChangeNotifierProvider(create: (context) => BannerProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()), // Add CartProvider
       ],
       child: MaterialApp(
