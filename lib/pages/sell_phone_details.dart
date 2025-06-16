@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/components/sell_phone/phones_brands.dart';
 import 'package:ecom/components/sell_phone/selling_comp.dart';
+import 'package:ecom/components/sell_phone/faq_comp.dart';
 import 'package:ecom/pages/sell_phone_multi_page_questionnaire.dart';
 import 'package:ecom/services/sell_phone.dart';
 
@@ -200,8 +201,7 @@ class _SellPhoneDetailsPageState extends State<SellPhoneDetailsPage> {
               ),
               const SizedBox(height: 24),
             ],
-            
-            // CTA button
+              // CTA button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -222,6 +222,11 @@ class _SellPhoneDetailsPageState extends State<SellPhoneDetailsPage> {
                 ),
               ),
             ),
+            
+            const SizedBox(height: 24),
+            
+            // FAQ Component
+            const FAQComponent(isCompact: true),
           ],
         ),
       ),

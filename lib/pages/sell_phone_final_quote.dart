@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/sell_phone.dart';
 import '../providers/user_provider.dart';
+import '../components/sell_phone/faq_comp.dart';
 import 'package:provider/provider.dart';
 
 class SellPhoneFinalQuotePage extends StatefulWidget {
@@ -519,9 +520,13 @@ class _SellPhoneFinalQuotePageState extends State<SellPhoneFinalQuotePage> {
                     ),
                   ),
                 ],
-              ),
-            ),
+              ),            ),
 
+            const SizedBox(height: 24),
+            
+            // FAQ Component
+            const FAQComponent(isCompact: true),
+            
             const SizedBox(height: 24),
           ],
         ),
