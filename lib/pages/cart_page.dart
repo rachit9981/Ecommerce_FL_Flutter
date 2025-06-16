@@ -4,6 +4,7 @@ import 'package:ecom/components/cart/cart_comp.dart';
 import '../providers/cart_provider.dart';
 import '../providers/user_provider.dart';
 import '../services/address_service.dart';
+import '../services/cart_wishlist.dart';
 import '../components/common/login_required.dart';
 import 'checkout.dart';
 
@@ -27,15 +28,15 @@ class _CartPageState extends State<CartPage> {
       cartProvider.fetchCartItems();
     });
   }
-
   void _navigateToHome() {
     Navigator.pop(context);
   }
 
   // Method to handle address selection and checkout
   Future<void> _proceedToCheckout(BuildContext context, CartProvider cartProvider) async {
-    final productIds = cartProvider.cartItems.map((item) => item.productId).toList();
-    final double subtotal = cartProvider.cartItems.fold(
+    final cartItems = cartProvider.cartItems;
+    final productIds = cartItems.map((item) => item.productId).toList();
+    final double subtotal = cartItems.fold(
       0,
       (sum, item) => sum + ((item.price ?? 0) * item.quantity),
     );
@@ -65,15 +66,13 @@ class _CartPageState extends State<CartPage> {
       print(addresses);
       setState(() {
         _isAddressLoading = false;
-      });
-
-      if (addresses.isEmpty) {
+      });      if (addresses.isEmpty) {
         _showAddAddressDialog(context);
         return;
       } else if (addresses.length == 1) {
-        _navigateToCheckout(context, addresses[0].id, productIds, amountInPaise);
+        _navigateToCheckout(context, addresses[0].id, cartItems, amountInPaise);
       } else {
-        _showAddressSelectionDialog(context, addresses, productIds, amountInPaise);
+        _showAddressSelectionDialog(context, addresses, cartItems, amountInPaise);
       }
     } catch (e) {
       setState(() {
@@ -112,11 +111,10 @@ class _CartPageState extends State<CartPage> {
       ),
     );
   }
-
   void _showAddressSelectionDialog(
     BuildContext context, 
     List<UserAddress> addresses, 
-    List<String> productIds, 
+    List<CartItem> cartItems, 
     int amountInPaise
   ) {
     showDialog(
@@ -131,13 +129,12 @@ class _CartPageState extends State<CartPage> {
             itemCount: addresses.length,
             itemBuilder: (context, index) {
               final address = addresses[index];
-              return ListTile(
-                leading: Radio<String>(
+              return ListTile(                leading: Radio<String>(
                   value: address.id,
                   groupValue: null, // No pre-selection
-                  onChanged: (_) {
+                  onChanged: (value) {
                     Navigator.pop(context);
-                    _navigateToCheckout(context, address.id, productIds, amountInPaise);
+                    _navigateToCheckout(context, address.id, cartItems, amountInPaise);
                   },
                 ),
                 title: Text(address.name),
@@ -148,7 +145,7 @@ class _CartPageState extends State<CartPage> {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  _navigateToCheckout(context, address.id, productIds, amountInPaise);
+                  _navigateToCheckout(context, address.id, cartItems, amountInPaise);
                 },
               );
             },
@@ -173,13 +170,13 @@ class _CartPageState extends State<CartPage> {
       ),
     );
   }
-
   void _navigateToCheckout(
     BuildContext context, 
     String addressId, 
-    List<String> productIds, 
+    List<CartItem> cartItems, 
     int amountInPaise
   ) {
+    final productIds = cartItems.map((item) => item.productId).toList();
     Navigator.push(
       context,
       MaterialPageRoute(

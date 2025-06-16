@@ -37,12 +37,12 @@ class CartItemCard extends StatelessWidget {
                     offset: const Offset(0, 3),
                   ),
                 ],
-              ),
-              child: ClipRRect(
+              ),              child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: item.imageUrl != null
+                child: (item.imageUrl != null && item.imageUrl!.isNotEmpty) || 
+                       (item.image != null && item.image!.isNotEmpty)
                     ? Image.network(
-                        item.imageUrl!,
+                        item.imageUrl ?? item.image!,
                         width: 100,
                         height: 100,
                         fit: BoxFit.cover,
@@ -79,8 +79,20 @@ class CartItemCard extends StatelessWidget {
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
+                  ),                  const SizedBox(height: 6),
+                  // Brand and category info
+                  if (item.brand != null || item.category != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        [item.brand, item.category].where((e) => e != null).join(' • '),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  // Price
                   if (item.price != null)
                     Text(
                       '₹${item.price!.toStringAsFixed(2)}',
@@ -88,6 +100,40 @@ class CartItemCard extends StatelessWidget {
                         color: Theme.of(context).primaryColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
+                      ),
+                    ),
+                  // Variant info if available
+                  if (item.variant != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Text(
+                          _getVariantDisplayText(item.variant!),
+                          style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  // Stock info if available
+                  if (item.stock != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        item.stock! > 0 ? 'In Stock (${item.stock})' : 'Out of Stock',
+                        style: TextStyle(
+                          color: item.stock! > 0 ? Colors.green.shade600 : Colors.red.shade600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   const SizedBox(height: 12),
@@ -139,6 +185,19 @@ class CartItemCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getVariantDisplayText(Map<String, dynamic> variant) {
+    final List<String> variantInfo = [];
+    
+    // Common variant fields to display
+    if (variant['color'] != null) variantInfo.add('Color: ${variant['color']}');
+    if (variant['size'] != null) variantInfo.add('Size: ${variant['size']}');
+    if (variant['storage'] != null) variantInfo.add('Storage: ${variant['storage']}');
+    if (variant['ram'] != null) variantInfo.add('RAM: ${variant['ram']}');
+    if (variant['memory'] != null) variantInfo.add('Memory: ${variant['memory']}');
+    
+    return variantInfo.isNotEmpty ? variantInfo.join(' • ') : 'Variant Selected';
   }
 }
 

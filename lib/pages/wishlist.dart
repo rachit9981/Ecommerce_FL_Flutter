@@ -109,7 +109,6 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
       }
     }
   }
-
   Future<void> _addToCart(WishlistItem item) async {
     if (_isProcessing) return;
     
@@ -118,7 +117,7 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
         _isProcessing = true;
       });
       
-      await _wishlistService.addToCart(item.productId);
+      await _wishlistService.addToCart(item.productId, variantId: item.variantId);
       
       if (mounted) {
         setState(() {
@@ -459,14 +458,14 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  ),
-                  child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                  ),                  child: (item.imageUrl != null && item.imageUrl!.isNotEmpty) || 
+                         (item.image != null && item.image!.isNotEmpty)
                       ? Hero(
                           tag: 'wishlist_${item.itemId}',
                           child: ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                             child: Image.network(
-                              item.imageUrl!,
+                              item.imageUrl ?? item.image!,
                               fit: BoxFit.cover,
                               width: double.infinity,
                               errorBuilder: (context, error, stackTrace) => Center(
@@ -538,8 +537,20 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
+                    ),                    const SizedBox(height: 6),
+                    // Brand and category info
+                    if (item.brand != null || item.category != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          [item.brand, item.category].where((e) => e != null).join(' • '),
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    // Price
                     Text(
                       item.price != null ? '₹${item.price!.toStringAsFixed(2)}' : 'Price not available',
                       style: TextStyle(
@@ -548,6 +559,40 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    // Variant info if available
+                    if (item.variant != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Text(
+                            _getVariantDisplayText(item.variant!),
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    // Stock info if available
+                    if (item.stock != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          item.stock! > 0 ? 'In Stock' : 'Out of Stock',
+                          style: TextStyle(
+                            color: item.stock! > 0 ? Colors.green.shade600 : Colors.red.shade600,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     const Spacer(),
                     SizedBox(
                       width: double.infinity,
@@ -589,5 +634,18 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
         ),
       ),
     );
+  }
+
+  String _getVariantDisplayText(Map<String, dynamic> variant) {
+    final List<String> variantInfo = [];
+    
+    // Common variant fields to display
+    if (variant['color'] != null) variantInfo.add('${variant['color']}');
+    if (variant['size'] != null) variantInfo.add('${variant['size']}');
+    if (variant['storage'] != null) variantInfo.add('${variant['storage']}');
+    if (variant['ram'] != null) variantInfo.add('${variant['ram']}');
+    if (variant['memory'] != null) variantInfo.add('${variant['memory']}');
+    
+    return variantInfo.isNotEmpty ? variantInfo.join(' • ') : 'Variant';
   }
 }

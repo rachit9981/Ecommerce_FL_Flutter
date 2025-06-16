@@ -47,44 +47,50 @@ class CartProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  
-  // Add item to cart
-  Future<void> addToCart(String productId, {int quantity = 1}) async {
+    // Add item to cart
+  Future<void> addToCart(String productId, {int quantity = 1, String? variantId}) async {
     _isLoading = true;
     notifyListeners();
     
     try {
-      await _cartService.addToCart(productId, quantity: quantity);
+      await _cartService.addToCart(productId, quantity: quantity, variantId: variantId);
       await fetchCartItems(); // Refresh cart after adding
     } catch (e) {
       _error = e.toString();
       notifyListeners();
     }
   }
-  
-  // Update item quantity
+    // Update item quantity
   Future<void> updateQuantity(String itemId, int newQuantity) async {
     // First update locally for UI responsiveness
     final index = _cartItems.indexWhere((item) => item.itemId == itemId);
     if (index != -1) {
-      final productId = _cartItems[index].productId;
+      // Create updated cart item with all the existing fields
+      final existingItem = _cartItems[index];
       
       // Optimistically update the UI
       setState(() {
         _cartItems[index] = CartItem(
-          itemId: _cartItems[index].itemId,
-          productId: _cartItems[index].productId,
-          name: _cartItems[index].name,
-          price: _cartItems[index].price,
-          imageUrl: _cartItems[index].imageUrl,
+          itemId: existingItem.itemId,
+          productId: existingItem.productId,
+          variantId: existingItem.variantId,
+          name: existingItem.name,
+          price: existingItem.price,
+          imageUrl: existingItem.imageUrl,
+          image: existingItem.image,
           quantity: newQuantity,
-          addedAt: _cartItems[index].addedAt,
+          stock: existingItem.stock,
+          category: existingItem.category,
+          brand: existingItem.brand,
+          variant: existingItem.variant,
+          addedAt: existingItem.addedAt,
+          error: existingItem.error,
         );
       });
       
       try {
-        // Then update on server
-        await _cartService.addToCart(productId, quantity: newQuantity);
+        // Then update on server using the new updateCartQuantity method
+        await _cartService.updateCartQuantity(itemId, newQuantity);
         await fetchCartItems(); // Refresh to ensure consistency
       } catch (e) {
         _error = e.toString();

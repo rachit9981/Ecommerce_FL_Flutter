@@ -21,16 +21,19 @@ class CartWishlistService {
     } catch (e) {
       throw Exception('Failed to get authentication token: $e');
     }
-  }
-
-  // Cart API calls
-  Future<Map<String, dynamic>> addToCart(String productId, {int quantity = 1}) async {
+  }  // Cart API calls
+  Future<Map<String, dynamic>> addToCart(String productId, {int quantity = 1, String? variantId}) async {
     try {
       final headers = await _getAuthHeaders();
+      final body = <String, dynamic>{'quantity': quantity};
+      if (variantId != null) {
+        body['variant_id'] = variantId;
+      }
+      
       final response = await http.post(
         Uri.parse('$apiUrl/users/cart/add/$productId/'),
         headers: headers,
-        body: json.encode({'quantity': quantity}),
+        body: json.encode(body),
       );
       
       final data = json.decode(response.body);
@@ -87,13 +90,39 @@ class CartWishlistService {
     }
   }
 
-  // Wishlist API calls
-  Future<Map<String, dynamic>> addToWishlist(String productId) async {
+  Future<Map<String, dynamic>> updateCartQuantity(String itemId, int quantity) async {
     try {
       final headers = await _getAuthHeaders();
+      final response = await http.put(
+        Uri.parse('$apiUrl/users/cart/update/$itemId/'),
+        headers: headers,
+        body: json.encode({'quantity': quantity}),
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 200) {
+        return data;
+      } else {
+        throw Exception(data['error'] ?? 'Failed to update cart quantity');
+      }
+    } catch (e) {
+      throw Exception('Failed to update cart quantity: $e');
+    }
+  }
+  // Wishlist API calls
+  Future<Map<String, dynamic>> addToWishlist(String productId, {String? variantId}) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final body = <String, dynamic>{};
+      if (variantId != null) {
+        body['variant_id'] = variantId;
+      }
+      
       final response = await http.post(
         Uri.parse('$apiUrl/users/wishlist/add/$productId/'),
-        headers: headers
+        headers: headers,
+        body: json.encode(body),
       );
       
       final data = json.decode(response.body);
@@ -149,41 +178,104 @@ class CartWishlistService {
       throw Exception('Failed to remove from wishlist: $e');
     }
   }
+
+  // Helper methods for getting counts
+  Future<int> getCartItemCount() async {
+    try {
+      final cartItems = await getCart();
+      return cartItems.fold<int>(0, (sum, item) => sum + item.quantity);
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<int> getWishlistItemCount() async {
+    try {
+      final wishlistItems = await getWishlist();
+      return wishlistItems.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  // Helper method to check if product is in cart
+  Future<bool> isInCart(String productId, {String? variantId}) async {
+    try {
+      final cartItems = await getCart();
+      return cartItems.any((item) => 
+        item.productId == productId && 
+        (variantId == null || item.variantId == variantId)
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Helper method to check if product is in wishlist
+  Future<bool> isInWishlist(String productId, {String? variantId}) async {
+    try {
+      final wishlistItems = await getWishlist();
+      return wishlistItems.any((item) => 
+        item.productId == productId && 
+        (variantId == null || item.variantId == variantId)
+      );
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 class CartItem {
   final String itemId;
   final String productId;
+  final String? variantId;
   final String name;
   final double? price;
   final String? imageUrl;
+  final String? image;
   final int quantity;
+  final int? stock;
+  final String? category;
+  final String? brand;
+  final Map<String, dynamic>? variant;
   final DateTime? addedAt;
   final String? error;
 
   CartItem({
     required this.itemId,
     required this.productId,
+    this.variantId,
     required this.name,
     this.price,
     this.imageUrl,
+    this.image,
     required this.quantity,
+    this.stock,
+    this.category,
+    this.brand,
+    this.variant,
     this.addedAt,
     this.error,
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      itemId: json['item_id'],
-      productId: json['product_id'],
-      name: json['name'],
+      itemId: json['item_id'] ?? '',
+      productId: json['product_id'] ?? '',
+      variantId: json['variant_id'],
+      name: json['name'] ?? 'Unknown Product',
       price: json['price'] != null
           ? (json['price'] is int)
               ? (json['price'] as int).toDouble()
               : json['price']
           : null,
       imageUrl: json['image_url'],
-      quantity: json['quantity'],
+      image: json['image'],
+      quantity: json['quantity'] ?? 1,
+      stock: json['stock'],
+      category: json['category'],
+      brand: json['brand'],
+      variant: json['variant'] != null ? Map<String, dynamic>.from(json['variant']) : null,
       addedAt: json['added_at'] != null ? DateTime.parse(json['added_at']) : null,
       error: json['error'],
     );
@@ -193,33 +285,51 @@ class CartItem {
 class WishlistItem {
   final String itemId;
   final String productId;
+  final String? variantId;
   final String name;
   final double? price;
   final String? imageUrl;
+  final String? image;
+  final int? stock;
+  final String? category;
+  final String? brand;
+  final Map<String, dynamic>? variant;
   final DateTime? addedAt;
   final String? error;
 
   WishlistItem({
     required this.itemId,
     required this.productId,
+    this.variantId,
     required this.name,
     this.price,
     this.imageUrl,
+    this.image,
+    this.stock,
+    this.category,
+    this.brand,
+    this.variant,
     this.addedAt,
     this.error,
   });
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) {
     return WishlistItem(
-      itemId: json['item_id'],
-      productId: json['product_id'],
-      name: json['name'],
+      itemId: json['item_id'] ?? '',
+      productId: json['product_id'] ?? '',
+      variantId: json['variant_id'],
+      name: json['name'] ?? 'Unknown Product',
       price: json['price'] != null
           ? (json['price'] is int)
               ? (json['price'] as int).toDouble()
               : json['price']
           : null,
       imageUrl: json['image_url'],
+      image: json['image'],
+      stock: json['stock'],
+      category: json['category'],
+      brand: json['brand'],
+      variant: json['variant'] != null ? Map<String, dynamic>.from(json['variant']) : null,
       addedAt: json['added_at'] != null ? DateTime.parse(json['added_at']) : null,
       error: json['error'],
     );
