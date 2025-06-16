@@ -35,19 +35,9 @@ class _SellPhoneByBrandPageState extends State<SellPhoneByBrandPage> {
       appBar: AppBar(
         title: Text('${widget.brandName} Phone Series'),
         elevation: 0,
-      ),
-      body: Consumer<UserProvider>(
+      ),      body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
-          // Check if user is not authenticated
-          if (!userProvider.isAuthenticated) {
-            return LoginRequired(
-              title: 'Login to Sell Your Phone',
-              message: 'Please login to sell your old phone and get instant quotes',
-              icon: Icons.smartphone_outlined,
-            );
-          }
-          
-          // If authenticated, show the brand-specific content
+          // Always show the brand-specific content
           return Column(
             children: [
               // Brand header

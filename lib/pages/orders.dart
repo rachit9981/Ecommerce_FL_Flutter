@@ -37,25 +37,23 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     setState(() {
       _isLoading = true;
       _error = null;
-    });
-    
-    try {
+    });    try {
+      debugPrint('Fetching user orders...');
       final allOrders = await _orderService.getUserOrders();
-      // Filter to only include orders with confirmed payment
-      final confirmedOrders = allOrders.where((order) => 
-        order.status.toLowerCase() == 'payment_successful').toList();
+      // Show all orders regardless of status - let users see pending payments too
       
       if (mounted) {
         setState(() {
-          _orders = confirmedOrders;
+          _orders = allOrders;
           _isLoading = false;
         });
         _animationController.forward(from: 0.0);
       }
     } catch (e) {
+      debugPrint('Error fetching orders: $e');
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = 'Failed to load orders. Please try again.';
           _isLoading = false;
         });
       }
@@ -67,39 +65,15 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     _animationController.dispose();
     super.dispose();
   }
-
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'processing':
-      case 'pending_payment':
-        return Colors.orange;
-      case 'shipped':
-        return Colors.blue;
-      case 'delivered':
-      case 'payment_successful':
-        return Colors.green;
-      case 'cancelled':
-      case 'payment_failed':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
+    // Use the OrderService utility method
+    final colorHex = _orderService.getOrderStatusColor(status);
+    return Color(int.parse(colorHex.substring(1), radix: 16) + 0xFF000000);
   }
 
   String _getFormattedStatus(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending_payment':
-        return 'Pending Payment';
-      case 'payment_successful':
-        return 'Payment Confirmed';
-      case 'payment_failed':
-        return 'Payment Failed';
-      default:
-        // Capitalize first letter of each word
-        return status.split('_')
-            .map((word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
-            .join(' ');
-    }
+    // Use the OrderService utility method
+    return _orderService.getOrderStatusDisplayText(status);
   }
 
   IconData _getStatusIcon(String status) {
@@ -548,9 +522,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         ),
       ),);
   }
-
   Widget _buildStatusBadge(String displayStatus, String originalStatus) {
-    final statusColor = _getStatusColor(originalStatus);
     final icon = _getStatusIcon(originalStatus);
     
     return Container(

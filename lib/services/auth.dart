@@ -213,13 +213,16 @@ class AuthService {
           phoneNumber: phoneNumber,
           authProvider: authProvider ?? 'email',
           uid: uid,
-        );
-        
-        // Set the user profile in provider
+        );        // Set the user profile in provider
         userProvider.setUserProfile(userProfile);
         
-        // Initialize user data
-        await userProvider.initializeUserData();
+        // Try to fetch addresses, but don't let it override auth state if it fails
+        try {
+          await userProvider.fetchAddresses();
+        } catch (e) {
+          print('Failed to fetch addresses during session restore: $e');
+          // Don't let address fetching failure affect authentication status
+        }
       }
     } catch (e) {
       print('Error restoring user session: $e');

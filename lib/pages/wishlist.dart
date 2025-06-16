@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:ecom/services/cart_wishlist.dart';
 import 'package:ecom/pages/product_page.dart';
+import 'package:provider/provider.dart';
+import 'package:ecom/providers/user_provider.dart';
+import 'package:ecom/components/common/login_required.dart';
 
 class WishlistPage extends StatefulWidget {
   const WishlistPage({Key? key}) : super(key: key);
@@ -208,88 +211,108 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
           ),
       ],
     );
-  }
-
-  @override
+  }  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: Colors.grey.shade50,
-        appBar: _buildAppBar(isLoading: true),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 20),
-              Text(
-                'Loading your wishlist...',
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                  fontSize: 16,
-                ),
-              )
-            ],
-          ),
-        ),
-      );
-    }
-    
-    if (_error != null) {
-      return Scaffold(
-        backgroundColor: Colors.grey.shade50,
-        appBar: _buildAppBar(),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 56, color: Colors.red.shade300),
-              const SizedBox(height: 20),
-              Text(
-                'Failed to load wishlist',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800,
-                ),
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        // If not authenticated, show login prompt for wishlist features
+        if (!userProvider.isAuthenticated) {
+          return Scaffold(
+            backgroundColor: Colors.grey.shade50,
+            appBar: AppBar(
+              title: const Text('My Wishlist'),
+              elevation: 0,
+              centerTitle: true,
+            ),
+            body: LoginRequired(
+              title: 'Login to Access Your Wishlist',
+              message: 'Please login to view and manage your saved items',
+              icon: Icons.favorite_border,
+            ),
+          );
+        }
+
+        // If authenticated, show the wishlist content
+        final theme = Theme.of(context);
+        final primaryColor = theme.colorScheme.primary;
+        
+        if (_isLoading) {
+          return Scaffold(
+            backgroundColor: Colors.grey.shade50,
+            appBar: _buildAppBar(isLoading: true),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text(
+                    'Loading your wishlist...',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 16,
+                    ),
+                  )
+                ],
               ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _loadWishlist,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Try Again'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            ),
+          );
+        }
+        
+        if (_error != null) {
+          return Scaffold(
+            backgroundColor: Colors.grey.shade50,
+            appBar: _buildAppBar(),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 56, color: Colors.red.shade300),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Failed to load wishlist',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
                   ),
-                  elevation: 2,
-                ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _loadWishlist,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 2,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      );
-    }
-    
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: _buildAppBar(),
-      body: _wishlistItems.isEmpty
-          ? _buildEmptyWishlist(primaryColor)
-          : _buildWishlistItems(context),
+            ),
+          );
+        }
+        
+        return Scaffold(
+          backgroundColor: Colors.grey.shade50,
+          appBar: _buildAppBar(),
+          body: _wishlistItems.isEmpty
+              ? _buildEmptyWishlist(primaryColor)
+              : _buildWishlistItems(context),
+        );
+      },
     );
   }
 

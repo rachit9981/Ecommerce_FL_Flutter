@@ -228,12 +228,35 @@ class SellingComponents {
     try {
       // Get user ID from shared preferences
       final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-
-      if (userId == null || userId.isEmpty) {
+      final userId = prefs.getString('user_id');      if (userId == null || userId.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please login to submit an inquiry')),
+          // Show login dialog instead of just a snackbar
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.login, color: Theme.of(context).primaryColor),
+                  SizedBox(width: 8),
+                  Text('Login Required'),
+                ],
+              ),
+              content: Text('Please login to submit your sell inquiry and get instant quotes'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/login');
+                  },
+                  child: Text('Login'),
+                ),
+              ],
+            ),
           );
         }
         return;

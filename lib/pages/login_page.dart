@@ -50,10 +50,10 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = true;
       });
 
-      try {
-        final response = await _authService.login(
+      try {        final response = await _authService.login(
           email: _emailController.text.trim(),
           password: _passwordController.text,
+          context: context,  // Pass context so UserProvider gets initialized
         );
 
         _showSuccess(response.message);

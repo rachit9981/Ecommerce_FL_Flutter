@@ -1,6 +1,31 @@
-import 'package:razorpay_flutter/razorpay_flutter.dart';
+/*
+Checkout Page - Updated for new OrderService and RazorpayService
+
+Usage:
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => CheckoutPage(
+      addressId: 'user_address_id',
+      productIds: ['product_1', 'product_2'], // Cart item IDs
+      amountInPaise: 150000, // ₹1500.00 in paise
+    ),
+  ),
+);
+
+Features:
+- Integrated with updated OrderService for backend compatibility
+- Uses RazorpayService for streamlined payment processing
+- Automatic payment verification with backend
+- Enhanced error handling and user feedback
+- Support for single product and cart-based orders
+*/
+
 import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '/services/orders.dart';
+import '/services/razorpay.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CheckoutPage extends StatefulWidget {
   final String addressId;
@@ -20,8 +45,8 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage>
     with SingleTickerProviderStateMixin {
-  late Razorpay _razorpay;
   final OrderService _orderService = OrderService();
+  late final RazorpayService _razorpayService;
   String? _appOrderId;
   bool _isLoading = false;
   late AnimationController _animationController;
@@ -31,10 +56,13 @@ class _CheckoutPageState extends State<CheckoutPage>
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    
+    // Initialize RazorpayService
+    _razorpayService = RazorpayService();
+      // Set up payment callbacks
+    _razorpayService.setPaymentSuccessCallback(_handlePaymentSuccess);
+    _razorpayService.setPaymentErrorCallback(_handlePaymentError);
+    _razorpayService.setExternalWalletCallback(() => _handleExternalWallet());
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -59,55 +87,33 @@ class _CheckoutPageState extends State<CheckoutPage>
 
     _animationController.forward();
   }
-
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     print("Payment success: ${response.paymentId}");
     setState(() {
-      _isLoading = true;
+      _isLoading = false;
     });
 
-    try {
-      if (response.orderId == null ||
-          response.paymentId == null ||
-          response.signature == null ||
-          _appOrderId == null) {
-        throw Exception("Payment data incomplete for verification.");
-      }
-
-      // Verify payment with your backend
-      final verificationData = await _orderService.verifyRazorpayPayment(
-        razorpayOrderId: response.orderId!,
-        razorpayPaymentId: response.paymentId!,
-        razorpaySignature: response.signature!,
-        orderId: _appOrderId!, // Your backend's order ID
-      );
-      print("Payment verification success: $verificationData");
-
-      if (mounted) {
-        _showSuccessDialog();
-      }
-    } catch (e) {
-      print("Payment verification failed: $e");
-      if (mounted) {
-        _showErrorSnackBar('Payment verification failed: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    // The RazorpayService already handles verification in the background
+    // Show success dialog immediately
+    if (mounted) {
+      _showSuccessDialog();
     }
   }
-
   void _handlePaymentError(PaymentFailureResponse response) {
-    _showErrorSnackBar('Payment Failed');
+    setState(() {
+      _isLoading = false;
+    });
+    _showErrorSnackBar('Payment Failed: ${response.message ?? "Unknown error"}');
   }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    print("External wallet: ${response.walletName}");
+  void _handleExternalWallet() {
+    print("External wallet selected");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('External wallet selected'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
-
   void _showSuccessDialog() {
     showDialog(
       context: context,
@@ -142,9 +148,8 @@ class _CheckoutPageState extends State<CheckoutPage>
                   color: Colors.green[800],
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Your order has been placed successfully.',
+              const SizedBox(height: 12),              Text(
+                'Your order has been placed successfully and your cart has been cleared.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -168,6 +173,31 @@ class _CheckoutPageState extends State<CheckoutPage>
                   ),
                 ),
               ],
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                        Navigator.of(context).pop(); // Close checkout page
+                      },
+                      child: const Text('Continue Shopping'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                        Navigator.of(context).pop(); // Close checkout page
+                        Navigator.pushNamed(context, '/orders'); // Navigate to orders
+                      },
+                      child: const Text('View Orders'),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -201,14 +231,12 @@ class _CheckoutPageState extends State<CheckoutPage>
       );
     }
   }
-
   @override
   void dispose() {
-    _razorpay.clear();
+    _razorpayService.dispose();
     _animationController.dispose();
     super.dispose();
   }
-
   Future<void> _openCheckout() async {
     setState(() {
       _isLoading = true;
@@ -236,24 +264,24 @@ class _CheckoutPageState extends State<CheckoutPage>
         throw Exception("app_order_id not found in backend response for verification.");
       }
 
-      var options = {
-        'key': razorpayKey,
-        'amount': orderAmount,
-        'name': 'Your Store',
-        'order_id': razorpayOrderId,
-        'description': 'Purchase from Your Store',
-        'prefill': {'contact': '8888888888', 'email': 'test@example.com'},
-        'external': {
-          'wallets': ['paytm']
-        },
-        'theme': {
-          'color': Theme.of(context).primaryColor.value.toRadixString(16).substring(2),
-          'backdrop_color': '#ffffff',
-          'hide_topbar': false
-        }
-      };
+      // Get user details from SharedPreferences or use defaults
+      final prefs = await SharedPreferences.getInstance();
+      final userEmail = prefs.getString('email') ?? 'test@example.com';
+      final userPhone = prefs.getString('phone') ?? '8888888888';
+      final userName = prefs.getString('name') ?? 'User';
 
-      _razorpay.open(options);
+      // Use the RazorpayService to initiate payment
+      await _razorpayService.initiatePayment(
+        razorpayKeyId: razorpayKey,
+        razorpayOrderId: razorpayOrderId,
+        appOrderId: _appOrderId!,
+        amount: orderAmount / 100.0, // Convert paise to rupees
+        currency: 'INR',
+        userEmail: userEmail,
+        userPhone: userPhone,
+        userName: userName,
+        description: 'Purchase from Your Store',
+      );
     } catch (e) {
       debugPrint('Error creating order or opening checkout: $e');
 

@@ -110,6 +110,27 @@ class CartWishlistService {
       throw Exception('Failed to update cart quantity: $e');
     }
   }
+
+  Future<Map<String, dynamic>> clearCart() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.delete(
+        Uri.parse('$apiUrl/users/cart/clear/'),
+        headers: headers
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 200) {
+        return data;
+      } else {
+        throw Exception(data['error'] ?? 'Failed to clear cart');
+      }
+    } catch (e) {
+      throw Exception('Failed to clear cart: $e');
+    }
+  }
+
   // Wishlist API calls
   Future<Map<String, dynamic>> addToWishlist(String productId, {String? variantId}) async {
     try {

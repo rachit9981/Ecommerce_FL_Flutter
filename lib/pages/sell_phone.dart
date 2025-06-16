@@ -26,7 +26,9 @@ class _SellPhonePageState extends State<SellPhonePage> {
   void initState() {
     super.initState();
     _loadData();
-  }  Future<void> _loadData() async {
+  }
+
+  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
       _allModels = [];
@@ -58,6 +60,7 @@ class _SellPhonePageState extends State<SellPhonePage> {
       });
     }
   }
+
   void _navigateToSearch() async {
     // Navigate to the search page and wait for a result
     final result = await Navigator.push(
@@ -74,6 +77,7 @@ class _SellPhonePageState extends State<SellPhonePage> {
       _onModelSelected(result);
     }
   }
+
   void _onModelSelected(dynamic model) {
     // Handle both PhoneModel and PhoneModelUI
     if (model is PhoneModelUI) {
@@ -98,6 +102,7 @@ class _SellPhonePageState extends State<SellPhonePage> {
       );
     }
   }
+
   void _onBrandSelected(dynamic brand) async {
     // Handle both PhoneBrand and PhoneBrandUI
     String brandId;
@@ -137,7 +142,8 @@ class _SellPhonePageState extends State<SellPhonePage> {
             duration: const Duration(seconds: 2),
           ),
         );
-      } else {        // Navigate directly to the series/models page
+      } else {
+        // Navigate directly to the series/models page
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -179,7 +185,8 @@ class _SellPhonePageState extends State<SellPhonePage> {
 
   // Convert list of PhoneModelUI to PhoneModel
   List<PhoneModel> _convertToPhoneModels(List<PhoneModelUI> uiModels) {
-    return uiModels.map((uiModel) => _convertUIModelToPhoneModel(uiModel)).toList();  }
+    return uiModels.map((uiModel) => _convertUIModelToPhoneModel(uiModel)).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -206,6 +213,7 @@ class _SellPhonePageState extends State<SellPhonePage> {
         ],
       ),      body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
+          print('SellPhonePage: User authentication state: ${userProvider.isAuthenticated}');
           // Check if user is not authenticated
           if (!userProvider.isAuthenticated) {
             return LoginRequired(
@@ -233,7 +241,8 @@ class _SellPhonePageState extends State<SellPhonePage> {
                   ),
                   
                   const SizedBox(height: 16),
-                    // Brands section
+                  
+                  // Brands section
                   Container(
                     padding: const EdgeInsets.all(20),
                     margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -346,7 +355,8 @@ class _SellPhonePageState extends State<SellPhonePage> {
                                   childAspectRatio: 1.0,
                                   crossAxisSpacing: 16,
                                   mainAxisSpacing: 16,
-                                ),                                itemCount: featuredBrands.length,
+                                ),
+                                itemCount: featuredBrands.length,
                                 itemBuilder: (context, index) {
                                   final brand = featuredBrands[index];
                                   return InkWell(

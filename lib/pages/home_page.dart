@@ -24,27 +24,27 @@ class _HomePageBaseState extends State<HomePageBase> {
       _checkUserData();
     });
   }
-
   Future<void> _checkUserData() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     
-    // If user data isn't loaded yet, try to load it
-    if (!userProvider.hasUserData) {
-      await userProvider.refreshUserData();
+    // Only try to load user data if authenticated
+    if (userProvider.isAuthenticated && !userProvider.hasUserData) {
+      try {
+        await userProvider.refreshUserData();
+      } catch (e) {
+        // If user data loading fails, just continue - user can still browse
+        print('Failed to load user data: $e');
+      }
     }
     
     setState(() {
       _isInitialized = true;
     });
   }
-  
-  @override
+    @override
   Widget build(BuildContext context) {
-    // Check if user data is still loading
-    final userProvider = Provider.of<UserProvider>(context);
-    
-    // Show loading indicator while user data is being initialized
-    if (!_isInitialized || userProvider.isProfileLoading) {
+    // Check if user data is still loading during auto-login
+    if (!_isInitialized) {
       return Scaffold(
         body: Center(
           child: Column(
@@ -53,27 +53,7 @@ class _HomePageBaseState extends State<HomePageBase> {
               CircularProgressIndicator(),
               SizedBox(height: 16),
               Text(
-                'Loading your profile...',
-                style: TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    
-    // If authentication failed or user not authenticated, redirect will happen through provider
-    if (!userProvider.isAuthenticated) {
-      // This will only show briefly before the auth_gate redirects
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: Colors.red),
-              SizedBox(height: 16),
-              Text(
-                'Authentication error. Redirecting...',
+                'Loading...',
                 style: TextStyle(fontSize: 16),
               ),
             ],

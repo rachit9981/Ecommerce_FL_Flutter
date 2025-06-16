@@ -37,22 +37,28 @@ class UserProvider with ChangeNotifier {
     _isProfileLoading = true;
     _profileError = null;
     notifyListeners();
-    
-    try {
+      try {
       _userProfile = await _userService.getProfile();
       _profileError = null;
       _isAuthenticated = true;
+      print('UserProvider: Profile fetched successfully, authentication state: $_isAuthenticated');
     } catch (e) {
       _profileError = e.toString();
       _userProfile = null;
-      
-      // Check if it's an authentication error
+      print('UserProvider: Profile fetch failed: $e');
+        // Check if it's an authentication error
       if (e.toString().contains('Authentication failed') || 
           e.toString().contains('No authentication token found')) {
-        _isAuthenticated = false;
-        _handleAuthenticationFailure();
+        // Only set auth to false if we don't already have a valid user profile
+        if (_userProfile == null) {
+          _isAuthenticated = false;
+          print('UserProvider: Authentication failed, setting state to false');
+          _handleAuthenticationFailure();
+        } else {
+          print('UserProvider: Profile fetch failed but keeping auth state since we have user profile');
+        }
       }
-    } finally {
+    }finally {
       _isProfileLoading = false;
       notifyListeners(); 
     }
@@ -111,18 +117,22 @@ class UserProvider with ChangeNotifier {
       _addresses = await _userService.getAddresses();
       _updateDefaultAddress();
       _addressError = null;
-      _isAuthenticated = true;
-    } catch (e) {
+      _isAuthenticated = true;    } catch (e) {
       _addressError = e.toString();
       _addresses = [];
       
       // Check if it's an authentication error
       if (e.toString().contains('Authentication failed') || 
           e.toString().contains('No authentication token found')) {
-        _isAuthenticated = false;
-        _handleAuthenticationFailure();
+        // Only set auth to false if we don't already have a valid user profile
+        if (_userProfile == null) {
+          _isAuthenticated = false;
+          _handleAuthenticationFailure();
+        } else {
+          print('UserProvider: Address fetch failed but keeping auth state since we have user profile');
+        }
       }
-    } finally {
+    }finally {
       _isAddressesLoading = false;
       notifyListeners();
     }
@@ -356,11 +366,11 @@ class UserProvider with ChangeNotifier {
   Future<void> refreshUserData() async {
     await initializeUserData();
   }
-  
-  // Method to set user profile directly (used by AuthService)
+    // Method to set user profile directly (used by AuthService)
   void setUserProfile(UserProfile profile) {
     _userProfile = profile;
     _isAuthenticated = true;
+    print('UserProvider: User profile set, authentication state: $_isAuthenticated');
     notifyListeners();
   }
 }

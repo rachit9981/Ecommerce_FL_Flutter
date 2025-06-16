@@ -6,6 +6,7 @@ import '../providers/user_provider.dart';
 import '../services/address_service.dart';
 import '../services/cart_wishlist.dart';
 import '../components/common/login_required.dart';
+import '../pages/login_page.dart';
 import 'checkout.dart';
 
 class CartPage extends StatefulWidget {
@@ -240,15 +241,20 @@ class _CartPageState extends State<CartPage> {
             }
           ),
         ],
-      ),
-      body: Consumer<UserProvider>(
+      ),      body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
-          // Check if user is not authenticated
+          print('CartPage: User authentication state: ${userProvider.isAuthenticated}');
+          // If not authenticated, show login prompt for cart features
           if (!userProvider.isAuthenticated) {
             return LoginRequired(
-              title: 'Login to View Cart',
-              message: 'Please login to view your cart and continue shopping',
+              title: 'Login to Access Your Cart',
+              message: 'Please login to view your saved cart items and checkout',
               icon: Icons.shopping_cart_outlined,
+              onLoginPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              },
             );
           }
           

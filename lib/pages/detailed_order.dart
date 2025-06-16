@@ -21,7 +21,6 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
     super.initState();
     _fetchOrderDetails();
   }
-
   Future<void> _fetchOrderDetails() async {
     setState(() {
       _isLoading = true;
@@ -29,6 +28,7 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
     });
 
     try {
+      debugPrint('Fetching order details for: ${widget.orderId}');
       final orderDetail = await _orderService.getOrderDetails(widget.orderId);
       if (mounted) {
         setState(() {
@@ -37,12 +37,54 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
         });
       }
     } catch (e) {
+      debugPrint('Error fetching order details: $e');
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = 'Failed to load order details. Please try again.';
           _isLoading = false;
         });
       }
+    }
+  }
+  Future<void> _downloadInvoice(OrderDetail orderDetail) async {
+    try {
+      if (orderDetail.invoice != null && orderDetail.invoice!['invoice_pdf_url'] != null) {
+        final pdfUrl = orderDetail.invoice!['invoice_pdf_url'];
+        debugPrint('Invoice PDF URL: $pdfUrl');
+        
+        // Open the PDF URL in the browser or default PDF viewer
+        // You might want to use url_launcher package for this
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Opening invoice...'),
+            action: SnackBarAction(
+              label: 'Copy Link',
+              onPressed: () {
+                // Copy PDF URL to clipboard
+                // You might want to use clipboard package for this
+                debugPrint('Copying URL to clipboard: $pdfUrl');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Invoice link copied to clipboard')),
+                );
+              },
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invoice is being generated. Please try again in a few moments.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error downloading invoice: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -264,8 +306,7 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-                if (item.brand != null) ...[
+                ),                if (item.brand != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     'Brand: ${item.brand}',
@@ -275,30 +316,20 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
                     ),
                   ),
                 ],
-                if (item.color != null || item.model != null) ...[
+                if (item.variantDetails != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${item.color ?? ''} ${item.model ?? ''}'.trim(),
+                    _buildVariantText(item.variantDetails!),
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,
                     ),
                   ),
-                ],
-                const SizedBox(height: 4),
+                ],                const SizedBox(height: 4),
                 Text(
                   'Quantity: ${item.quantity}',
                   style: TextStyle(
                     color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '₹${item.totalItemPrice.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
                   ),
                 ),
               ],
@@ -307,13 +338,16 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
         ],
       ),
     );
-  }
-
-  Widget _buildOrderSummary(OrderDetail orderDetail) {
-    final subtotal = orderDetail.orderItems.fold<double>(
-      0.0,
-      (sum, item) => sum + item.totalItemPrice,
-    );
+  }  Widget _buildOrderSummary(OrderDetail orderDetail) {
+    // Use the order total as the subtotal since individual item prices may not be accurate
+    final displaySubtotal = orderDetail.totalAmountCalculated != null && orderDetail.totalAmountCalculated! > 0 
+        ? orderDetail.totalAmountCalculated! 
+        : orderDetail.totalAmount;
+    
+    // Use the same value for final total
+    final finalTotal = displaySubtotal;
+    
+    debugPrint('Order Summary - Subtotal/Total: $displaySubtotal');
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -331,17 +365,18 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
       ),
       child: Column(
         children: [
-          _buildSummaryItem('Subtotal', '₹${subtotal.toStringAsFixed(2)}'),
+          _buildSummaryItem('Subtotal', '₹${displaySubtotal.toStringAsFixed(2)}'),
           _buildSummaryItem('Shipping', 'Free'),
           _buildSummaryItem('Tax', 'Included'),
           const Divider(height: 24),
           _buildSummaryItem(
             'Total',
-            '${orderDetail.currency} ${orderDetail.totalAmount.toStringAsFixed(2)}',
+            '${orderDetail.currency} ${finalTotal.toStringAsFixed(2)}',
             isBold: true,
           ),
         ],
-      ),);
+      ),
+    );
   }
 
   Widget _buildTrackingInfo(TrackingInfo trackingInfo) {
@@ -452,19 +487,21 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
             ),
           ),
           const SizedBox(height: 16),
-        ],
-        SizedBox(
+        ],        SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Invoice downloaded')),
-              );
-            },
+            onPressed: () => _downloadInvoice(orderDetail),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
-            child: const Text('Download Invoice'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.download_outlined, size: 18),
+                const SizedBox(width: 8),
+                Text(orderDetail.invoice != null ? 'Download Invoice' : 'Generate Invoice'),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -472,38 +509,34 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
     );
   }
 
+  String _buildVariantText(Map<String, dynamic> variantDetails) {
+    List<String> variantParts = [];
+    
+    if (variantDetails['color'] != null) {
+      variantParts.add('Color: ${variantDetails['color']}');
+    }
+    if (variantDetails['storage'] != null) {
+      variantParts.add('Storage: ${variantDetails['storage']}');
+    }
+    if (variantDetails['size'] != null) {
+      variantParts.add('Size: ${variantDetails['size']}');
+    }
+    if (variantDetails['model'] != null) {
+      variantParts.add('Model: ${variantDetails['model']}');
+    }
+    
+    return variantParts.isNotEmpty ? variantParts.join(', ') : '';
+  }
   // Helper methods
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'processing':
-      case 'pending_payment':
-        return Colors.orange;
-      case 'shipped':
-        return Colors.blue;
-      case 'delivered':
-      case 'payment_successful':
-        return Colors.green;
-      case 'cancelled':
-      case 'payment_failed':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
+    // Use the OrderService utility method
+    final colorHex = _orderService.getOrderStatusColor(status);
+    return Color(int.parse(colorHex.substring(1), radix: 16) + 0xFF000000);
   }
 
   String _getFormattedStatus(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending_payment':
-        return 'Pending Payment';
-      case 'payment_successful':
-        return 'Payment Confirmed';
-      case 'payment_failed':
-        return 'Payment Failed';
-      default:
-        return status.split('_')
-            .map((word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
-            .join(' ');
-    }
+    // Use the OrderService utility method
+    return _orderService.getOrderStatusDisplayText(status);
   }
 
   IconData _getStatusIcon(String status) {

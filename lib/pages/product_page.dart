@@ -156,14 +156,6 @@ class _ProductPageState extends State<ProductPage> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {
-              // TODO: Implement share functionality
-            },
-          ),
-        ],
       ),      body: Consumer<ProductProvider>(
         builder: (context, productProvider, child) {
           return FutureBuilder<DetailedProduct>(
