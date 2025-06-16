@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../services/sell_phone.dart';
-import '../providers/user_provider.dart';
+import 'sell_phone_final_quote.dart';
 
 class SellPhoneMultiPageQuestionnairePage extends StatefulWidget {
   final PhoneModelUI phoneModel;
@@ -136,145 +135,21 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
       );
     }
   }
-
   void _proceedToFinalQuote() {
-    // Navigate to final quote page or show quote dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Final Quote'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Phone: ${widget.phoneModel.name}'),
-            Text('Storage: ${widget.selectedStorage}'),
-            Text('RAM: ${widget.selectedRam}'),
-            const SizedBox(height: 16),
-            Text(
-              'Final Price: ₹${finalPrice.toStringAsFixed(0)}',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
-            ),
-          ],
+    // Navigate to final quote page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SellPhoneFinalQuotePage(
+          phoneModel: widget.phoneModel,
+          selectedStorage: widget.selectedStorage,
+          selectedRam: widget.selectedRam,
+          selectedAnswers: selectedAnswers,
+          basePrice: basePrice,
+          finalPrice: finalPrice,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _submitInquiry();
-            },
-            child: const Text('Accept Quote'),
-          ),
-        ],
       ),
-    );
-  }  void _submitInquiry() async {
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    try {
-      final sellPhoneService = SellPhoneService();
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      
-      // Check if user is authenticated
-      if (!userProvider.isAuthenticated || userProvider.userProfile == null) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please login to submit inquiry'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Refresh user data to ensure we have the latest info
-      if (userProvider.userProfile == null) {
-        await userProvider.fetchProfile();
-        await userProvider.fetchAddresses();
-      }
-
-      // Check again after refresh
-      if (userProvider.userProfile == null) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to load user data. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Get user data from provider
-      final user = userProvider.userProfile!;
-      final userId = user.userId;
-      final buyerPhone = user.phoneNumber ?? '';
-      
-      // Use default address or get from user provider - match backend field names
-      final defaultAddr = userProvider.defaultAddress;
-      final address = {
-        'street_address': defaultAddr?.streetAddress ?? 'Not provided',
-        'city': defaultAddr?.city ?? 'Not provided', 
-        'state': defaultAddr?.state ?? 'Not provided',
-        'postal_code': defaultAddr?.postalCode ?? 'Not provided',
-      };
-
-      debugPrint('Submitting inquiry with userId: $userId');
-      debugPrint('User profile: ${user.toJson()}');
-      debugPrint('Address: $address');
-      
-      final result = await sellPhoneService.submitInquiryWithAnswers(
-        phoneModelId: widget.phoneModel.id,
-        userId: userId,
-        buyerPhone: buyerPhone,
-        selectedStorage: widget.selectedStorage,
-        selectedRam: widget.selectedRam,
-        questionnaireAnswers: selectedAnswers,
-        address: address,
-      );
-
-      // Hide loading indicator
-      Navigator.of(context).pop();
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Inquiry submitted successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Navigate back to main sell phone page
-      Navigator.of(context).popUntil((route) => route.isFirst);
-      
-    } catch (e) {
-      // Hide loading indicator
-      Navigator.of(context).pop();
-      
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error submitting inquiry: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+    );  }
 
   @override
   Widget build(BuildContext context) {
@@ -382,39 +257,55 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
           ),
         ),
       );
-    }
-
-    return Scaffold(
+    }    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Text('Step ${currentPageIndex + 1} of ${questionGroupKeys.length}'),
         elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        foregroundColor: Colors.black87,
       ),
       body: Column(
-        children: [
-          // Phone details header
+        children: [          // Phone details header
           Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.grey[100],
+            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    widget.phoneModel.imageUrl,
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 50,
-                      height: 50,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.phone_android, size: 30),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      widget.phoneModel.imageUrl,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey.shade100,
+                        child: Icon(Icons.phone_android, size: 30, color: Colors.grey.shade600),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,13 +313,18 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
                       Text(
                         widget.phoneModel.name,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
                       ),
+                      const SizedBox(height: 4),
                       Text(
                         '${widget.selectedStorage} • ${widget.selectedRam}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
@@ -436,16 +332,16 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green[50],
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.green.shade200),
+                    border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
                   ),
                   child: Text(
                     '₹${finalPrice.toStringAsFixed(0)}',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade700,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
                 ),
@@ -588,44 +484,63 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
                 );
               },
             ),
-          ),
-
-          // Navigation buttons
+          ),          // Navigation buttons
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 if (currentPageIndex > 0)
                   Expanded(
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
                       onPressed: _previousPage,
+                      icon: const Icon(Icons.arrow_back_ios, size: 16),
+                      label: const Text('Previous'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        side: BorderSide(color: Theme.of(context).primaryColor),
+                        foregroundColor: Theme.of(context).primaryColor,
                       ),
-                      child: const Text('Previous'),
                     ),
                   ),
                 if (currentPageIndex > 0) const SizedBox(width: 16),
                 Expanded(
                   flex: currentPageIndex > 0 ? 1 : 2,
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: _areCurrentPageQuestionsAnswered() 
                         ? _nextPage 
                         : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                    icon: Icon(
+                      currentPageIndex < questionGroupKeys.length - 1 
+                          ? Icons.arrow_forward_ios 
+                          : Icons.check_circle,
+                      size: 18,
                     ),
-                    child: Text(
+                    label: Text(
                       currentPageIndex < questionGroupKeys.length - 1 
                           ? 'Next' 
                           : 'Get Final Quote',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
                     ),
                   ),
                 ),
