@@ -74,13 +74,6 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
   }
-
-  // Get the default address from the provider
-  Address? get _defaultAddress {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    return userProvider.defaultAddress;
-  }
-
   // Count orders (for now using a placeholder, would be fetched from an orders service)
   int get _orderCount {
     // This would be replaced with actual order count from API
@@ -99,19 +92,16 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
       ),
       body: Consumer<UserProvider>(
-        builder: (context, userProvider, child) {
-          // Check if user is not authenticated
+        builder: (context, userProvider, child) {          // Check if user is not authenticated
           if (!userProvider.isAuthenticated && 
               userProvider.userProfile == null && 
               !userProvider.isProfileLoading &&
               (userProvider.profileError?.contains('Authentication failed') == true ||
                userProvider.profileError?.contains('No authentication token found') == true)) {
             return LoginRequired(
-              message: 'Please login to view your profile and manage your account',
+              message: 'Login to access your profile',
             );
-          }
-
-          // Show loading state - combine local and provider loading states
+          }          // Show loading state - combine local and provider loading states
           if (_isLoading || (userProvider.isProfileLoading && userProvider.userProfile == null)) {
             return _buildLoadingState(primaryColor, secondaryColor);
           }
@@ -154,16 +144,15 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Column(
                             children: [
                               Icon(Icons.error_outline, color: Colors.orange, size: 40),
-                              SizedBox(height: 10),
-                              Text(
-                                'Failed to load addresses',
+                              SizedBox(height: 10),                              Text(
+                                'Load Failed',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 4),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 32),
                                 child: Text(
-                                  userProvider.addressError!,
+                                  'Unable to load addresses',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                 ),
@@ -203,35 +192,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-
-  Widget _buildAuthRequiredState(Color primaryColor, Color secondaryColor) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.login, size: 64, color: primaryColor),
-            const SizedBox(height: 16),
-            Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('Please login to view your profile', style: TextStyle(color: Colors.grey.shade600), textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to login screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Please navigate to login screen')),
-                );
-              },
-              child: Text('Login'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildLoadingState(Color primaryColor, Color secondaryColor) {
     return Center(
       child: Column(
@@ -239,7 +199,7 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           CircularProgressIndicator(color: primaryColor),
           const SizedBox(height: 16),
-          Text('Loading profile...', style: TextStyle(color: Colors.grey.shade600)),
+          Text('Loading...', style: TextStyle(color: Colors.grey.shade600)),
         ],
       ),
     );
@@ -260,14 +220,13 @@ class _ProfilePageState extends State<ProfilePage> {
               size: 64, 
               color: isAuthError ? primaryColor : Colors.red.shade400
             ),
-            const SizedBox(height: 16),
-            Text(
-              isAuthError ? 'Authentication Required' : 'Failed to load profile', 
+            const SizedBox(height: 16),            Text(
+              isAuthError ? 'Login Required' : 'Load Failed', 
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
             ),
             const SizedBox(height: 8),
             Text(
-              isAuthError ? 'Please login to continue' : (userProvider.profileError ?? 'Unknown error'), 
+              isAuthError ? 'Please login to continue' : 'Try again', 
               style: TextStyle(color: Colors.grey.shade600), 
               textAlign: TextAlign.center
             ),
@@ -291,17 +250,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildProfileHeader(UserProfile? profile, Color primaryColor) {
     final hasCompleteProfile = profile?.firstName != null && profile?.lastName != null;
-    
-    return Container(
+      return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withOpacity(0.2),
-            blurRadius: 10,
+            color: primaryColor.withOpacity(0.15),
+            blurRadius: 8,
             spreadRadius: 1,
           ),
         ],
@@ -309,13 +267,12 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Column(
         children: [
           if (!hasCompleteProfile) ...[
-            Icon(Icons.account_circle_outlined, size: 48, color: Colors.grey.shade400),
-            const SizedBox(height: 8),
+            Icon(Icons.account_circle_outlined, size: 48, color: Colors.grey.shade400),            const SizedBox(height: 8),
             Text('Complete your profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orange.shade700)),
             const SizedBox(height: 4),
             TextButton(
               onPressed: () => _navigateToEditProfile(),
-              child: Text('Add name and details'),
+              child: Text('Add details'),
             ),
           ] else ...[
             Text(
@@ -323,15 +280,14 @@ class _ProfilePageState extends State<ProfilePage> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             const SizedBox(height: 4),
-          ],
-          Row(
+          ],          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.email_outlined, size: 16, color: primaryColor),
               const SizedBox(width: 6),
               Text(
                 profile?.email ?? 'No email',
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 15),
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
               ),
             ],
           ),
@@ -355,10 +311,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildContactInfo(UserProfile? profile, Address? defaultAddress, Color primaryColor) {
     return Column(
-      children: [
-        _ProfileInfoTile(
+      children: [        _ProfileInfoTile(
           icon: Icons.phone_android,
-          label: 'Phone Number',
+          label: 'Phone',
           value: profile?.phoneNumber ?? 'Not provided',
           hasValue: profile?.phoneNumber != null && profile!.phoneNumber!.isNotEmpty,
           onTap: () => _navigateToEditProfile(),
@@ -367,18 +322,16 @@ class _ProfilePageState extends State<ProfilePage> {
         const SizedBox(height: 12),
         _ProfileInfoTile(
           icon: Icons.location_on_outlined,
-          label: 'Address',
-          value: defaultAddress != null 
+          label: 'Address',          value: defaultAddress != null 
               ? '${defaultAddress.streetAddress}, ${defaultAddress.city}'
-              : 'No address added',
+              : 'No address',
           hasValue: defaultAddress != null,
           onTap: () => _navigateToEditProfile(initialTab: 1),
           primaryColor: primaryColor,
         ),
-        const SizedBox(height: 12),
-        _ProfileInfoTile(
+        const SizedBox(height: 12),        _ProfileInfoTile(
           icon: Icons.pin_drop_outlined,
-          label: 'Pincode',
+          label: 'Postal Code',
           value: defaultAddress?.postalCode ?? 'Not provided',
           hasValue: defaultAddress?.postalCode != null && defaultAddress!.postalCode.isNotEmpty,
           onTap: () => _navigateToEditProfile(initialTab: 1),
@@ -396,7 +349,7 @@ class _ProfilePageState extends State<ProfilePage> {
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OrdersPage())),
             icon: Icons.shopping_bag_outlined,
             label: 'My Orders',
-            description: _orderCount > 0 ? '$_orderCount orders placed' : 'No orders yet',
+            description: _orderCount > 0 ? '$_orderCount orders' : 'No orders yet',
             color: primaryColor,
           ),
         ),
@@ -412,7 +365,7 @@ class _ProfilePageState extends State<ProfilePage> {
             }),
             icon: Icons.favorite_border,
             label: 'Wishlist',
-            description: 'View saved items',
+            description: 'Saved items',
             color: secondaryColor,
           ),
         ),
@@ -447,7 +400,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Text('Logout'),
           ],
         ),
-        content: Text('Are you sure you want to logout? You will need to login again to access your account.'),
+        content: Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -592,18 +545,17 @@ class _ProfileInfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      onTap: onTap,      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.shade200,
-              blurRadius: 12,
-              spreadRadius: 2,
-              offset: const Offset(0, 3),
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
             ),
           ],
           border: Border.all(
@@ -693,45 +645,42 @@ class _ActivityButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
-      child: InkWell(
+      color: Colors.transparent,      child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Ink(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 color,
-                Color.lerp(color, Colors.white, 0.3) ?? color,
+                Color.lerp(color, Colors.white, 0.2) ?? color,
               ],
             ),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.4),
-                blurRadius: 8,
-                offset: Offset(0, 4),
+                color: color.withOpacity(0.3),
+                blurRadius: 6,
+                offset: Offset(0, 3),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
+            children: [              Icon(
                 icon,
                 color: Colors.white,
-                size: 28,
-              ),
-              const SizedBox(height: 14),
+                size: 26,
+              ),const SizedBox(height: 12),
               Text(
                 label,
                 style: TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
                 ),
               ),
               const SizedBox(height: 4),

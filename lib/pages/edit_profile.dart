@@ -81,29 +81,23 @@ class _EditProfilePageState extends State<EditProfilePage>
     _addressPhoneController.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    final orangeColor = primaryColor;
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profile'),
-        elevation: 0,
-        bottom: TabBar(
+        elevation: 0,bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
-          indicatorWeight: 5,
+          indicatorWeight: 3,
           indicatorSize: TabBarIndicatorSize.tab,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.orange.shade300,
-          labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+          labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 13),
           tabs: [
-            Tab(icon: Icon(Icons.person_outline, size: 20), text: 'Profile'),
-            Tab(icon: Icon(Icons.location_on_outlined, size: 20), text: 'Addresses'),
+            Tab(icon: Icon(Icons.person_outline, size: 18), text: 'Profile'),
+            Tab(icon: Icon(Icons.location_on_outlined, size: 18), text: 'Address'),
           ],
         ),
       ),
@@ -124,26 +118,23 @@ class _EditProfilePageState extends State<EditProfilePage>
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildProfileInfoTile(
+            children: [              _buildProfileInfoTile(
                 icon: Icons.person_outline,
                 label: 'First Name',
                 controller: _firstNameController,
-                hint: 'Enter your first name',
+                hint: 'First name',
               ),
-              SizedBox(height: 12),
-              _buildProfileInfoTile(
+              SizedBox(height: 12),              _buildProfileInfoTile(
                 icon: Icons.person,
                 label: 'Last Name',
                 controller: _lastNameController,
-                hint: 'Enter your last name',
+                hint: 'Last name',
               ),
-              SizedBox(height: 12),
-              _buildProfileInfoTile(
+              SizedBox(height: 12),              _buildProfileInfoTile(
                 icon: Icons.phone,
                 label: 'Phone Number',
                 controller: _phoneController,
-                hint: 'Enter your phone number',
+                hint: 'Phone number',
                 keyboardType: TextInputType.phone,
               ),
               
@@ -153,32 +144,29 @@ class _EditProfilePageState extends State<EditProfilePage>
               _buildPasswordToggle(),
               
               if (_showPasswordSection) ...[
-                SizedBox(height: 12),
-                _buildProfileInfoTile(
+                SizedBox(height: 12),                _buildProfileInfoTile(
                   icon: Icons.lock_outline,
                   label: 'Current Password',
                   controller: _currentPasswordController,
-                  hint: 'Enter your current password',
+                  hint: 'Current password',
                   isPassword: true,
                   isObscured: _obscureCurrentPassword,
                   onToggleVisibility: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
                 ),
-                SizedBox(height: 12),
-                _buildProfileInfoTile(
+                SizedBox(height: 12),                _buildProfileInfoTile(
                   icon: Icons.lock,
                   label: 'New Password',
                   controller: _newPasswordController,
-                  hint: 'Enter your new password',
+                  hint: 'New password',
                   isPassword: true,
                   isObscured: _obscureNewPassword,
                   onToggleVisibility: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
                 ),
-                SizedBox(height: 12),
-                _buildProfileInfoTile(
+                SizedBox(height: 12),                _buildProfileInfoTile(
                   icon: Icons.lock_reset,
-                  label: 'Confirm New Password',
+                  label: 'Confirm Password',
                   controller: _confirmPasswordController,
-                  hint: 'Confirm your new password',
+                  hint: 'Confirm password',
                   isPassword: true,
                   isObscured: _obscureConfirmPassword,
                   onToggleVisibility: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
@@ -243,20 +231,19 @@ class _EditProfilePageState extends State<EditProfilePage>
     final primaryColor = Theme.of(context).colorScheme.primary;
     
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 12,
-            spreadRadius: 2,
-            offset: const Offset(0, 3),
-          ),
-        ],
-        border: Border.all(color: Colors.grey.shade100),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(color: Colors.grey.shade100),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -316,23 +303,22 @@ class _EditProfilePageState extends State<EditProfilePage>
     final primaryColor = Theme.of(context).colorScheme.primary;
     
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 12,
-            spreadRadius: 2,
-            offset: const Offset(0, 3),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(
+            color: _showPasswordSection ? Colors.orange.shade200 : Colors.grey.shade100,
+            width: _showPasswordSection ? 2 : 1,
           ),
-        ],
-        border: Border.all(
-          color: _showPasswordSection ? Colors.orange.shade200 : Colors.grey.shade100,
-          width: _showPasswordSection ? 2 : 1,
         ),
-      ),
       child: Row(
         children: [
           Container(
@@ -351,22 +337,21 @@ class _EditProfilePageState extends State<EditProfilePage>
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Change Password',
-                  style: TextStyle(
-                    color: _showPasswordSection ? Colors.orange.shade700 : Colors.black87,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+              children: [                  Text(
+                    'Change Password',
+                    style: TextStyle(
+                      color: _showPasswordSection ? Colors.orange.shade700 : Colors.black87,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
-                ),
-                Text(
-                  _showPasswordSection ? 'Fill the fields below' : 'Tap to change password',
-                  style: TextStyle(
-                    color: _showPasswordSection ? Colors.orange.shade600 : Colors.grey.shade600,
-                    fontSize: 12,
+                  Text(
+                    _showPasswordSection ? 'Fill fields below' : 'Tap to change',
+                    style: TextStyle(
+                      color: _showPasswordSection ? Colors.orange.shade600 : Colors.grey.shade600,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -389,16 +374,14 @@ class _EditProfilePageState extends State<EditProfilePage>
     );
   }
 
-  Widget _buildUpdateButton(UserProvider userProvider) {
-    return Container(
-      height: 56,
+  Widget _buildUpdateButton(UserProvider userProvider) {    return Container(
+      height: 52,
       child: ElevatedButton(
-        onPressed: _isProfileLoading ? null : () => _updateProfile(userProvider),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 4,
-        ),
+        onPressed: _isProfileLoading ? null : () => _updateProfile(userProvider),      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+      ),
         child: _isProfileLoading
             ? SizedBox(
                 height: 24,
@@ -412,12 +395,11 @@ class _EditProfilePageState extends State<EditProfilePage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.save_outlined, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text(
+                  SizedBox(width: 12),                  Text(
                     'Update Profile',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -467,10 +449,9 @@ class _EditProfilePageState extends State<EditProfilePage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.location_off_outlined, size: 64, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text('No addresses added yet', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+          const SizedBox(height: 16),          Text('No addresses yet', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
           const SizedBox(height: 8),
-          Text('Add your first address to get started', style: TextStyle(color: Colors.grey.shade500)),
+          Text('Add your first address', style: TextStyle(color: Colors.grey.shade500)),
           const SizedBox(height: 24),
           _buildAddButton(),
         ],
@@ -494,16 +475,15 @@ class _EditProfilePageState extends State<EditProfilePage>
     
     return Container(
       margin: EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.shade200,
-            blurRadius: 12,
-            spreadRadius: 2,
-            offset: const Offset(0, 3),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
           ),
         ],
         border: Border.all(
@@ -600,7 +580,7 @@ class _EditProfilePageState extends State<EditProfilePage>
                     ),
                   ),
                 ],
-                onSelected: (value) => _handleAddressAction(value as String, address, userProvider),
+                onSelected: (value) => _handleAddressAction(value, address, userProvider),
               ),
             ],
           ),
@@ -688,32 +668,28 @@ class _EditProfilePageState extends State<EditProfilePage>
                       ),
                     ],
                   ),
-                  SizedBox(height: 24),
-                  _buildDialogTextField(
+                  SizedBox(height: 24),                  _buildDialogTextField(
                     controller: _addressTypeController,
-                    label: 'Address Type',
+                    label: 'Type',
                     hint: 'Home, Work, etc.',
                     icon: Icons.label,
                   ),
-                  SizedBox(height: 16),
-                  _buildDialogTextField(
+                  SizedBox(height: 16),                  _buildDialogTextField(
                     controller: _streetAddressController,
                     label: 'Street Address',
-                    hint: 'Enter your street address',
+                    hint: 'Street address',
                     icon: Icons.home,
                   ),
-                  SizedBox(height: 16),
-                  _buildDialogTextField(
+                  SizedBox(height: 16),                  _buildDialogTextField(
                     controller: _cityController,
                     label: 'City',
-                    hint: 'Enter your city',
+                    hint: 'City',
                     icon: Icons.location_city,
                   ),
-                  SizedBox(height: 16),
-                  _buildDialogTextField(
+                  SizedBox(height: 16),                  _buildDialogTextField(
                     controller: _stateController,
                     label: 'State',
-                    hint: 'Enter your state',
+                    hint: 'State',
                     icon: Icons.map,
                   ),
                   SizedBox(height: 16),
@@ -821,13 +797,11 @@ class _EditProfilePageState extends State<EditProfilePage>
         _currentPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile updated successfully!'), backgroundColor: Colors.green),
+          ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Profile updated!'), backgroundColor: Colors.green),
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile'), backgroundColor: Colors.red),
+      } else {        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Update failed'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -841,8 +815,7 @@ class _EditProfilePageState extends State<EditProfilePage>
         _cityController.text.trim().isEmpty ||
         _stateController.text.trim().isEmpty ||
         _postalCodeController.text.trim().isEmpty ||
-        _addressPhoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+        _addressPhoneController.text.trim().isEmpty) {      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all fields'), backgroundColor: Colors.red),
       );
       return;
@@ -876,20 +849,18 @@ class _EditProfilePageState extends State<EditProfilePage>
       }
 
       if (success) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
+        Navigator.pop(context);        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_editingAddress != null 
-              ? 'Address updated successfully!' 
+              ? 'Address updated!' 
               : isFirstAddress 
-                ? 'Address added and set as default!' 
-                : 'Address added successfully!'),
+                ? 'Address added as default!' 
+                : 'Address added!'),
             backgroundColor: Colors.green,
           ),
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save address'), backgroundColor: Colors.red),
+      } else {        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Save failed'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -899,26 +870,22 @@ class _EditProfilePageState extends State<EditProfilePage>
 
   Future<void> _setDefaultAddress(String addressId, UserProvider userProvider) async {
     final success = await userProvider.setDefaultAddress(addressId);
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    if (success) {      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Default address updated'), backgroundColor: Colors.green),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update default address'), backgroundColor: Colors.red),
+    } else {      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Update failed'), backgroundColor: Colors.red),
       );
     }
   }
 
   Future<void> _deleteAddress(String addressId, UserProvider userProvider) async {
     final success = await userProvider.deleteAddress(addressId);
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Address deleted successfully'), backgroundColor: Colors.green),
+    if (success) {      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Address deleted'), backgroundColor: Colors.green),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete address'), backgroundColor: Colors.red),
+    } else {      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed'), backgroundColor: Colors.red),
       );
     }
   }
