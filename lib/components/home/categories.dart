@@ -55,6 +55,9 @@ List<CategoryItem> getDynamicCategories(BuildContext context, List<Product> prod
       uniqueCategories[categoryKey] = product.category;
     }
   }
+  
+  print('HomeCategoriesSection: Found categories: ${uniqueCategories.keys.toList()}');
+  
   final List<Color> colorOptions = [
     Colors.grey.shade700, Colors.grey.shade600, Colors.grey.shade800, 
     Colors.blueGrey.shade700, Colors.blueGrey.shade600, Colors.blueGrey.shade800,
@@ -74,8 +77,11 @@ List<CategoryItem> getDynamicCategories(BuildContext context, List<Product> prod
       backgroundColor: colorOptions[colorIndex % colorOptions.length].withOpacity(0.1),
     );
     
+    print('HomeCategoriesSection: Creating category item with ID: "${item.id}" and title: "${item.title}"');
+    
     categoryItems.add(
       item.copyWith(onTap: () { // Use copyWith to set onTap
+        print('HomeCategoriesSection: Category tapped: "${item.id}"');
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => CategoryPage(category: item)), // Pass the CategoryItem object

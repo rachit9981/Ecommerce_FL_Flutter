@@ -19,10 +19,7 @@ class CategoryPage extends StatefulWidget {
 
 class _CategoryPageState extends State<CategoryPage> {
   String _sortOption = 'Recommended';
-  // Set initial price range with conservative values
-  // RangeValues _priceRange = const RangeValues(0, 100000);
   double _maxPrice = 500000;
-  // Set initial price range to maximum range
   RangeValues _priceRange = const RangeValues(0, 500000);
   bool _isFiltersVisible = false;
   bool _isLoading = true;
@@ -73,27 +70,44 @@ class _CategoryPageState extends State<CategoryPage> {
       }
     });
   }
-
   void _filterProducts(List<Product> allProducts) {
     if (!mounted) return;
 
     try {
       // Filter products by category
       final categoryName = widget.category.id.toLowerCase();
+      // Create singular version by removing 's' from the end if it exists
+      final singularCategoryName = categoryName.endsWith('s') 
+          ? categoryName.substring(0, categoryName.length - 1) 
+          : categoryName;
+      
+      print('CategoryPage: Filtering for category: "$categoryName" (singular: "$singularCategoryName")');
+      print('CategoryPage: Total products to filter: ${allProducts.length}');
+      
       final filteredByCategory = allProducts.where((product) {
         final productCategory = product.category.toLowerCase();
         final productBrand = product.brand.toLowerCase();
         
-        // Check if product matches the category
+        // Check if product matches the category (including singular form)
         bool categoryMatch = productCategory.contains(categoryName) || 
-                            categoryName.contains(productCategory);
+                            categoryName.contains(productCategory) ||
+                            productCategory.contains(singularCategoryName) ||
+                            singularCategoryName.contains(productCategory);
                             
         // For brand categories, also check brand match
         bool brandMatch = productBrand.contains(categoryName) || 
                           categoryName.contains(productBrand);
+        
+        bool matches = categoryMatch || brandMatch;
+        
+        if (matches) {
+          print('CategoryPage: Product "${product.name}" matches - Category: "${product.category}", Brand: "${product.brand}"');
+        }
                           
-        return categoryMatch || brandMatch;
+        return matches;
       }).toList();
+      
+      print('CategoryPage: Found ${filteredByCategory.length} products after category filtering');
 
       // Calculate max price for range slider before applying price filter
       double newMaxPrice = 10000; // Default fallback value
