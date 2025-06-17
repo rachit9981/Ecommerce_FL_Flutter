@@ -163,9 +163,8 @@ class _CheckoutPageState extends State<CheckoutPage>
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Order ID: ${_appOrderId!.substring(0, 8)}...',
+                  ),                  child: Text(
+                    'Order ID: ${_appOrderId!.substring(0, min(8, _appOrderId!.length))}...',
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       color: Colors.grey[800],
@@ -670,7 +669,9 @@ class _CheckoutPageState extends State<CheckoutPage>
             size: 20,
           ),
         ],
-      ),
-    );
+      ),    );
   }
 }
+
+// Helper function for min value to avoid importing dart:math
+int min(int a, int b) => a < b ? a : b;

@@ -90,9 +90,8 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Order #${widget.orderId.substring(0, 8)}'),
+    return Scaffold(      appBar: AppBar(
+        title: Text('Order #${widget.orderId.substring(0, min(8, widget.orderId.length))}'),
         elevation: 0,
       ),
       body: _buildBody(),
@@ -687,6 +686,8 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
           ),
         ],
       ),
-    );
-  }
+    );  }
 }
+
+// Helper function for min value to avoid importing dart:math
+int min(int a, int b) => a < b ? a : b;

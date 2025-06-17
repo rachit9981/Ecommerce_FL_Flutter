@@ -74,8 +74,7 @@ class _SellPhoneFinalQuotePageState extends State<SellPhoneFinalQuotePage> {
       final user = userProvider.userProfile!;
       final userId = user.userId;
       final buyerPhone = user.phoneNumber ?? '';
-      
-      // Use default address or get from user provider
+        // Use default address or get from user provider
       final defaultAddr = userProvider.defaultAddress;
       final address = {
         'street_address': defaultAddr?.streetAddress ?? 'Not provided',
@@ -83,6 +82,19 @@ class _SellPhoneFinalQuotePageState extends State<SellPhoneFinalQuotePage> {
         'state': defaultAddr?.state ?? 'Not provided',
         'postal_code': defaultAddr?.postalCode ?? 'Not provided',
       };
+      
+      // Debug: Print the data being submitted
+      print('=== DEBUG: Submitting Sell Phone Inquiry ===');
+      print('Phone Model ID: ${widget.phoneModel.id}');
+      print('User ID: $userId');
+      print('Selected Storage: ${widget.selectedStorage}');
+      print('Selected RAM: ${widget.selectedRam}');
+      print('Final Price: ${widget.finalPrice}');
+      print('Base Price: ${widget.basePrice}');
+      print('Price Adjustments: ${widget.finalPrice - widget.basePrice}');
+      print('Questionnaire Answers: ${widget.selectedAnswers}');
+      print('Address: $address');
+      print('=== End DEBUG ===');
       
       final result = await sellPhoneService.submitInquiryWithAnswers(
         phoneModelId: widget.phoneModel.id,
@@ -92,13 +104,15 @@ class _SellPhoneFinalQuotePageState extends State<SellPhoneFinalQuotePage> {
         selectedRam: widget.selectedRam,
         questionnaireAnswers: widget.selectedAnswers,
         address: address,
-      );
-
-      // Show success message
+        estimatedPrice: widget.finalPrice, // Add the final calculated price
+      );      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result['message'] ?? 'Inquiry submitted successfully!'),
+          content: Text(
+            result['message'] ?? 'Inquiry submitted successfully! Quote: ₹${widget.finalPrice}'
+          ),
           backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
         ),
       );
 

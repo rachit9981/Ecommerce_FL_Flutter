@@ -754,9 +754,10 @@ class SellPhoneService {
       }
     } catch (e) {
       debugPrint('Error submitting inquiry: $e');
-      rethrow;
-    }  }
-    // Submit an inquiry for a sell mobile listing with questionnaire answers
+      rethrow;    }
+  }
+  
+  // Submit an inquiry for a sell mobile listing with questionnaire answers
   Future<Map<String, dynamic>> submitInquiryWithAnswers({
     required String phoneModelId,
     required String userId,
@@ -766,13 +767,13 @@ class SellPhoneService {
     required Map<String, List<String>> questionnaireAnswers,
     required Map<String, dynamic> address,
     String? status,
+    int? estimatedPrice, // Add estimated price parameter
   }) async {
     try {
       // Get auth headers
       final headers = await _getAuthHeaders();
       debugPrint('Submitting inquiry with answers for phone: $phoneModelId');
-      
-      // Create request body - match backend expected field names
+        // Create request body - match backend expected field names
       final requestBody = {
         'phone_model_id': phoneModelId, // Changed from sell_mobile_id to phone_model_id
         'user_id': userId,
@@ -785,6 +786,11 @@ class SellPhoneService {
       
       if (status != null) {
         requestBody['status'] = status;
+      }
+      
+      // Add estimated price if provided
+      if (estimatedPrice != null) {
+        requestBody['estimated_price'] = estimatedPrice;
       }
       
       debugPrint('Submitting inquiry with answers:');
@@ -1031,8 +1037,24 @@ class SellPhoneInquiry {
     this.phoneDetails,
     this.price, // Include price in constructor
   });
-
   factory SellPhoneInquiry.fromJson(Map<String, dynamic> json) {
+    // Debug: Print all available fields in the JSON response
+    debugPrint('=== DEBUG: SellPhoneInquiry.fromJson ===');
+    debugPrint('Available JSON fields: ${json.keys.toList()}');
+    debugPrint('Raw JSON: $json');
+    
+    // Check for both old and new field name formats
+    debugPrint('Field mapping check:');
+    debugPrint('- sell_mobile_id: ${json['sell_mobile_id']}');
+    debugPrint('- phone_model_id: ${json['phone_model_id']}');
+    debugPrint('- selected_variant: ${json['selected_variant']}');
+    debugPrint('- selected_storage: ${json['selected_storage']}');
+    debugPrint('- selected_condition: ${json['selected_condition']}');
+    debugPrint('- selected_ram: ${json['selected_ram']}');
+    debugPrint('- questionnaire_answers: ${json['questionnaire_answers']}');
+    debugPrint('- estimated_price: ${json['estimated_price']}');
+    debugPrint('=== End SellPhoneInquiry debug ===');
+    
     // Parse address which might be a string or a map
     Map<String, dynamic> addressMap = {};
     if (json['address'] is String) {
@@ -1063,27 +1085,24 @@ class SellPhoneInquiry {
       id = json['id'].toString();
     } else {
       id = DateTime.now().millisecondsSinceEpoch.toString();
-    }
-
-    // Parse price field with fallback
+    }    // Parse price field with fallback - check multiple possible field names
     int? price;
-    if (json['price'] != null) {
-      if (json['price'] is int) {
-        price = json['price'];
-      } else if (json['price'] is double) {
-        price = json['price'].toInt();
-      } else if (json['price'] is String) {
-        price = int.tryParse(json['price']);
+    final priceValue = json['price'] ?? json['estimated_price'] ?? json['offered_price'];
+    if (priceValue != null) {
+      if (priceValue is int) {
+        price = priceValue;
+      } else if (priceValue is double) {
+        price = priceValue.toInt();
+      } else if (priceValue is String) {
+        price = int.tryParse(priceValue);
       }
-    }
-
-    return SellPhoneInquiry(
+    }    return SellPhoneInquiry(
       id: id,
-      sellMobileId: json['sell_mobile_id'] ?? '',
+      sellMobileId: json['sell_mobile_id'] ?? json['phone_model_id'] ?? '',
       userId: json['user_id'] ?? '',
       buyerPhone: json['buyer_phone'] ?? '',
-      selectedVariant: json['selected_variant'] ?? '',
-      selectedCondition: json['selected_condition'] ?? '',
+      selectedVariant: json['selected_variant'] ?? json['selected_storage'] ?? '',
+      selectedCondition: json['selected_condition'] ?? json['selected_ram'] ?? '',
       address: addressMap,
       status: json['status'] ?? 'pending',
       createdAt: json['created_at'] ?? json['timestamp'],

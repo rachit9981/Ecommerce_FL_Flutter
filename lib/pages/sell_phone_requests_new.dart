@@ -72,16 +72,32 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-    });
-
-    try {
+    });    try {
       final inquiries = await _sellPhoneService.getUserInquiries();
+      print('=== DEBUG: Raw inquiries data ===');
+      print('Number of inquiries received: ${inquiries.length}');
+      for (int i = 0; i < inquiries.length; i++) {
+        final inquiry = inquiries[i];
+        print('--- Inquiry $i ---');
+        print('ID: ${inquiry.id}');
+        print('Sell Mobile ID: ${inquiry.sellMobileId}');
+        print('Selected Variant: ${inquiry.selectedVariant}');
+        print('Selected Condition: ${inquiry.selectedCondition}');
+        print('Price: ${inquiry.price}');
+        print('Status: ${inquiry.status}');
+        print('Created At: ${inquiry.createdAt}');
+        print('Address: ${inquiry.address}');
+        print('Phone Details: ${inquiry.phoneDetails}');
+        print('--- End Inquiry $i ---');
+      }
+      print('=== End DEBUG data ===');
+      
       final mappedRequests = _mapInquiriesToRequests(inquiries);
       
       setState(() {
         _requests = mappedRequests;
         _isLoading = false;
-      });    } catch (e) {
+      });} catch (e) {
       print('Error loading sell phone requests: $e');
       setState(() {
         _errorMessage = 'Failed to load your requests. Please try again.';
@@ -90,34 +106,136 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
       });
     }
   }
-
   // Map API inquiry model to UI request model
   List<SellPhoneRequest> _mapInquiriesToRequests(List<SellPhoneInquiry> inquiries) {
-    return inquiries.map((inquiry) {
+    print('=== DEBUG: Mapping inquiries to requests ===');
+    print('Number of inquiries to map: ${inquiries.length}');
+      return inquiries.map((inquiry) {
+      print('--- Mapping inquiry ---');
+      print('Original inquiry ID: ${inquiry.id}');
+      print('Original sellMobileId: "${inquiry.sellMobileId}"');
+      print('Original selectedVariant: "${inquiry.selectedVariant}"');
+      print('Original selectedCondition: "${inquiry.selectedCondition}"');
+      print('Original price: ${inquiry.price}');
+      print('Original status: ${inquiry.status}');
+      print('Original address: ${inquiry.address}');
+      
+      // Check if this inquiry might be using newer field names
+      print('=== DEBUG: Checking for alternative field mappings ===');
+      print('User ID: ${inquiry.userId}');
+      print('Buyer Phone: ${inquiry.buyerPhone}');
+      print('Created At: ${inquiry.createdAt}');
+      print('Updated At: ${inquiry.updatedAt}');
+      
+      // The API might be using different field structures based on submission method
+      // Let's provide some hints about what type of inquiry this might be
+      bool hasStorage = inquiry.selectedVariant.isNotEmpty;
+      bool hasCondition = inquiry.selectedCondition.isNotEmpty;
+      bool hasPhoneId = inquiry.sellMobileId.isNotEmpty;
+      bool hasPrice = inquiry.price != null;
+      
+      print('Data completeness:');
+      print('- Has phone ID: $hasPhoneId');
+      print('- Has storage: $hasStorage');
+      print('- Has condition: $hasCondition');
+      print('- Has price: $hasPrice');
+      print('- Has address: ${inquiry.address.isNotEmpty}');
+      
+      if (!hasPhoneId && !hasStorage && !hasCondition && !hasPrice) {
+        print('*** This appears to be an incomplete inquiry submission ***');
+        print('*** Possible causes: ***');
+        print('*** 1. Different API field names being used ***');
+        print('*** 2. Submission process not saving complete data ***');
+        print('*** 3. Backend field mapping issues ***');
+      }
+      print('=== End alternative field mappings check ===');
+        // Handle empty or missing sellMobileId
+      String phoneId = inquiry.sellMobileId.isNotEmpty 
+          ? inquiry.sellMobileId 
+          : inquiry.id; // Use inquiry ID as fallback
+        // For new API structure, we have storage and RAM as separate fields
+      String storage = inquiry.selectedVariant.isNotEmpty 
+          ? inquiry.selectedVariant 
+          : 'Unknown Storage';
+      
+      String ram = inquiry.selectedCondition.isNotEmpty 
+          ? inquiry.selectedCondition 
+          : 'Unknown RAM';
+      
+      // For condition, we need to extract from questionnaire answers or use a default
+      String condition = 'Good'; // Default condition
+      
+      // Try to extract actual condition from questionnaire answers
+      // Look for screen condition, battery health, etc.
+      if (inquiry.address.containsKey('questionnaire_answers')) {
+        // This would need to be parsed if available
+        print('Questionnaire answers available for condition assessment');
+      }
+      
+      // Handle null price - for now use 0, but this should be calculated from questionnaire
+      int price = inquiry.price?.toInt() ?? 0;      // Create a more descriptive phone name
+      String phoneName;
+      if (phoneId.isNotEmpty) {
+        // Try to use a more descriptive name if available
+        // For now, use the phone ID but this could be enhanced with phone_display_name
+        if (phoneId.contains('iphone')) {
+          phoneName = phoneId.replaceAll('_', ' ').split(' ').map((word) => 
+            word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : word
+          ).join(' ');
+        } else {
+          phoneName = 'Phone #${phoneId.substring(0, min(8, phoneId.length))}';
+        }
+      } else {
+        // Try to create a more descriptive name using available data
+        String location = '';
+        if (inquiry.address.isNotEmpty) {
+          String city = inquiry.address['city']?.toString() ?? '';
+          String state = inquiry.address['state']?.toString() ?? '';
+          if (city.isNotEmpty && state.isNotEmpty) {
+            location = ' ($city, $state)';
+          } else if (city.isNotEmpty) {
+            location = ' ($city)';
+          } else if (state.isNotEmpty) {
+            location = ' ($state)';
+          }
+        }
+        phoneName = 'Phone Request$location';
+      }
+        print('Processed values:');
+      print('- Phone ID: "$phoneId"');
+      print('- Phone Name: "$phoneName"');
+      print('- Storage: "$storage"');
+      print('- RAM: "$ram"');
+      print('- Condition: "$condition"');
+      print('- Price: $price');
+      
       // Create basic phone model from inquiry
       PhoneModel phone = PhoneModel(
-        id: inquiry.sellMobileId,
+        id: phoneId,
         brandId: 'unknown',
-        name: 'Phone #${inquiry.sellMobileId.substring(0, 8)}',
+        name: phoneName,
         imageUrl: 'https://img.freepik.com/free-psd/smartphone-mockup_1310-812.jpg',
-        storageOptions: [inquiry.selectedVariant],
-        conditions: [inquiry.selectedCondition],
+        storageOptions: [storage],
+        conditions: [condition],
         variantPrices: {
-          inquiry.selectedVariant: {
-            inquiry.selectedCondition: inquiry.price?.toInt() ?? 0,
+          storage: {
+            condition: price,
           }
         },
       );
 
-      return SellPhoneRequest(
+      final request = SellPhoneRequest(
         id: inquiry.id,
         phone: phone,
-        storage: inquiry.selectedVariant,
-        condition: inquiry.selectedCondition,
+        storage: storage,
+        condition: condition,
         requestDate: DateTime.tryParse(inquiry.createdAt ?? '') ?? DateTime.now(),
         status: inquiry.status.toLowerCase(),
-        offeredPrice: inquiry.price?.toInt() ?? 0,
+        offeredPrice: price,
       );
+      
+      print('Final request - ID: ${request.id}, Storage: ${request.storage}, Condition: ${request.condition}, Price: ${request.offeredPrice}');
+      print('--- End mapping ---');      return request;
     }).toList();
   }
 
@@ -467,8 +585,7 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
                         ),
                       ),
                     ],
-                  ),
-                ),
+                  ),                ),
               ],
             ),
           ],
@@ -477,3 +594,6 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
     );
   }
 }
+
+// Helper function for min value to avoid importing dart:math
+int min(int a, int b) => a < b ? a : b;
