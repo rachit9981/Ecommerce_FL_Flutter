@@ -377,6 +377,7 @@ class _SellPhoneBySeriesPageState extends State<SellPhoneBySeriesPage> {
               // Series selection header
               Container(
                 color: Colors.white,
+                width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

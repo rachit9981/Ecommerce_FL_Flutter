@@ -399,15 +399,14 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            
+                            const SizedBox(height: 12),                            // Use uniform sizing for all option cards
                             GridView.count(
                               crossAxisCount: 2,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
-                              childAspectRatio: 1.2,
+                              childAspectRatio: 0.85, // Consistent aspect ratio for uniform sizing
                               children: question.options.map((option) {
                                 final isSelected = _isOptionSelected(question.id, option.label);
                                 
@@ -426,36 +425,46 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
                                           ? Theme.of(context).primaryColor.withOpacity(0.1)
                                           : Colors.white,
                                     ),
-                                    padding: const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.all(10),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        if (option.imageUrl.isNotEmpty)
-                                          Expanded(
-                                            flex: 2,
-                                            child: Image.network(
-                                              option.imageUrl,
-                                              fit: BoxFit.contain,
-                                              errorBuilder: (context, error, stackTrace) => 
-                                                  Icon(Icons.image, color: Colors.grey.shade400),
-                                            ),
-                                          ),
-                                        const SizedBox(height: 8),
+                                        // Fixed height container for image
+                                        Container(
+                                          height: 50,
+                                          width: double.infinity,
+                                          child: option.imageUrl.isNotEmpty
+                                              ? Image.network(
+                                                  option.imageUrl,
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder: (context, error, stackTrace) => 
+                                                      Icon(Icons.image, color: Colors.grey.shade400, size: 30),
+                                                )
+                                              : Icon(Icons.image, color: Colors.grey.shade400, size: 30),
+                                        ),
+                                        const SizedBox(height: 8),                                        // Expanded text area with bottom alignment
                                         Expanded(
                                           child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.end, // Changed to end for bottom alignment
                                             children: [
                                               Text(
                                                 option.label,
                                                 textAlign: TextAlign.center,
                                                 style: const TextStyle(
-                                                  fontSize: 12,
+                                                  fontSize: 11,
                                                   fontWeight: FontWeight.w500,
+                                                  height: 1.2,
                                                 ),
-                                                maxLines: 2,
+                                                maxLines: 3,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
-                                              if (option.priceModifier != 0)
-                                                Text(
+                                            ],
+                                          ),
+                                        ),
+                                        // Fixed height container for price modifier
+                                        Container(
+                                          height: 16,
+                                          child: option.priceModifier != 0
+                                              ? Text(
                                                   option.priceModifier > 0
                                                       ? '+₹${option.priceModifier}'
                                                       : '₹${option.priceModifier}',
@@ -466,9 +475,8 @@ class _SellPhoneMultiPageQuestionnairePageState extends State<SellPhoneMultiPage
                                                         : Colors.red,
                                                     fontWeight: FontWeight.bold,
                                                   ),
-                                                ),
-                                            ],
-                                          ),
+                                                )
+                                              : const SizedBox(),
                                         ),
                                       ],
                                     ),

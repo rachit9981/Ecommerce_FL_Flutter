@@ -680,15 +680,14 @@ class SellPhoneService {
   int min(int a, int b) {
     return a < b ? a : b;
   }
-  
-  // Submit an inquiry for a sell mobile listing
+    // Submit an inquiry for a sell mobile listing
   Future<Map<String, dynamic>> submitInquiry({
     required String sellMobileId,
     required String userId,
     required String buyerPhone,
     required String selectedVariant,
     required String selectedCondition,
-    required Map<String, String> address,
+    required Map<String, dynamic> address,
     String? status,
   }) async {
     try {
@@ -754,8 +753,7 @@ class SellPhoneService {
       debugPrint('Error submitting inquiry: $e');
       rethrow;
     }  }
-  
-  // Submit an inquiry for a sell mobile listing with questionnaire answers
+    // Submit an inquiry for a sell mobile listing with questionnaire answers
   Future<Map<String, dynamic>> submitInquiryWithAnswers({
     required String phoneModelId,
     required String userId,
@@ -763,21 +761,23 @@ class SellPhoneService {
     required String selectedStorage,
     required String selectedRam,
     required Map<String, List<String>> questionnaireAnswers,
-    required Map<String, String> address,
+    required Map<String, dynamic> address,
     String? status,
   }) async {
     try {
       // Get auth headers
       final headers = await _getAuthHeaders();
-      debugPrint('Submitting inquiry with answers for phone: $phoneModelId');        // Create request body - match backend expected field names
+      debugPrint('Submitting inquiry with answers for phone: $phoneModelId');
+      
+      // Create request body - match backend expected field names
       final requestBody = {
-        'sell_mobile_id': phoneModelId, // Backend expects sell_mobile_id, not phone_model_id
+        'phone_model_id': phoneModelId, // Changed from sell_mobile_id to phone_model_id
         'user_id': userId,
         'buyer_phone': buyerPhone,
         'selected_storage': selectedStorage,
         'selected_ram': selectedRam,
         'questionnaire_answers': questionnaireAnswers,
-        'address': address, // Address is already in correct format from caller
+        'address': address, // Address as Map<String, dynamic> to match expected format
       };
       
       if (status != null) {

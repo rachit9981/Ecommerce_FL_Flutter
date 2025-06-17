@@ -158,15 +158,14 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
 
     try {
       final sellPhoneService = SellPhoneService();
-      
-      // Dummy user data - in a real app, get from user provider/auth
+        // Dummy user data - in a real app, get from user provider/auth
       final userId = 'user123'; // TODO: Get from actual user provider
       final buyerPhone = '1234567890'; // TODO: Get from user profile
       final address = {
-        'street': '123 Main St',
+        'street_address': '123 Main St',
         'city': 'City',
         'state': 'State',
-        'zipCode': '12345',
+        'postal_code': '12345',
       }; // TODO: Get from user address
       
       final result = await sellPhoneService.submitInquiryWithAnswers(

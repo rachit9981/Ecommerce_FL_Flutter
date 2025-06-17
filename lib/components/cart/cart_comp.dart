@@ -13,166 +13,164 @@ class CartItemCard extends StatelessWidget {
     required this.onQuantityChanged,
     required this.onRemove,
   }) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 3,
-      shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0.5,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Colors.grey.shade100, width: 0.5),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product image with shadow
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: (item.imageUrl != null && item.imageUrl!.isNotEmpty) || 
-                       (item.image != null && item.image!.isNotEmpty)
-                    ? Image.network(
-                        item.imageUrl ?? item.image!,
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 100,
-                            height: 100,
-                            color: Colors.grey.shade200,
-                            child: Icon(Icons.image_not_supported, color: Colors.grey),
-                          );
-                        },
-                      )
-                    : Container(
-                        width: 100,
-                        height: 100,
-                        color: Colors.grey.shade200,
-                        child: Icon(Icons.image, color: Colors.grey),
-                      ),
-              ),
+            // Product image - more compact
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: (item.imageUrl != null && item.imageUrl!.isNotEmpty) || 
+                     (item.image != null && item.image!.isNotEmpty)
+                  ? Image.network(
+                      item.imageUrl ?? item.image!,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 70,
+                          height: 70,
+                          color: Colors.grey.shade50,
+                          child: Icon(Icons.image_not_supported, color: Colors.grey.shade300, size: 16),
+                        );
+                      },
+                    )
+                  : Container(
+                      width: 70,
+                      height: 70,
+                      color: Colors.grey.shade50,
+                      child: Icon(Icons.image, color: Colors.grey.shade300, size: 16),
+                    ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 10),
             
-            // Product details
+            // Product details - more compact layout
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     item.name,
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                      letterSpacing: -0.3,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      height: 1.2,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                  ),                  const SizedBox(height: 6),
-                  // Brand and category info
+                  ),
+                  const SizedBox(height: 2),
+                  
+                  // Brand and category info - smaller
                   if (item.brand != null || item.category != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        [item.brand, item.category].where((e) => e != null).join(' • '),
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  // Price
-                  if (item.price != null)
                     Text(
-                      '₹${item.price!.toStringAsFixed(2)}',
+                      [item.brand, item.category].where((e) => e != null).join(' • '),
                       style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        color: Colors.grey.shade500,
+                        fontSize: 10,
+                        height: 1.2,
                       ),
                     ),
-                  // Variant info if available
-                  if (item.variant != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue.shade200),
-                        ),
-                        child: Text(
-                          _getVariantDisplayText(item.variant!),
+                  
+                  const SizedBox(height: 4),
+                  
+                  // Price and variant in same row
+                  Row(
+                    children: [
+                      if (item.price != null)
+                        Text(
+                          '₹${item.price!.toStringAsFixed(0)}',
                           style: TextStyle(
-                            color: Colors.blue.shade700,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
                           ),
                         ),
-                      ),
-                    ),
-                  // Stock info if available
+                      if (item.variant != null) ...[
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(3),
+                              border: Border.all(color: Colors.grey.shade200, width: 0.5),
+                            ),
+                            child: Text(
+                              _getVariantDisplayText(item.variant!),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  
+                  // Stock info - smaller
                   if (item.stock != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         item.stock! > 0 ? 'In Stock (${item.stock})' : 'Out of Stock',
                         style: TextStyle(
                           color: item.stock! > 0 ? Colors.green.shade600 : Colors.red.shade600,
-                          fontSize: 12,
+                          fontSize: 9,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                  const SizedBox(height: 12),
                   
-                  // Quantity display and remove button
+                  const SizedBox(height: 6),
+                  
+                  // Quantity and remove button - more compact
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Quantity display as badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.grey.shade200, width: 0.5),
                         ),
                         child: Text(
                           'Qty: ${item.quantity}',
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade700,
+                            color: Colors.grey.shade600,
+                            fontSize: 10,
                           ),
                         ),
                       ),
                       
-                      // Remove button
                       InkWell(
                         onTap: onRemove,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
                           child: Icon(
                             Icons.delete_outline_rounded,
                             color: Colors.red.shade400,
-                            size: 20,
+                            size: 14,
                           ),
                         ),
                       ),
@@ -228,99 +226,105 @@ class CartSummary extends StatelessWidget {
   double get total {
     return subtotal - discountAmount + shippingCost;
   }
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade200, width: 0.5),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            offset: const Offset(0, -4),
-            blurRadius: 12,
-            spreadRadius: 2,
+            color: Colors.black.withOpacity(0.03),
+            offset: const Offset(0, -2),
+            blurRadius: 8,
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Order summary
-          _buildSummaryRow('Subtotal', '₹${subtotal.toStringAsFixed(2)}'),
+          // Order summary header
+          Text(
+            'Order Summary',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          // Order summary details
+          _buildSummaryRow('Subtotal', '₹${subtotal.toStringAsFixed(0)}'),
           if (discountAmount > 0)
             _buildSummaryRow(
               'Discount', 
-              '-₹${discountAmount.toStringAsFixed(2)}',
+              '-₹${discountAmount.toStringAsFixed(0)}',
               valueColor: Colors.green.shade600,
             ),
           _buildSummaryRow(
             'Shipping',
-            shippingCost > 0 ? '₹${shippingCost.toStringAsFixed(2)}' : 'Free',
+            shippingCost > 0 ? '₹${shippingCost.toStringAsFixed(0)}' : 'Free',
             valueColor: shippingCost == 0 ? Colors.green.shade600 : null,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: Colors.grey.shade200, thickness: 1),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Divider(color: Colors.grey.shade200, thickness: 0.5, height: 1),
           ),
           _buildSummaryRow(
             'Total',
-            '₹${total.toStringAsFixed(2)}',
+            '₹${total.toStringAsFixed(0)}',
             isBold: true,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           
           // Checkout button with loading state
           SizedBox(
             width: double.infinity,
-            height: 54,
+            height: 44,
             child: ElevatedButton(
               onPressed: isAddressLoading ? null : onCheckout,
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                elevation: 2,
-                shadowColor: Theme.of(context).primaryColor.withOpacity(0.4),
+                elevation: 0,
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade300,
               ),
               child: isAddressLoading 
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(
-                          width: 20, 
-                          height: 20, 
+                          width: 16, 
+                          height: 16, 
                           child: CircularProgressIndicator(
-                            strokeWidth: 3,
+                            strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         ),
-                        SizedBox(width: 12),
+                        SizedBox(width: 8),
                         Text(
-                          'Loading Addresses...',
+                          'Loading...',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.3,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Proceed to Checkout',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.arrow_forward_rounded, size: 18),
-                      ],
+                  : Text(
+                      'Proceed to Checkout',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
             ),
           ),
@@ -328,27 +332,26 @@ class CartSummary extends StatelessWidget {
       ),
     );
   }
-
   Widget _buildSummaryRow(String label, String value, {bool isBold = false, Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
             style: TextStyle(
-              color: Colors.grey.shade700,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              fontSize: isBold ? 17 : 15,
+              color: Colors.grey.shade600,
+              fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
+              fontSize: isBold ? 13 : 12,
             ),
           ),
           Text(
             value,
             style: TextStyle(
-              color: valueColor ?? (isBold ? Colors.black : Colors.grey.shade800),
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-              fontSize: isBold ? 19 : 15,
+              color: valueColor ?? (isBold ? Colors.black87 : Colors.grey.shade700),
+              fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
+              fontSize: isBold ? 14 : 12,
             ),
           ),
         ],
@@ -365,7 +368,6 @@ class EmptyCartView extends StatelessWidget {
     Key? key,
     required this.onStartShopping,
   }) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -373,54 +375,53 @@ class EmptyCartView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: Colors.grey.shade50,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.shopping_cart_outlined,
-              size: 72,
-              color: Theme.of(context).primaryColor.withOpacity(0.7),
+              size: 48,
+              color: Colors.grey.shade400,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             'Your cart is empty',
             style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-              letterSpacing: -0.5,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Add items to your cart to get started with your shopping',
+              'Add items to your cart to get started',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 15,
+                color: Colors.grey.shade500,
+                fontSize: 12,
               ),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: onStartShopping,
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(8),
               ),
-              elevation: 2,
+              elevation: 0,
             ),
             child: const Text(
               'Start Shopping',
               style: TextStyle(
-                fontSize: 16, 
-                fontWeight: FontWeight.bold,
+                fontSize: 13, 
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

@@ -85,19 +85,25 @@ class _CartPageState extends State<CartPage> {
       );
     }
   }
-
   void _showAddAddressDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('No Address Found'),
-        content: Text('Please add a delivery address before proceeding to checkout.'),
+        title: Text(
+          'No Address Found',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Please add a delivery address before proceeding to checkout.',
+          style: TextStyle(fontSize: 14),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(fontSize: 13)),
           ),
           // ElevatedButton(
           //   onPressed: () {
@@ -111,8 +117,7 @@ class _CartPageState extends State<CartPage> {
         ],
       ),
     );
-  }
-  void _showAddressSelectionDialog(
+  }  void _showAddressSelectionDialog(
     BuildContext context, 
     List<UserAddress> addresses, 
     List<CartItem> cartItems, 
@@ -121,8 +126,12 @@ class _CartPageState extends State<CartPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Select Delivery Address'),
-        contentPadding: EdgeInsets.symmetric(vertical: 20),
+        title: Text(
+          'Select Delivery Address',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        contentPadding: EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         content: Container(
           width: double.maxFinite,
           child: ListView.builder(
@@ -130,7 +139,9 @@ class _CartPageState extends State<CartPage> {
             itemCount: addresses.length,
             itemBuilder: (context, index) {
               final address = addresses[index];
-              return ListTile(                leading: Radio<String>(
+              return ListTile(
+                dense: true,
+                leading: Radio<String>(
                   value: address.id,
                   groupValue: null, // No pre-selection
                   onChanged: (value) {
@@ -138,11 +149,15 @@ class _CartPageState extends State<CartPage> {
                     _navigateToCheckout(context, address.id, cartItems, amountInPaise);
                   },
                 ),
-                title: Text(address.name),
+                title: Text(
+                  address.name,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(
                   '${address.street}, ${address.city}, ${address.state} ${address.pincode}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -157,7 +172,7 @@ class _CartPageState extends State<CartPage> {
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(fontSize: 13)),
           ),
           TextButton(
             onPressed: () {
@@ -165,7 +180,7 @@ class _CartPageState extends State<CartPage> {
               // Navigate to add new address
               Navigator.pushNamed(context, '/addresses/add');
             },
-            child: Text('Add New Address'),
+            child: Text('Add New', style: TextStyle(fontSize: 13)),
           ),
         ],
       ),
@@ -192,11 +207,18 @@ class _CartPageState extends State<CartPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+    return Scaffold(      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-        title: const Text('Shopping Cart'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'Shopping Cart',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           Consumer<CartProvider>(
             builder: (context, cartProvider, child) {
@@ -204,21 +226,27 @@ class _CartPageState extends State<CartPage> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: IconButton(
-                    icon: Icon(Icons.delete_sweep_outlined, color: Colors.red.shade400),
+                    icon: Icon(Icons.delete_sweep_outlined, color: Colors.red.shade400, size: 20),
                     tooltip: 'Clear cart',
                     onPressed: () {
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Clear Cart'),
-                          content: const Text('Are you sure you want to remove all items from your cart?'),
+                          title: const Text(
+                            'Clear Cart',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                          content: const Text(
+                            'Remove all items from your cart?',
+                            style: TextStyle(fontSize: 14),
+                          ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancel'),
+                              child: const Text('Cancel', style: TextStyle(fontSize: 13)),
                             ),
                             TextButton(
                               onPressed: () {
@@ -228,7 +256,7 @@ class _CartPageState extends State<CartPage> {
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.red,
                               ),
-                              child: const Text('Clear'),
+                              child: const Text('Clear', style: TextStyle(fontSize: 13)),
                             ),
                           ],
                         ),
@@ -241,7 +269,7 @@ class _CartPageState extends State<CartPage> {
             }
           ),
         ],
-      ),      body: Consumer<UserProvider>(
+      ),body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
           print('CartPage: User authentication state: ${userProvider.isAuthenticated}');
           // If not authenticated, show login prompt for cart features
@@ -261,19 +289,22 @@ class _CartPageState extends State<CartPage> {
           // If authenticated, show the cart content
           return SafeArea(
             child: Consumer<CartProvider>(
-              builder: (context, cartProvider, child) {
-                if (cartProvider.isLoading) {
+              builder: (context, cartProvider, child) {                if (cartProvider.isLoading) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 20),
+                        SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(height: 12),
                         Text(
-                          'Loading your cart...',
+                          'Loading cart...',
                           style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
                           ),
                         )
                       ],
@@ -286,29 +317,30 @@ class _CartPageState extends State<CartPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 56, color: Colors.red.shade300),
-                        SizedBox(height: 20),
+                        Icon(Icons.error_outline, size: 40, color: Colors.red.shade300),
+                        SizedBox(height: 12),
                         Text(
                           'Error: ${cartProvider.error}',
                           style: TextStyle(
-                            color: Colors.red.shade800,
-                            fontSize: 16,
+                            color: Colors.red.shade700,
+                            fontSize: 13,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 24),
+                        SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () {
                             cartProvider.clearError();
                             cartProvider.fetchCartItems();
                           },
-                          icon: Icon(Icons.refresh),
-                          label: Text('Retry'),
+                          icon: Icon(Icons.refresh, size: 16),
+                          label: Text('Retry', style: TextStyle(fontSize: 13)),
                           style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(6),
                             ),
+                            elevation: 0,
                           ),
                         )
                       ],
@@ -319,13 +351,12 @@ class _CartPageState extends State<CartPage> {
                 if (cartProvider.isEmpty) {
                   return EmptyCartView(onStartShopping: _navigateToHome);
                 }
-                
-                return Column(
+                  return Column(
                   children: [
                     // Cart items list
                     Expanded(
                       child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
                         physics: const BouncingScrollPhysics(),
                         itemCount: cartProvider.cartItems.length,
                         itemBuilder: (context, index) {
