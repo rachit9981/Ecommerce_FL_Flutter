@@ -69,39 +69,65 @@ class _CategoryPageState extends State<CategoryPage> {
         }
       }
     });
-  }
-  void _filterProducts(List<Product> allProducts) {
+  }  void _filterProducts(List<Product> allProducts) {
     if (!mounted) return;
 
     try {
       // Filter products by category
-      final categoryName = widget.category.id.toLowerCase();
-      // Create singular version by removing 's' from the end if it exists
-      final singularCategoryName = categoryName.endsWith('s') 
-          ? categoryName.substring(0, categoryName.length - 1) 
-          : categoryName;
+      final categoryId = widget.category.id.toLowerCase().trim();
       
-      print('CategoryPage: Filtering for category: "$categoryName" (singular: "$singularCategoryName")');
+      print('CategoryPage: Filtering for category ID: "$categoryId"');
       print('CategoryPage: Total products to filter: ${allProducts.length}');
       
+      // First, let's see what categories exist in the products
+      final allCategories = allProducts.map((p) => p.category.toLowerCase().trim()).toSet();
+      print('CategoryPage: Available product categories: $allCategories');
+      
       final filteredByCategory = allProducts.where((product) {
-        final productCategory = product.category.toLowerCase();
-        final productBrand = product.brand.toLowerCase();
+        final productCategory = product.category.toLowerCase().trim();
+        final productBrand = product.brand.toLowerCase().trim();
         
-        // Check if product matches the category (including singular form)
-        bool categoryMatch = productCategory.contains(categoryName) || 
-                            categoryName.contains(productCategory) ||
-                            productCategory.contains(singularCategoryName) ||
-                            singularCategoryName.contains(productCategory);
-                            
+        // Simple exact match first
+        if (productCategory == categoryId) {
+          print('CategoryPage: Exact match found - Product: "${product.name}", Category: "${product.category}"');
+          return true;
+        }
+        
+        // Try partial matches for common category variations
+        bool categoryMatch = false;
+        
+        // Check if the category ID contains common terms
+        if (categoryId.contains('laptop') || categoryId.contains('computer')) {
+          categoryMatch = productCategory.contains('laptop') || 
+                        productCategory.contains('computer') || 
+                        productCategory.contains('pc');
+        } else if (categoryId.contains('mobile') || categoryId.contains('phone')) {
+          categoryMatch = productCategory.contains('mobile') || 
+                        productCategory.contains('phone') || 
+                        productCategory.contains('smartphone');
+        } else if (categoryId.contains('electronic')) {
+          categoryMatch = productCategory.contains('electronic') || 
+                        productCategory.contains('gadget') ||
+                        productCategory.contains('device');
+        } else if (categoryId.contains('fashion') || categoryId.contains('clothing')) {
+          categoryMatch = productCategory.contains('fashion') || 
+                        productCategory.contains('clothing') || 
+                        productCategory.contains('apparel') ||
+                        productCategory.contains('wear');
+        } else {
+          // Generic partial match
+          categoryMatch = productCategory.contains(categoryId) || 
+                         categoryId.contains(productCategory);
+        }
+        
         // For brand categories, also check brand match
-        bool brandMatch = productBrand.contains(categoryName) || 
-                          categoryName.contains(productBrand);
+        bool brandMatch = productBrand.contains(categoryId) || 
+                          categoryId.contains(productBrand);
         
         bool matches = categoryMatch || brandMatch;
         
         if (matches) {
-          print('CategoryPage: Product "${product.name}" matches - Category: "${product.category}", Brand: "${product.brand}"');
+          print('CategoryPage: Partial match found - Product: "${product.name}", Category: "${product.category}", Brand: "${product.brand}"');
         }
                           
         return matches;
