@@ -160,16 +160,15 @@ class _SearchPageState extends State<SearchPage> {
           // This handles initial loading state of products for the whole page
           if (productProvider.isLoading && productProvider.products.isEmpty && _liveSearchResults.isEmpty) {
             return const Center(child: CircularProgressIndicator());
-          }
-
-          if (productProvider.error != null && productProvider.products.isEmpty && _liveSearchResults.isEmpty) {
+          }          if (productProvider.error != null && productProvider.products.isEmpty && _liveSearchResults.isEmpty) {
+            print('Error loading products: ${productProvider.error}');
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  Text('Error loading products: ${productProvider.error}'),
+                  Text('Failed to load products. Please try again.'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => productProvider.loadProducts().then((_) {

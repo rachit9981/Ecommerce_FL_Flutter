@@ -77,11 +77,11 @@ class _DetailedOrderPageState extends State<DetailedOrderPage> {
             backgroundColor: Colors.orange,
           ),
         );
-      }
-    } catch (e) {
+      }    } catch (e) {
+      print('Error downloading invoice: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error downloading invoice: $e'),
+          content: Text('Failed to download invoice. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );

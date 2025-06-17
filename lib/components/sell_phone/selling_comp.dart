@@ -4,7 +4,7 @@ import 'package:ecom/components/sell_phone/phones_brands.dart';
 import 'package:ecom/services/sell_phone.dart';
 import 'package:ecom/services/address_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ecom/pages/sell_phone_requests.dart';
+import 'package:ecom/pages/sell_phone_requests_new.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 
@@ -188,14 +188,14 @@ class SellingComponents {
               duration: const Duration(seconds: 4),
             ),
           );
-        }
-      } catch (apiError) {
+        }      } catch (apiError) {
         // Handle API error
+        print('API call error: $apiError');
         debugPrint('API call error: $apiError');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error submitting inquiry: ${apiError.toString()}'),
+              content: Text('Failed to submit inquiry. Please try again.'),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 4),
             ),
@@ -204,11 +204,12 @@ class SellingComponents {
       }
     } catch (e) {
       // Show error message for any other errors
+      print('General error in _processInquiryWithAddress: $e');
       debugPrint('General error in _processInquiryWithAddress: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Something went wrong. Please try again.'),
             duration: const Duration(seconds: 5),
             backgroundColor: Colors.red,
           ),
@@ -319,13 +320,13 @@ class SellingComponents {
           phoneNumber,
           onSuccess,
         );
-      }
-    } catch (e) {
+      }    } catch (e) {
       // Show error message
+      print('Error in submitInquiry: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Something went wrong. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );

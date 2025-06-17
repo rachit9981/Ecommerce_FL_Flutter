@@ -98,12 +98,12 @@ class _CheckoutPageState extends State<CheckoutPage>
     if (mounted) {
       _showSuccessDialog();
     }
-  }
-  void _handlePaymentError(PaymentFailureResponse response) {
+  }  void _handlePaymentError(PaymentFailureResponse response) {
     setState(() {
       _isLoading = false;
     });
-    _showErrorSnackBar('Payment Failed: ${response.message ?? "Unknown error"}');
+    print('Payment Failed: ${response.message ?? "Unknown error"}');
+    _showErrorSnackBar('Payment failed. Please try again.');
   }
   void _handleExternalWallet() {
     print("External wallet selected");

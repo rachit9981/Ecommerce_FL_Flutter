@@ -467,12 +467,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
       // Navigate to login screen or home
       // You can replace this with your actual login/welcome screen navigation
-      _navigateToLoginScreen();
-
-    } catch (e) {
+      _navigateToLoginScreen();    } catch (e) {
       // Close loading dialog if it's still open
       Navigator.pop(context);
       
+      print('Logout failed: $e');
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -480,7 +479,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Icon(Icons.error, color: Colors.white),
               const SizedBox(width: 8),
-              Expanded(child: Text('Logout failed: ${e.toString()}')),
+              Expanded(child: Text('Logout failed. Please try again.')),
             ],
           ),
           backgroundColor: Colors.red,

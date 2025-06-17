@@ -32,11 +32,11 @@ class _SignupPageState extends State<SignupPage> {
     _phoneController.dispose();
     super.dispose();
   }
-
   void _showError(String message) {
+    print('Signup error: $message');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text('Something went wrong. Please try again.'),
         backgroundColor: Colors.red,
       ),
     );

@@ -191,15 +191,15 @@ class _SellPhoneQuestionnairePageState extends State<SellPhoneQuestionnairePage>
 
       // Navigate back to main sell phone page
       Navigator.of(context).popUntil((route) => route.isFirst);
-      
-    } catch (e) {
+        } catch (e) {
       // Hide loading indicator
       Navigator.of(context).pop();
       
+      print('Error submitting inquiry: $e');
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error submitting inquiry: ${e.toString()}'),
+          content: Text('Failed to submit inquiry. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );

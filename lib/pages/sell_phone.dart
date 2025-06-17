@@ -3,7 +3,7 @@ import 'package:ecom/components/sell_phone/phones_brands.dart';
 import 'package:ecom/components/sell_phone/selling_comp.dart';
 import 'package:ecom/services/sell_phone.dart';
 import 'package:ecom/pages/search_phone.dart';
-import 'package:ecom/pages/sell_phone_requests.dart';
+import 'package:ecom/pages/sell_phone_requests_new.dart';
 import 'package:ecom/pages/sell_phone_by_brand.dart';
 import 'package:ecom/pages/sell_phone_details.dart';
 import 'package:provider/provider.dart';
@@ -134,11 +134,10 @@ class _SellPhonePageState extends State<SellPhonePage> {
       
       // Close loading dialog
       Navigator.of(context).pop();
-      
-      if (brandData == null || brandData.phoneSeries.isEmpty) {
+        if (brandData == null || brandData.phoneSeries.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('No phone series available for $brandName'),
+            content: Text('No phone models available. Please try again.'),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -156,14 +155,14 @@ class _SellPhonePageState extends State<SellPhonePage> {
             ),
           ),
         );
-      }
-    } catch (e) {
+      }    } catch (e) {
       // Close loading dialog
       Navigator.of(context).pop();
       
+      print('Error loading brand data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error loading $brandName data. Please try again.'),
+          content: Text('Failed to load data. Please try again.'),
           duration: const Duration(seconds: 2),
         ),
       );

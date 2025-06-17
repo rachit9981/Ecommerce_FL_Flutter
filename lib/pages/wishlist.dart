@@ -94,16 +94,16 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
             backgroundColor: Colors.grey.shade700,
           ),
         );
-      }
-    } catch (e) {
+      }    } catch (e) {
       if (mounted) {
         setState(() {
           _isProcessing = false;
         });
         
+        print('Error removing item from wishlist: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to remove: ${e.toString().replaceAll('Exception: ', '')}'),
+            content: Text('Failed to remove item. Please try again.'),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             backgroundColor: Colors.red.shade600,
@@ -159,13 +159,13 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
             duration: const Duration(seconds: 2),
           ),
         );
-      }
-    } catch (e) {
+      }    } catch (e) {
       if (mounted) {
         setState(() {
           _isProcessing = false;
         });
         
+        print('Error adding item to cart: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -174,7 +174,7 @@ class _WishlistPageState extends State<WishlistPage> with SingleTickerProviderSt
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Failed to add to cart: ${e.toString().replaceAll('Exception: ', '')}',
+                    'Failed to add to cart. Please try again.',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),

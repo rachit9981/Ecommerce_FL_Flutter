@@ -81,10 +81,10 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
       setState(() {
         _requests = mappedRequests;
         _isLoading = false;
-      });
-    } catch (e) {
+      });    } catch (e) {
+      print('Error loading sell phone requests: $e');
       setState(() {
-        _errorMessage = 'Failed to load your requests: $e';
+        _errorMessage = 'Failed to load your requests. Please try again.';
         _isLoading = false;
         _requests = []; // Clear any previous data
       });
@@ -237,9 +237,8 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
               color: Colors.grey.shade800,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            _errorMessage ?? 'Something went wrong',
+          const SizedBox(height: 8),          Text(
+            _errorMessage ?? 'Something went wrong. Please try again.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.grey.shade600,

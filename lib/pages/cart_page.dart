@@ -74,14 +74,14 @@ class _CartPageState extends State<CartPage> {
         _navigateToCheckout(context, addresses[0].id, cartItems, amountInPaise);
       } else {
         _showAddressSelectionDialog(context, addresses, cartItems, amountInPaise);
-      }
-    } catch (e) {
+      }    } catch (e) {
       setState(() {
         _isAddressLoading = false;
       });
       
+      print('Error loading addresses: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading addresses: $e')),
+        SnackBar(content: Text('Failed to load addresses. Please try again.')),
       );
     }
   }

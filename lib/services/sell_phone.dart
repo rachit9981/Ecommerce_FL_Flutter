@@ -4,9 +4,13 @@ import 'config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
-// API endpoints
+// API endpoints - Updated to use top-level API routes with consistent naming
 const String sellMobileBaseUrl = '$apiUrl/sell-mobile';
+
+// Catalog endpoints
 const String catalogUrl = '$sellMobileBaseUrl/catalog/all/';
+
+// Inquiry endpoints
 const String submitInquiryUrl = '$sellMobileBaseUrl/inquiries/submit/';
 const String userInquiriesUrl = '$sellMobileBaseUrl/inquiries/user/';
 
@@ -715,9 +719,8 @@ class SellPhoneService {
         }
         requestBody['status'] = status;
       }
-      
-      // Ensure endpoint is correct - check documentation for exact path
-      final apiEndpoint = '$apiUrl/sell-mobile/submit_inquiry/';
+        // Use the consistent endpoint from constants
+      final apiEndpoint = submitInquiryUrl;
       debugPrint('Submitting sell phone inquiry:');
       debugPrint('URL: $apiEndpoint');
       debugPrint('Request body: ${json.encode(requestBody)}');
@@ -815,13 +818,12 @@ class SellPhoneService {
       rethrow;
     }
   }
-
   // Fetch all inquiries made by the current user
   Future<List<SellPhoneInquiry>> getUserInquiries() async {
     try {
       final headers = await _getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$apiUrl/sell-mobile/user_inquires/'),
+        Uri.parse(userInquiriesUrl),
         headers: headers,
       );
       
