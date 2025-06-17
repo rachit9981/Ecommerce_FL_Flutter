@@ -70,18 +70,9 @@ class _CategoryPageState extends State<CategoryPage> {
       }
     });
   }  void _filterProducts(List<Product> allProducts) {
-    if (!mounted) return;
-
-    try {
+    if (!mounted) return;    try {
       // Filter products by category
       final categoryId = widget.category.id.toLowerCase().trim();
-      
-      print('CategoryPage: Filtering for category ID: "$categoryId"');
-      print('CategoryPage: Total products to filter: ${allProducts.length}');
-      
-      // First, let's see what categories exist in the products
-      final allCategories = allProducts.map((p) => p.category.toLowerCase().trim()).toSet();
-      print('CategoryPage: Available product categories: $allCategories');
       
       final filteredByCategory = allProducts.where((product) {
         final productCategory = product.category.toLowerCase().trim();
@@ -89,7 +80,6 @@ class _CategoryPageState extends State<CategoryPage> {
         
         // Simple exact match first
         if (productCategory == categoryId) {
-          print('CategoryPage: Exact match found - Product: "${product.name}", Category: "${product.category}"');
           return true;
         }
         
@@ -124,16 +114,8 @@ class _CategoryPageState extends State<CategoryPage> {
         bool brandMatch = productBrand.contains(categoryId) || 
                           categoryId.contains(productBrand);
         
-        bool matches = categoryMatch || brandMatch;
-        
-        if (matches) {
-          print('CategoryPage: Partial match found - Product: "${product.name}", Category: "${product.category}", Brand: "${product.brand}"');
-        }
-                          
-        return matches;
+        return categoryMatch || brandMatch;
       }).toList();
-      
-      print('CategoryPage: Found ${filteredByCategory.length} products after category filtering');
 
       // Calculate max price for range slider before applying price filter
       double newMaxPrice = 10000; // Default fallback value

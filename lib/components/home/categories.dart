@@ -60,17 +60,13 @@ Future<List<CategoryItem>> getApiCategories(BuildContext context) async {
 // Method to get dynamic categories from product data
 List<CategoryItem> getDynamicCategories(BuildContext context, List<Product> products) {
   final Map<String, String> uniqueCategories = {};
-  
-  // Collect all unique categories from products
+    // Collect all unique categories from products
   for (var product in products) {
     final categoryKey = product.category.toLowerCase().trim();
     if (categoryKey.isNotEmpty && !uniqueCategories.containsKey(categoryKey)) {
       uniqueCategories[categoryKey] = product.category.trim();
     }
   }
-  
-  print('HomeCategoriesSection: Found ${uniqueCategories.length} unique categories from ${products.length} products');
-  print('HomeCategoriesSection: Categories found: ${uniqueCategories.keys.toList()}');
   
   final List<Color> colorOptions = [
     Colors.grey.shade700, Colors.grey.shade600, Colors.grey.shade800, 
@@ -81,7 +77,6 @@ List<CategoryItem> getDynamicCategories(BuildContext context, List<Product> prod
 
   List<CategoryItem> categoryItems = [];
   int colorIndex = 0;
-
   for (var entry in uniqueCategories.entries) {
     final categoryKey = entry.key; // lowercase version for ID
     final originalCategory = entry.value; // original case for display
@@ -92,11 +87,8 @@ List<CategoryItem> getDynamicCategories(BuildContext context, List<Product> prod
       backgroundColor: colorOptions[colorIndex % colorOptions.length].withOpacity(0.1),
     );
     
-    print('HomeCategoriesSection: Creating category item with ID: "${item.id}" and title: "${item.title}"');
-    
     categoryItems.add(
       item.copyWith(onTap: () { // Use copyWith to set onTap
-        print('HomeCategoriesSection: Category tapped: "${item.id}" (${item.title})');
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => CategoryPage(category: item)), // Pass the CategoryItem object
@@ -106,7 +98,6 @@ List<CategoryItem> getDynamicCategories(BuildContext context, List<Product> prod
     colorIndex++;
   }
   
-  print('HomeCategoriesSection: Created ${categoryItems.length} category items');
   return categoryItems;
 }
 
