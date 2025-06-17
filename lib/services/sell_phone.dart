@@ -965,11 +965,10 @@ class SellPhone {
       // Generate a unique ID if none exists
       id = DateTime.now().millisecondsSinceEpoch.toString();
     }
-    
-    final phone = SellPhone(
+      final phone = SellPhone(
       id: id,
       brand: json['brand'] ?? json['manufacturer'] ?? '',
-      name: json['name'] ?? json['model'] ?? json['title'] ?? '', // Support multiple possible keys
+      name: json['phone_display_name'] ?? json['name'] ?? json['model'] ?? json['title'] ?? '', // Prefer phone_display_name first
       image: json['image'] ?? json['img_url'] ?? json['thumbnail'] ?? '',
       description: json['description'] ?? json['details'] ?? '',
       variantPrices: variantPrices,
@@ -1022,6 +1021,7 @@ class SellPhoneInquiry {
   final String? updatedAt;
   final SellPhone? phoneDetails;
   final int? price; // Add price field
+  final String? phoneDisplayName; // Add phone display name field
 
   SellPhoneInquiry({
     required this.id,
@@ -1036,8 +1036,8 @@ class SellPhoneInquiry {
     this.updatedAt,
     this.phoneDetails,
     this.price, // Include price in constructor
-  });
-  factory SellPhoneInquiry.fromJson(Map<String, dynamic> json) {
+    this.phoneDisplayName, // Include phone display name in constructor
+  });  factory SellPhoneInquiry.fromJson(Map<String, dynamic> json) {
     // Debug: Print all available fields in the JSON response
     debugPrint('=== DEBUG: SellPhoneInquiry.fromJson ===');
     debugPrint('Available JSON fields: ${json.keys.toList()}');
@@ -1047,6 +1047,7 @@ class SellPhoneInquiry {
     debugPrint('Field mapping check:');
     debugPrint('- sell_mobile_id: ${json['sell_mobile_id']}');
     debugPrint('- phone_model_id: ${json['phone_model_id']}');
+    debugPrint('- phone_display_name: ${json['phone_display_name']}');
     debugPrint('- selected_variant: ${json['selected_variant']}');
     debugPrint('- selected_storage: ${json['selected_storage']}');
     debugPrint('- selected_condition: ${json['selected_condition']}');
@@ -1109,6 +1110,7 @@ class SellPhoneInquiry {
       updatedAt: json['updated_at'],
       phoneDetails: phoneDetails,
       price: price, // Include parsed price
+      phoneDisplayName: json['phone_display_name'], // Extract phone display name
     );
   }
 }

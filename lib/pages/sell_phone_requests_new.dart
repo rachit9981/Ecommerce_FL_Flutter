@@ -108,47 +108,7 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
   }
   // Map API inquiry model to UI request model
   List<SellPhoneRequest> _mapInquiriesToRequests(List<SellPhoneInquiry> inquiries) {
-    print('=== DEBUG: Mapping inquiries to requests ===');
-    print('Number of inquiries to map: ${inquiries.length}');
       return inquiries.map((inquiry) {
-      print('--- Mapping inquiry ---');
-      print('Original inquiry ID: ${inquiry.id}');
-      print('Original sellMobileId: "${inquiry.sellMobileId}"');
-      print('Original selectedVariant: "${inquiry.selectedVariant}"');
-      print('Original selectedCondition: "${inquiry.selectedCondition}"');
-      print('Original price: ${inquiry.price}');
-      print('Original status: ${inquiry.status}');
-      print('Original address: ${inquiry.address}');
-      
-      // Check if this inquiry might be using newer field names
-      print('=== DEBUG: Checking for alternative field mappings ===');
-      print('User ID: ${inquiry.userId}');
-      print('Buyer Phone: ${inquiry.buyerPhone}');
-      print('Created At: ${inquiry.createdAt}');
-      print('Updated At: ${inquiry.updatedAt}');
-      
-      // The API might be using different field structures based on submission method
-      // Let's provide some hints about what type of inquiry this might be
-      bool hasStorage = inquiry.selectedVariant.isNotEmpty;
-      bool hasCondition = inquiry.selectedCondition.isNotEmpty;
-      bool hasPhoneId = inquiry.sellMobileId.isNotEmpty;
-      bool hasPrice = inquiry.price != null;
-      
-      print('Data completeness:');
-      print('- Has phone ID: $hasPhoneId');
-      print('- Has storage: $hasStorage');
-      print('- Has condition: $hasCondition');
-      print('- Has price: $hasPrice');
-      print('- Has address: ${inquiry.address.isNotEmpty}');
-      
-      if (!hasPhoneId && !hasStorage && !hasCondition && !hasPrice) {
-        print('*** This appears to be an incomplete inquiry submission ***');
-        print('*** Possible causes: ***');
-        print('*** 1. Different API field names being used ***');
-        print('*** 2. Submission process not saving complete data ***');
-        print('*** 3. Backend field mapping issues ***');
-      }
-      print('=== End alternative field mappings check ===');
         // Handle empty or missing sellMobileId
       String phoneId = inquiry.sellMobileId.isNotEmpty 
           ? inquiry.sellMobileId 
@@ -175,9 +135,17 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
       // Handle null price - for now use 0, but this should be calculated from questionnaire
       int price = inquiry.price?.toInt() ?? 0;      // Create a more descriptive phone name
       String phoneName;
-      if (phoneId.isNotEmpty) {
-        // Try to use a more descriptive name if available
-        // For now, use the phone ID but this could be enhanced with phone_display_name
+      
+      // First priority: Use phone_display_name from API if available
+      if (inquiry.phoneDisplayName != null && inquiry.phoneDisplayName!.isNotEmpty) {
+        phoneName = inquiry.phoneDisplayName!;
+      } 
+      // Second priority: Use phone details name if available
+      else if (inquiry.phoneDetails != null && inquiry.phoneDetails!.name.isNotEmpty) {
+        phoneName = inquiry.phoneDetails!.name;
+      } 
+      else if (phoneId.isNotEmpty) {
+        // Fallback: Try to use a more descriptive name based on phone ID
         if (phoneId.contains('iphone')) {
           phoneName = phoneId.replaceAll('_', ' ').split(' ').map((word) => 
             word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : word
@@ -186,7 +154,7 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
           phoneName = 'Phone #${phoneId.substring(0, min(8, phoneId.length))}';
         }
       } else {
-        // Try to create a more descriptive name using available data
+        // Last resort: Try to create a more descriptive name using available data
         String location = '';
         if (inquiry.address.isNotEmpty) {
           String city = inquiry.address['city']?.toString() ?? '';
@@ -200,9 +168,10 @@ class _SellPhoneRequestsPageState extends State<SellPhoneRequestsPage> {
           }
         }
         phoneName = 'Phone Request$location';
-      }
-        print('Processed values:');
+      }        print('Processed values:');
       print('- Phone ID: "$phoneId"');
+      print('- Phone Display Name: "${inquiry.phoneDisplayName}"');
+      print('- Phone Details Name: "${inquiry.phoneDetails?.name}"');
       print('- Phone Name: "$phoneName"');
       print('- Storage: "$storage"');
       print('- RAM: "$ram"');
